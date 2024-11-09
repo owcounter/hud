@@ -1,0 +1,112 @@
+name: Windows Build and Auto-Release
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Get version
+      id: get_version
+      run: |
+        $xml = [Xml](Get-Content OwcounterHUD.csproj)
+        $version = $xml.Project.PropertyGroup.Version
+        if ([string]::IsNullOrEmpty($version)) {
+          $version = "1.0.0"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        
+    - name: Update project version
+      run: |
+        $file = 'OwcounterHUD.csproj'
+        $xml = [Xml](Get-Content $file)
+        if ($null -eq $xml.Project.PropertyGroup.Version) {
+            $versionElement = $xml.CreateElement("Version")
+            $versionElement.InnerText = "1.0.0"
+            $xml.Project.PropertyGroup.AppendChild($versionElement)
+        } else {
+            $xml.Project.PropertyGroup.Version = "1.0.0"
+        }
+        $xml.Save($file)
+    
+    - name: Restore dependencies
+      run: dotnet restore OwcounterHUD.csproj
+    
+    - name: Build
+      run: dotnet build OwcounterHUD.csproj --configuration Release --no-restore
+    
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
+    
+    - name: Publish (Self-contained)
+      run: dotnet publish OwcounterHUD.csproj -c Release -o publish-self-contained -r win-x64 --self-contained true
+    
+    - name: Publish (Framework-dependent)
+      run: dotnet publish OwcounterHUD.csproj -c Release -o publish-framework-dependent
+    
+    - name: Zip artifacts
+      run: |
+        Compress-Archive -Path publish-self-contained/* -DestinationPath OWCounterHUD-v1.0.0-self-contained.zip
+        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWCounterHUD-v1.0.0-framework-dependent.zip
+    
+    - name: Get commit message
+      id: get_commit_message
+      run: |
+        $commit_message = (git log --format=%B -n 1 ${{ github.sha }}) -replace "`r?`n","`n"
+        $formatted_message = $commit_message -split "`n" | Where-Object { $_ } | ForEach-Object { "- $_`n" }
+        echo "COMMIT_MESSAGE<<EOF" >> $env:GITHUB_OUTPUT
+        echo "$formatted_message" >> $env:GITHUB_OUTPUT
+        echo "EOF" >> $env:GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: v1.0.0
+        body: |
+          This release includes two versions of OWCOUNTER HUD:
+          1. Framework-dependent: Smaller file, requires .NET 8.0 installed (https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+          2. Self-contained: Includes .NET runtime. Larger file, but works out-of-the-box.
+          
+          Choose self-contained for convenience, framework-dependent for smaller download.
+
+          **Changes:**
+          ${{ steps.get_commit_message.outputs.COMMIT_MESSAGE }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset (Self-contained)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./OWCounterHUD-v1.0.0-self-contained.zip
+        asset_name: OWCounterHUD-v1.0.0-self-contained.zip
+        asset_content_type: application/zip
+    
+    - name: Upload Release Asset (Framework-dependent)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./OWCounterHUD-v1.0.0-framework-dependent.zip
+        asset_name: OWCounterHUD-v1.0.0-framework-dependent.zip
+        asset_content_type: application/zip
