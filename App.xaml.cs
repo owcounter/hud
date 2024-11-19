@@ -23,6 +23,8 @@ namespace Owcounter
         private ApiService? _apiService;
         private KeycloakAuth? _keycloakAuth;
         private ScreenshotMonitoringService? _monitoringService;
+        private Mutex? _mutex;
+        private const string MutexName = "Global\\OWCOUNTER_HUD_INSTANCE";
         private const string ApiBaseUrl = "https://api.owcounter.com";
 
 #if DEBUG
@@ -35,12 +37,37 @@ namespace Owcounter
         {
             base.OnStartup(e);
 
+            // Check for existing instance
+            _mutex = new Mutex(true, MutexName, out bool createdNew);
+
+            if (!createdNew)
+            {
+                MessageBox.Show("OWCOUNTER HUD is already running.\nCheck your system tray for the icon.",
+                    "OWCOUNTER HUD",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                Current.Shutdown();
+                return;
+            }
+
 #if DEBUG
             AllocConsole();
 #endif
-            InitializeServices();
-            InitializeTrayIcon();
-            InitializeApplication();
+            try
+            {
+                InitializeServices();
+                InitializeTrayIcon();
+                InitializeApplication();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Application startup failed: {ex.Message}");
+                MessageBox.Show("Failed to start application. Please check the logs for details.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                ExitApplication();
+            }
         }
 
         private void InitializeServices()
@@ -120,8 +147,11 @@ namespace Owcounter
             try
             {
                 _monitoringService?.StartMonitoring();
-                UpdateTrayTooltip("OWCOUNTER HUD - Monitoring");
-                ShowNotification("OWCOUNTER HUD", "Press F2 or use the tray icon to toggle the hud visibility.");
+                if (!DEV_MODE)
+                {
+                    UpdateTrayTooltip("OWCOUNTER HUD - Monitoring");
+                    ShowNotification("OWCOUNTER HUD", "Press F2 or use the tray icon to toggle the hud visibility.");
+                }
             }
             catch (Exception ex)
             {
@@ -162,11 +192,22 @@ namespace Owcounter
 
         private void ShowWelcomeMessage()
         {
-            MessageBox.Show(
+            var disclaimerMessage =
                 "Welcome to OWCOUNTER HUD!\n\n" +
+                "Important Notice:\n" +
+                "The hero recommendations and analysis provided by this tool are meant to help you learn and understand the game better. " +
+                "They are based on general strategic principles and community knowledge, but should not be taken as absolute rules.\n\n" +
+                "Remember:\n" +
+                "• Every match is unique and context-dependent\n" +
+                "• Personal skill and experience with heroes matter more than theoretical counters\n" +
+                "• The suggestions are learning tools, not guaranteed winning strategies\n" +
+                "• Use this information to enhance your game understanding, not as strict rules to follow\n\n" +
                 "The app is now running in the background.\n" +
-                "Press F2 to display the hud on top of your game to see real-time hero analysis and suggestions.",
-                "OWCOUNTER HUD",
+                "Press F2 to display the HUD on top of your game to see real-time hero analysis and suggestions.";
+
+            MessageBox.Show(
+                disclaimerMessage,
+                "OWCOUNTER HUD - Getting Started",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information
             );
@@ -217,6 +258,8 @@ namespace Owcounter
         {
             _notifyIcon?.Dispose();
             _monitoringService?.Dispose();
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
             Current.Shutdown();
         }
 
@@ -236,6 +279,8 @@ namespace Owcounter
         protected override void OnExit(ExitEventArgs e)
         {
             _notifyIcon?.Dispose();
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
             base.OnExit(e);
         }
     }

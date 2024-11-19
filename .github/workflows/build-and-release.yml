@@ -28,17 +28,26 @@ jobs:
           $version = "1.0.0"
         }
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        
+    
+    - name: Increment version
+      id: increment_version
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $parts = $version.Split('.')
+        $parts[2] = [int]$parts[2] + 1
+        $newVersion = $parts -join '.'
+        echo "NEW_VERSION=$newVersion" >> $env:GITHUB_OUTPUT
+    
     - name: Update project version
       run: |
         $file = 'OwcounterHUD.csproj'
         $xml = [Xml](Get-Content $file)
         if ($null -eq $xml.Project.PropertyGroup.Version) {
             $versionElement = $xml.CreateElement("Version")
-            $versionElement.InnerText = "1.0.0"
+            $versionElement.InnerText = "${{ steps.increment_version.outputs.NEW_VERSION }}"
             $xml.Project.PropertyGroup.AppendChild($versionElement)
         } else {
-            $xml.Project.PropertyGroup.Version = "1.0.0"
+            $xml.Project.PropertyGroup.Version = "${{ steps.increment_version.outputs.NEW_VERSION }}"
         }
         $xml.Save($file)
     
@@ -59,8 +68,8 @@ jobs:
     
     - name: Zip artifacts
       run: |
-        Compress-Archive -Path publish-self-contained/* -DestinationPath OWCounterHUD-v1.0.0-self-contained.zip
-        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWCounterHUD-v1.0.0-framework-dependent.zip
+        Compress-Archive -Path publish-self-contained/* -DestinationPath OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
     
     - name: Get commit message
       id: get_commit_message
@@ -77,8 +86,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v1.0.0
-        release_name: v1.0.0
+        tag_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
+        release_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
         body: |
           This release includes two versions of OWCOUNTER HUD:
           1. Framework-dependent: Smaller file, requires .NET 8.0 installed (https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
@@ -97,8 +106,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWCounterHUD-v1.0.0-self-contained.zip
-        asset_name: OWCounterHUD-v1.0.0-self-contained.zip
+        asset_path: ./OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        asset_name: OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
         asset_content_type: application/zip
     
     - name: Upload Release Asset (Framework-dependent)
@@ -107,6 +116,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWCounterHUD-v1.0.0-framework-dependent.zip
-        asset_name: OWCounterHUD-v1.0.0-framework-dependent.zip
+        asset_path: ./OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
+        asset_name: OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
         asset_content_type: application/zip
+        
+    - name: Commit version increment
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Bump version to ${{ steps.increment_version.outputs.NEW_VERSION }}"
+        git push

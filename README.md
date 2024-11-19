@@ -40,7 +40,14 @@ OWCOUNTER HUD is a lightweight, non-intrusive heads-up display application that 
    - Set hero synergies for optimal team compositions
    - Configure map-specific strengths and weaknesses
    - Customize composition preferences (Dive/Poke/Brawl)
-6. To analyze team compositions:
+6. In Overwatch 2, configure your screenshot hotkey:
+   - Go to Options > Controls > Interface > Miscellaneous
+   - Note your screenshot hotkey or set up an additional one
+7. Ensure you're using default game colors:
+   - Go to Options > Controls > Color Blind Options
+   - Set Enemy UI Color to "Red"
+   - Set Team UI Color to "Blue"
+8. To analyze team compositions in a game:
    - Hold Tab to display the scoreboard
    - While holding Tab, use your screenshot hotkey to capture the scoreboard
    - View recommendations on the HUD
@@ -91,7 +98,7 @@ OWCOUNTER HUD is a lightweight, non-intrusive heads-up display application that 
 - Restart the HUD application
 
 ### Screenshot Issues
-- Make sure you're holding Tab to display the scoreboard when taking screenshots
+- Make sure you're using default UI colors (Enemy: Red, Team: Blue) in Color Blind Options
 - The default Print Screen key may activate cursor selection mode
   - Press Escape to continue playing
   - Consider using a different screenshot hotkey

@@ -1,6 +1,7 @@
 ﻿using Owcounter.Model;
 using Owcounter.Services;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
@@ -9,6 +10,7 @@ namespace Owcounter.Display
     public partial class SwapSuggestionsPanel : UserControl
     {
         public ObservableCollection<HeroSuggestionViewModel> Suggestions { get; } = new();
+        private MapName? _currentMap;
 
         public SwapSuggestionsPanel()
         {
@@ -16,8 +18,9 @@ namespace Owcounter.Display
             SuggestionsControl.ItemsSource = Suggestions;
         }
 
-        public void UpdateSuggestions(HeroName playerHero, Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis)
+        public void UpdateSuggestions(HeroName playerHero, Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis, MapName? currentMap = null)
         {
+            _currentMap = currentMap;
             if (!blueTeamAnalysis.TryGetValue(playerHero, out var currentHeroAnalysis))
                 return;
 
@@ -49,6 +52,8 @@ namespace Owcounter.Display
                 }
             }
 
+            var mapStrengthInfo = GetMapStrengthInfo(analysis.Hero, _currentMap);
+
             return new HeroSuggestionViewModel
             {
                 HeroName = FormatHeroName(heroName),
@@ -58,8 +63,27 @@ namespace Owcounter.Display
                 CountersHard = ConvertHeroListToBitmapSource(analysis.HardCounters),
                 CountersSoft = ConvertHeroListToBitmapSource(analysis.SoftCounters),
                 HardCounteredBy = ConvertHeroListToBitmapSource(analysis.HardCounteredBy),
-                SoftCounteredBy = ConvertHeroListToBitmapSource(analysis.SoftCounteredBy)
+                SoftCounteredBy = ConvertHeroListToBitmapSource(analysis.SoftCounteredBy),
+                MapStrengthVisibility = mapStrengthInfo.HasValue ? Visibility.Visible : Visibility.Collapsed,
+                MapStrengthColor = mapStrengthInfo.HasValue ?
+                    (mapStrengthInfo.Value.IsStrong ? "#10B981" : "#EF4444") : "#FFFFFF",
+                MapStrengthText = mapStrengthInfo.HasValue ?
+                    (mapStrengthInfo.Value.IsStrong ? "Strong Map" : "Weak Map") : string.Empty
             };
+        }
+
+        private (bool IsStrong, bool IsWeak)? GetMapStrengthInfo(Hero? hero, MapName? currentMap)
+        {
+            if (hero == null || currentMap == null)
+                return null;
+
+            bool isStrong = hero.StrongMaps?.Contains(currentMap.Value) ?? false;
+            bool isWeak = hero.WeakMaps?.Contains(currentMap.Value) ?? false;
+
+            if (!isStrong && !isWeak)
+                return null;
+
+            return (isStrong, isWeak);
         }
 
         private List<BitmapSource> ConvertHeroListToBitmapSource(IEnumerable<HeroCounter> counters)
@@ -96,6 +120,9 @@ namespace Owcounter.Display
         public required List<BitmapSource> CountersSoft { get; set; }
         public required List<BitmapSource> HardCounteredBy { get; set; }
         public required List<BitmapSource> SoftCounteredBy { get; set; }
+        public required Visibility MapStrengthVisibility { get; set; }
+        public required string MapStrengthColor { get; set; }
+        public required string MapStrengthText { get; set; }
     }
 
     public class CompositionInfo

@@ -69,40 +69,65 @@
                                     </Border>
 
                                     <!-- Hero Info -->
-                                    <StackPanel Grid.Column="1" 
-                                              VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding HeroName}"
-                                                 FontSize="18"
-                                                 FontWeight="SemiBold"
-                                                 Foreground="White">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                                                            <Setter Property="Text" Value="{Binding HeroName, StringFormat={}{0} (Current)}"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <ItemsControl ItemsSource="{Binding Compositions}"
-                                                    Margin="0,4,0,0">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}"
-                                                             Margin="0,0,8,0"
-                                                             FontSize="14"
-                                                             FontWeight="Medium"
-                                                             Foreground="{Binding Color}"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" 
+                                                  VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding HeroName}"
+                                                     FontSize="18"
+                                                     FontWeight="SemiBold"
+                                                     Foreground="White">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                                <Setter Property="Text" Value="{Binding HeroName, StringFormat={}{0} (Current)}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding Compositions}"
+                                                        Margin="0,4,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                 Margin="0,0,8,0"
+                                                                 FontSize="14"
+                                                                 FontWeight="Medium"
+                                                                 Foreground="{Binding Color}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Map Strength Indicator -->
+                                        <StackPanel Grid.Column="1" 
+                                                  Orientation="Horizontal" 
+                                                  VerticalAlignment="Center"
+                                                  Margin="8,0,0,0"
+                                                  Visibility="{Binding MapStrengthVisibility}">
+                                            <Path Data="M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z"
+                                            Fill="{Binding MapStrengthColor}" 
+                                                  Width="16" 
+                                                  Height="16"
+                                                  Margin="0,0,4,0"
+                                                  Stretch="Uniform"/>
+                                            <TextBlock Text="{Binding MapStrengthText}"
+                                                     FontSize="14"
+                                                     FontWeight="SemiBold"
+                                                     Foreground="{Binding MapStrengthColor}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </Grid>
 
                                 <!-- Counter Lists -->

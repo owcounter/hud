@@ -14,6 +14,8 @@ namespace Owcounter.Services
         private readonly string tokenFileName = "owcounter_oauth_token.json";
         private string? accessToken;
         private string? refreshToken;
+        private readonly SemaphoreSlim tokenRefreshSemaphore = new SemaphoreSlim(1, 1);
+        private DateTime? tokenExpiryTime;
 
         public ApiService(string apiBaseUrl, KeycloakAuth keycloakAuth)
         {
@@ -31,26 +33,41 @@ namespace Owcounter.Services
                 var tokenJson = System.IO.File.ReadAllText(tokenFileName);
                 var tokenResponse = JsonConvert.DeserializeObject<KeycloakConnectOutput>(tokenJson);
                 if (tokenResponse == null)
-                {
                     return false;
-                }
 
                 accessToken = tokenResponse.access_token;
                 refreshToken = tokenResponse.refresh_token;
+                UpdateTokenExpiryTime(tokenResponse.expires_in);
 
+                // If token is expired or about to expire, try refreshing
+                if (IsTokenExpiredOrExpiringSoon())
+                {
+                    return await RefreshAndValidateToken();
+                }
+
+                // Validate the current token
                 if (!string.IsNullOrEmpty(accessToken) && await ValidateToken(accessToken))
                     return true;
 
-                if (await RefreshAndValidateToken())
-                    return true;
+                // If validation failed, try refreshing
+                return await RefreshAndValidateToken();
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error loading or validating tokens: {ex.Message}");
+                DeleteTokenFile();
+                return false;
             }
+        }
 
-            DeleteTokenFile();
-            return false;
+        private bool IsTokenExpiredOrExpiringSoon(int bufferSeconds = 30)
+        {
+            return tokenExpiryTime == null || DateTime.UtcNow.AddSeconds(bufferSeconds) >= tokenExpiryTime;
+        }
+
+        private void UpdateTokenExpiryTime(int expiresIn)
+        {
+            tokenExpiryTime = DateTime.UtcNow.AddSeconds(expiresIn);
         }
 
         private async Task<bool> ValidateToken(string token)
@@ -58,11 +75,19 @@ namespace Owcounter.Services
             if (string.IsNullOrEmpty(token))
                 return false;
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             try
             {
-                var response = await httpClient.GetAsync("/user/session");
+                using var request = new HttpRequestMessage(HttpMethod.Get, "/user/session");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await httpClient.SendAsync(request);
+
+                // Consider 401/403 as validation failures but don't log them as errors
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return false;
+                }
+
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -74,23 +99,51 @@ namespace Owcounter.Services
 
         private async Task<bool> RefreshAndValidateToken()
         {
+            await tokenRefreshSemaphore.WaitAsync();
             try
             {
+                // Add additional check for refresh token expiration
                 if (string.IsNullOrEmpty(refreshToken))
+                {
+                    Logger.Log("No refresh token available");
                     return false;
+                }
 
-                var tokenResponse = await keycloakAuth.RefreshToken(refreshToken);
-                accessToken = tokenResponse.access_token;
-                refreshToken = tokenResponse.refresh_token;
+                try
+                {
+                    var tokenResponse = await keycloakAuth.RefreshToken(refreshToken);
+                    if (tokenResponse == null)
+                    {
+                        Logger.Log("Received null token response during refresh");
+                        return false;
+                    }
 
-                System.IO.File.WriteAllText(tokenFileName, JsonConvert.SerializeObject(tokenResponse));
+                    accessToken = tokenResponse.access_token;
+                    refreshToken = tokenResponse.refresh_token;
+                    UpdateTokenExpiryTime(tokenResponse.expires_in);
 
-                return !string.IsNullOrEmpty(accessToken) && await ValidateToken(accessToken);
+                    // Save the new tokens
+                    System.IO.File.WriteAllText(tokenFileName, JsonConvert.SerializeObject(tokenResponse));
+
+                    // Validate the new token immediately
+                    if (!string.IsNullOrEmpty(accessToken) && await ValidateToken(accessToken))
+                    {
+                        return true;
+                    }
+
+                    Logger.Log("New token validation failed after refresh");
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Token refresh failed with error: {ex.Message}");
+                    DeleteTokenFile();
+                    return false;
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                Logger.Log($"Failed to refresh token: {ex.Message}");
-                return false;
+                tokenRefreshSemaphore.Release();
             }
         }
 
@@ -102,6 +155,12 @@ namespace Owcounter.Services
 
             return await SendApiRequestWithRetry(async () =>
             {
+                // Pre-emptively refresh token if it's about to expire
+                if (IsTokenExpiredOrExpiringSoon())
+                {
+                    await RefreshAndValidateToken();
+                }
+
                 var response = await httpClient.PostAsync("/process-screenshot", content);
                 if (response.IsSuccessStatusCode)
                 {
@@ -137,34 +196,55 @@ namespace Owcounter.Services
 
         private async Task<T?> SendApiRequestWithRetry<T>(Func<Task<T>> apiCall)
         {
-            int maxRetries = 2;
-            for (int i = 0; i <= maxRetries; i++)
+            int maxRetries = 3;
+            int currentRetry = 0;
+            bool tokenRefreshed = false;
+
+            while (currentRetry <= maxRetries)
             {
                 if (string.IsNullOrEmpty(accessToken))
                 {
                     throw new UnauthorizedException("No access token available");
                 }
 
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                // Proactively refresh token if it's about to expire
+                if (IsTokenExpiredOrExpiringSoon() && !tokenRefreshed)
+                {
+                    Logger.Log("Token expired or expiring soon, attempting refresh");
+                    if (await RefreshAndValidateToken())
+                    {
+                        tokenRefreshed = true;
+                    }
+                    else
+                    {
+                        throw new UnauthorizedException("Failed to refresh expired token");
+                    }
+                }
+
                 try
                 {
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                     return await apiCall();
                 }
                 catch (UnauthorizedException)
                 {
-                    if (i < maxRetries && await RefreshAndValidateToken())
+                    if (currentRetry < maxRetries && !tokenRefreshed && await RefreshAndValidateToken())
                     {
+                        tokenRefreshed = true;
+                        currentRetry++;
                         continue;
                     }
+                    throw;
                 }
                 catch (Exception e)
                 {
-                    Logger.Log($"HTTP Request failed: {e.Message}");
-                }
-
-                if (i == maxRetries)
-                {
-                    throw new ApiException("Failed to process request after max retries");
+                    Logger.Log($"API request failed: {e.Message}");
+                    if (currentRetry == maxRetries)
+                    {
+                        throw new ApiException($"Failed to process request after {maxRetries} retries");
+                    }
+                    currentRetry++;
+                    await Task.Delay(1000 * currentRetry); // Exponential backoff
                 }
             }
 
@@ -173,9 +253,19 @@ namespace Owcounter.Services
 
         private void DeleteTokenFile()
         {
-            if (System.IO.File.Exists(tokenFileName))
+            try
             {
-                System.IO.File.Delete(tokenFileName);
+                if (System.IO.File.Exists(tokenFileName))
+                {
+                    System.IO.File.Delete(tokenFileName);
+                }
+                accessToken = null;
+                refreshToken = null;
+                tokenExpiryTime = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error deleting token file: {ex.Message}");
             }
         }
 
@@ -184,7 +274,9 @@ namespace Owcounter.Services
             try
             {
                 if (!string.IsNullOrEmpty(accessToken))
+                {
                     await keycloakAuth.RevokeToken(accessToken);
+                }
             }
             catch (Exception ex)
             {
@@ -193,19 +285,17 @@ namespace Owcounter.Services
             finally
             {
                 DeleteTokenFile();
-                accessToken = null;
-                refreshToken = null;
             }
         }
+    }
 
-        private class UnauthorizedException : Exception
-        {
-            public UnauthorizedException(string message) : base(message) { }
-        }
+    public class ApiException : Exception
+    {
+        public ApiException(string message) : base(message) { }
+    }
 
-        private class ApiException : Exception
-        {
-            public ApiException(string message) : base(message) { }
-        }
+    public class UnauthorizedException : Exception
+    {
+        public UnauthorizedException(string message) : base(message) { }
     }
 }

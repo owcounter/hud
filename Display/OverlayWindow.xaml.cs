@@ -1,8 +1,10 @@
-﻿using Owcounter.Model;
+﻿using Microsoft.Win32;
+using Owcounter.Model;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
@@ -19,13 +21,13 @@ namespace Owcounter.Display
         private const uint SWP_NOACTIVATE = 0x0010;
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOSIZE = 0x0001;
+        private const int WM_HOTKEY = 0x0312;
+        private const int WM_DISPLAYCHANGE = 0x007E;
+        private const int F2_HOTKEY_ID = 9000;
 
         private MatchState? _matchState;
         private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
         private Dictionary<HeroName, HeroAnalysis>? _redTeamAnalysis;
-
-        private const int WM_HOTKEY = 0x0312;
-        private const int F2_HOTKEY_ID = 9000;
 
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
@@ -77,7 +79,9 @@ namespace Owcounter.Display
             Resources.Add("ScaleConverter", new ScaleConverter());
             InitializeComponent();
             InitializeWindow();
-            SetToScreenResolution();
+
+            // Register for display settings changed event
+            SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
             Opacity = 0.95;
 
@@ -89,6 +93,40 @@ namespace Owcounter.Display
 
             Loaded += OnWindowLoaded;
             Closing += OnWindowClosing;
+        }
+
+        private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+            {
+                try
+                {
+                    // Wait a moment for the display change to complete
+                    Thread.Sleep(1000);
+
+                    // Update window bounds to match primary screen
+                    SetToScreenResolution();
+
+                    // If window is visible, reposition it
+                    if (IsVisible)
+                    {
+                        var overwatchHandle = FindOverwatchWindow();
+                        if (overwatchHandle != IntPtr.Zero)
+                        {
+                            PositionOverOverwatch(overwatchHandle);
+                        }
+                        else if (!_devMode)
+                        {
+                            // Hide the window if Overwatch isn't found and we're not in dev mode
+                            Visibility = Visibility.Hidden;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Error handling display settings change: {ex.Message}");
+                }
+            }));
         }
 
         private void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -154,16 +192,30 @@ namespace Owcounter.Display
         {
             if (GetWindowRect(overwatchHandle, out RECT overwatchRect))
             {
+                // Get the screen where Overwatch is running
+                var screen = Screen.FromHandle(overwatchHandle);
+
                 int width = overwatchRect.Right - overwatchRect.Left;
                 int height = overwatchRect.Bottom - overwatchRect.Top;
 
                 if (Left != overwatchRect.Left || Top != overwatchRect.Top ||
                     Width != width || Height != height)
                 {
+                    // Ensure the window is on the correct screen and has the right size
                     MoveWindow(_windowHandle, overwatchRect.Left, overwatchRect.Top, width, height, true);
                     SetWindowPos(_windowHandle, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0,
                         SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+
+                    // Update window position properties
+                    Left = overwatchRect.Left;
+                    Top = overwatchRect.Top;
+                    Width = width;
+                    Height = height;
                 }
+            }
+            else
+            {
+                Logger.Log("Failed to get Overwatch window rectangle");
             }
         }
 
@@ -192,8 +244,30 @@ namespace Owcounter.Display
 
         private void SetToScreenResolution()
         {
-            Width = SystemParameters.PrimaryScreenWidth;
-            Height = SystemParameters.PrimaryScreenHeight;
+            try
+            {
+                // Get the screen where Overwatch is running
+                var overwatchHandle = FindOverwatchWindow();
+                if (overwatchHandle != IntPtr.Zero)
+                {
+                    var screen = Screen.FromHandle(overwatchHandle);
+                    Width = screen.Bounds.Width;
+                    Height = screen.Bounds.Height;
+                }
+                else
+                {
+                    // Fallback to primary screen if Overwatch window isn't found
+                    Width = SystemParameters.PrimaryScreenWidth;
+                    Height = SystemParameters.PrimaryScreenHeight;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error setting screen resolution: {ex.Message}");
+                // Fallback to primary screen
+                Width = SystemParameters.PrimaryScreenWidth;
+                Height = SystemParameters.PrimaryScreenHeight;
+            }
         }
 
         public void OnScreenshotProcessed(object sender, ScreenshotProcessingResponse response)
@@ -212,7 +286,7 @@ namespace Owcounter.Display
 
                 if (_matchState?.PlayerHero != null && _blueTeamAnalysis != null)
                 {
-                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis);
+                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
                 }
             });
         }
@@ -237,12 +311,24 @@ namespace Owcounter.Display
 
         private IntPtr HandleMessages(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == WM_HOTKEY && wParam.ToInt32() == F2_HOTKEY_ID)
+            switch (msg)
             {
-                ToggleVisibility();
-                handled = true;
+                case WM_HOTKEY when wParam.ToInt32() == F2_HOTKEY_ID:
+                    ToggleVisibility();
+                    handled = true;
+                    break;
+                case WM_DISPLAYCHANGE:
+                    OnDisplaySettingsChanged(this, EventArgs.Empty);
+                    handled = true;
+                    break;
             }
             return IntPtr.Zero;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+            base.OnClosed(e);
         }
     }
 
