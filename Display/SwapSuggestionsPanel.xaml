@@ -1,7 +1,7 @@
-﻿<UserControl x:Class="Owcounter.Display.SwapSuggestionsPanel"
+﻿<UserControl x:Class="Owmeta.Display.SwapSuggestionsPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Owcounter.Display">
+             xmlns:local="clr-namespace:Owmeta.Display">
 
     <!-- Main container -->
     <StackPanel HorizontalAlignment="Center">

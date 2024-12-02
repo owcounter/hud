@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Owcounter.Model {
+namespace Owmeta.Model {
 
   /// <summary>Holder for reflection information generated from ochmodel.proto</summary>
   public static partial class OchmodelReflection {
@@ -24,108 +24,105 @@ namespace Owcounter.Model {
     static OchmodelReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5vY2htb2RlbC5wcm90bxIPb3djb3VudGVyLm1vZGVsGg1lcnJjb2RlLnBy",
-            "b3RvIpsDCgRIZXJvEicKBG5hbWUYASABKA4yGS5vd2NvdW50ZXIubW9kZWwu",
-            "SGVyb05hbWUSJwoEcm9sZRgCIAEoDjIZLm93Y291bnRlci5tb2RlbC5IZXJv",
-            "Um9sZRIyCgxjb3VudGVyZWRfYnkYAyADKAsyHC5vd2NvdW50ZXIubW9kZWwu",
-            "SGVyb0NvdW50ZXISLwoJc3luZXJnaWVzGAQgAygLMhwub3djb3VudGVyLm1v",
-            "ZGVsLkhlcm9TeW5lcmd5EjsKEWJlc3RfY29tcG9zaXRpb25zGAUgAygOMiAu",
-            "b3djb3VudGVyLm1vZGVsLkNvbXBvc2l0aW9uVHlwZRJDChlpbmNvbXBhdGli",
-            "bGVfY29tcG9zaXRpb25zGAYgAygOMiAub3djb3VudGVyLm1vZGVsLkNvbXBv",
-            "c2l0aW9uVHlwZRItCgtzdHJvbmdfbWFwcxgHIAMoDjIYLm93Y291bnRlci5t",
-            "b2RlbC5NYXBOYW1lEisKCXdlYWtfbWFwcxgIIAMoDjIYLm93Y291bnRlci5t",
-            "b2RlbC5NYXBOYW1lIsQBCgtIZXJvQ291bnRlchIsCgloZXJvX25hbWUYASAB",
-            "KA4yGS5vd2NvdW50ZXIubW9kZWwuSGVyb05hbWUSDwoHY29tbWVudBgCIAEo",
-            "CRIrCghzdHJlbmd0aBgDIAEoDjIZLm93Y291bnRlci5tb2RlbC5TdHJlbmd0",
-            "aBIuCgxzcGVjaWZpY19tYXAYBCABKA4yGC5vd2NvdW50ZXIubW9kZWwuTWFw",
-            "TmFtZRIZChFjdXN0b21fY291bnRlcl9pZBgFIAEoAyLEAQoLSGVyb1N5bmVy",
-            "Z3kSLAoJaGVyb19uYW1lGAEgASgOMhkub3djb3VudGVyLm1vZGVsLkhlcm9O",
-            "YW1lEg8KB2NvbW1lbnQYAiABKAkSKwoIc3RyZW5ndGgYAyABKA4yGS5vd2Nv",
-            "dW50ZXIubW9kZWwuU3RyZW5ndGgSLgoMc3BlY2lmaWNfbWFwGAQgASgOMhgu",
-            "b3djb3VudGVyLm1vZGVsLk1hcE5hbWUSGQoRY3VzdG9tX3N5bmVyZ3lfaWQY",
-            "BSABKAMijQMKDEhlcm9BbmFseXNpcxIjCgRoZXJvGAEgASgLMhUub3djb3Vu",
-            "dGVyLm1vZGVsLkhlcm8SMwoNaGFyZF9jb3VudGVycxgCIAMoCzIcLm93Y291",
-            "bnRlci5tb2RlbC5IZXJvQ291bnRlchI3ChFoYXJkX2NvdW50ZXJlZF9ieRgD",
-            "IAMoCzIcLm93Y291bnRlci5tb2RlbC5IZXJvQ291bnRlchIzCg1zb2Z0X2Nv",
-            "dW50ZXJzGAQgAygLMhwub3djb3VudGVyLm1vZGVsLkhlcm9Db3VudGVyEjcK",
-            "EXNvZnRfY291bnRlcmVkX2J5GAUgAygLMhwub3djb3VudGVyLm1vZGVsLkhl",
-            "cm9Db3VudGVyEi8KCXN5bmVyZ2llcxgGIAMoCzIcLm93Y291bnRlci5tb2Rl",
-            "bC5IZXJvU3luZXJneRI3ChBzd2FwX3N1Z2dlc3Rpb25zGAcgAygLMh0ub3dj",
-            "b3VudGVyLm1vZGVsLkhlcm9BbmFseXNpcxISCgpoZXJvX3Njb3JlGAggASgF",
-            "Iu8CChJNYXRjaFN0YXRlQW5hbHlzaXMSVQoSYmx1ZV90ZWFtX2FuYWx5c2lz",
-            "GAEgAygLMjkub3djb3VudGVyLm1vZGVsLk1hdGNoU3RhdGVBbmFseXNpcy5C",
-            "bHVlVGVhbUFuYWx5c2lzRW50cnkSUwoRcmVkX3RlYW1fYW5hbHlzaXMYAiAD",
-            "KAsyOC5vd2NvdW50ZXIubW9kZWwuTWF0Y2hTdGF0ZUFuYWx5c2lzLlJlZFRl",
-            "YW1BbmFseXNpc0VudHJ5GlYKFUJsdWVUZWFtQW5hbHlzaXNFbnRyeRILCgNr",
-            "ZXkYASABKAUSLAoFdmFsdWUYAiABKAsyHS5vd2NvdW50ZXIubW9kZWwuSGVy",
-            "b0FuYWx5c2lzOgI4ARpVChRSZWRUZWFtQW5hbHlzaXNFbnRyeRILCgNrZXkY",
-            "ASABKAUSLAoFdmFsdWUYAiABKAsyHS5vd2NvdW50ZXIubW9kZWwuSGVyb0Fu",
-            "YWx5c2lzOgI4ASLMAQoKTWF0Y2hTdGF0ZRIzCglibHVlX3RlYW0YASABKAsy",
-            "IC5vd2NvdW50ZXIubW9kZWwuVGVhbUNvbXBvc2l0aW9uEjIKCHJlZF90ZWFt",
-            "GAIgASgLMiAub3djb3VudGVyLm1vZGVsLlRlYW1Db21wb3NpdGlvbhIuCgtw",
-            "bGF5ZXJfaGVybxgDIAEoDjIZLm93Y291bnRlci5tb2RlbC5IZXJvTmFtZRIl",
-            "CgNtYXAYBCABKA4yGC5vd2NvdW50ZXIubW9kZWwuTWFwTmFtZSLsAQoPVGVh",
-            "bUNvbXBvc2l0aW9uEicKBHRhbmsYASABKA4yGS5vd2NvdW50ZXIubW9kZWwu",
-            "SGVyb05hbWUSKgoHZGFtYWdlMRgCIAEoDjIZLm93Y291bnRlci5tb2RlbC5I",
-            "ZXJvTmFtZRIqCgdkYW1hZ2UyGAMgASgOMhkub3djb3VudGVyLm1vZGVsLkhl",
-            "cm9OYW1lEisKCHN1cHBvcnQxGAQgASgOMhkub3djb3VudGVyLm1vZGVsLkhl",
-            "cm9OYW1lEisKCHN1cHBvcnQyGAUgASgOMhkub3djb3VudGVyLm1vZGVsLkhl",
-            "cm9OYW1lInEKDVdvcmtlck1lc3NhZ2USMAoLbWF0Y2hfc3RhdGUYASABKAsy",
-            "Gy5vd2NvdW50ZXIubW9kZWwuTWF0Y2hTdGF0ZRIuCgplcnJvcl9jb2RlGAIg",
-            "ASgOMhoub3djb3VudGVyLmVycmNvZGUuRXJyQ29kZSq9BAoISGVyb05hbWUS",
-            "FAoQTkFNRV9VTlNQRUNJRklFRBAAEgsKB1VOS05PV04QARIKCgZISURERU4Q",
-            "AhIHCgNBTkEQAxIICgRBU0hFEAQSDAoIQkFQVElTVEUQBRILCgdCQVNUSU9O",
-            "EAYSDAoIQlJJR0lUVEUQBxILCgdDQVNTSURZEAgSBwoDRFZBEAkSDAoIRE9P",
-            "TUZJU1QQChIICgRFQ0hPEAsSCQoFR0VOSkkQDBIJCgVIQU5aTxANEgoKBklM",
-            "TEFSSRAOEhAKDEpVTktFUl9RVUVFThAPEgsKB0pVTktSQVQQEBIICgRKVU5P",
-            "EBESCgoGS0lSSUtPEBISDgoKTElGRVdFQVZFUhATEgkKBUxVQ0lPEBQSCQoF",
-            "TUFVR0EQFRIHCgNNRUkQFhIJCgVNRVJDWRAXEgkKBU1PSVJBEBgSCQoFT1JJ",
-            "U0EQGRIKCgZQSEFSQUgQGhIMCghSQU1BVFRSQRAbEgoKBlJFQVBFUhAcEg0K",
-            "CVJFSU5IQVJEVBAdEgsKB1JPQURIT0cQHhIJCgVTSUdNQRAfEg0KCVNPTERJ",
-            "RVI3NhAgEgoKBlNPTUJSQRAhEgsKB1NPSk9VUk4QIhIMCghTWU1NRVRSQRAj",
-            "EgwKCFRPUkJKT1JOECQSCgoGVFJBQ0VSECUSCwoHVkVOVFVSRRAmEg4KCldJ",
-            "RE9XTUFLRVIQJxILCgdXSU5TVE9OECgSEQoNV1JFQ0tJTkdfQkFMTBApEgkK",
-            "BVpBUllBECoSDAoIWkVOWUFUVEEQKypDCghIZXJvUm9sZRIUChBST0xFX1VO",
-            "U1BFQ0lGSUVEEAASCAoEVEFOSxABEgoKBkRBTUFHRRACEgsKB1NVUFBPUlQQ",
-            "Ayo3CglIZXJvU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIJCgVBTElW",
-            "RRABEggKBERFQUQQAiovCgRUZWFtEhQKEFRFQU1fVU5TUEVDSUZJRUQQABII",
-            "CgRCTFVFEAESBwoDUkVEEAIqhwcKB01hcE5hbWUSEwoPTUFQX1VOU1BFQ0lG",
-            "SUVEEAASDAoIQUxMX01BUFMQARIiCh5BTlRBUkNUSUNfUEVOSU5TVUxBX0lD",
-            "RUJSRUFLRVIQAhIcChhBTlRBUkNUSUNfUEVOSU5TVUxBX0xBQlMQAxIgChxB",
-            "TlRBUkNUSUNfUEVOSU5TVUxBX1NVQkxFVkVMEAQSEgoOQlVTQU5fRE9XTlRP",
-            "V04QBRITCg9CVVNBTl9TQU5DVFVBUlkQBhITCg9CVVNBTl9NRUtBX0JBU0UQ",
-            "BxIUChBJTElPU19MSUdIVEhPVVNFEAgSDgoKSUxJT1NfV0VMTBAJEg8KC0lM",
-            "SU9TX1JVSU5TEAoSHgoaTElKSUFOR19UT1dFUl9OSUdIVF9NQVJLRVQQCxIY",
-            "ChRMSUpJQU5HX1RPV0VSX0dBUkRFThAMEiAKHExJSklBTkdfVE9XRVJfQ09O",
-            "VFJPTF9DRU5URVIQDRIRCg1ORVBBTF9WSUxMQUdFEA4SEAoMTkVQQUxfU0hS",
-            "SU5FEA8SEQoNTkVQQUxfU0FOQ1RVTRAQEhUKEU9BU0lTX0NJVFlfQ0VOVEVS",
-            "EBESEQoNT0FTSVNfR0FSREVOUxASEhQKEE9BU0lTX1VOSVZFUlNJVFkQExIP",
-            "CgtTQU1PQV9CRUFDSBAUEhIKDlNBTU9BX0RPV05UT1dOEBUSEQoNU0FNT0Ff",
-            "Vk9MQ0FOTxAWEhEKDUNJUkNVSVRfUk9ZQUwQFxIKCgZET1JBRE8QGBIKCgZI",
-            "QVZBTkEQGRIOCgpKVU5LRVJUT1dOEBoSCgoGUklBTFRPEBsSDAoIUk9VVEVf",
-            "NjYQHBIWChJTSEFNQkFMSV9NT05BU1RFUlkQHRIYChRXQVRDSFBPSU5UX0dJ",
-            "QlJBTFRBUhAeEhEKDU5FV19KVU5LX0NJVFkQHxIMCghTVVJBVkFTQRAgEhIK",
-            "DkJMSVpaQVJEX1dPUkxEECESDwoLRUlDSEVOV0FMREUQIhINCglIT0xMWVdP",
-            "T0QQIxINCglLSU5HU19ST1cQJBILCgdNSURUT1dOECUSCwoHTlVNQkFOSRAm",
-            "EgsKB1BBUkFJU08QJxIMCghDT0xPU1NFTxAoEg0KCUVTUEVSQU5DQRApEhQK",
-            "EE5FV19RVUVFTl9TVFJFRVQQKhIMCghSVU5BU0FQSRArEgsKB0hBTkFPS0EQ",
-            "LBIUChBUSFJPTkVfT0ZfQU5VQklTEC0qUgoPQ29tcG9zaXRpb25UeXBlEiAK",
-            "HENPTVBPU0lUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIICgRESVZFEAESCQoF",
-            "QlJBV0wQAhIICgRQT0tFEAMqRAoIU3RyZW5ndGgSGAoUU1RSRU5HVEhfVU5T",
-            "UEVDSUZJRUQQABIICgRTT0ZUEAESCAoESEFSRBACEgoKBk5VTExFRBADQjFa",
-            "HW93Y291bnRlci5jb20vZ28vcGtnL29jaG1vZGVsqgIPT3djb3VudGVyLk1v",
-            "ZGVsYgZwcm90bzM="));
+            "Cg5vY2htb2RlbC5wcm90bxIMb3dtZXRhLm1vZGVsGg1lcnJjb2RlLnByb3Rv",
+            "IoMDCgRIZXJvEiQKBG5hbWUYASABKA4yFi5vd21ldGEubW9kZWwuSGVyb05h",
+            "bWUSJAoEcm9sZRgCIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvUm9sZRIvCgxj",
+            "b3VudGVyZWRfYnkYAyADKAsyGS5vd21ldGEubW9kZWwuSGVyb0NvdW50ZXIS",
+            "LAoJc3luZXJnaWVzGAQgAygLMhkub3dtZXRhLm1vZGVsLkhlcm9TeW5lcmd5",
+            "EjgKEWJlc3RfY29tcG9zaXRpb25zGAUgAygOMh0ub3dtZXRhLm1vZGVsLkNv",
+            "bXBvc2l0aW9uVHlwZRJAChlpbmNvbXBhdGlibGVfY29tcG9zaXRpb25zGAYg",
+            "AygOMh0ub3dtZXRhLm1vZGVsLkNvbXBvc2l0aW9uVHlwZRIqCgtzdHJvbmdf",
+            "bWFwcxgHIAMoDjIVLm93bWV0YS5tb2RlbC5NYXBOYW1lEigKCXdlYWtfbWFw",
+            "cxgIIAMoDjIVLm93bWV0YS5tb2RlbC5NYXBOYW1lIrsBCgtIZXJvQ291bnRl",
+            "chIpCgloZXJvX25hbWUYASABKA4yFi5vd21ldGEubW9kZWwuSGVyb05hbWUS",
+            "DwoHY29tbWVudBgCIAEoCRIoCghzdHJlbmd0aBgDIAEoDjIWLm93bWV0YS5t",
+            "b2RlbC5TdHJlbmd0aBIrCgxzcGVjaWZpY19tYXAYBCABKA4yFS5vd21ldGEu",
+            "bW9kZWwuTWFwTmFtZRIZChFjdXN0b21fY291bnRlcl9pZBgFIAEoAyK7AQoL",
+            "SGVyb1N5bmVyZ3kSKQoJaGVyb19uYW1lGAEgASgOMhYub3dtZXRhLm1vZGVs",
+            "Lkhlcm9OYW1lEg8KB2NvbW1lbnQYAiABKAkSKAoIc3RyZW5ndGgYAyABKA4y",
+            "Fi5vd21ldGEubW9kZWwuU3RyZW5ndGgSKwoMc3BlY2lmaWNfbWFwGAQgASgO",
+            "MhUub3dtZXRhLm1vZGVsLk1hcE5hbWUSGQoRY3VzdG9tX3N5bmVyZ3lfaWQY",
+            "BSABKAMi+AIKDEhlcm9BbmFseXNpcxIgCgRoZXJvGAEgASgLMhIub3dtZXRh",
+            "Lm1vZGVsLkhlcm8SMAoNaGFyZF9jb3VudGVycxgCIAMoCzIZLm93bWV0YS5t",
+            "b2RlbC5IZXJvQ291bnRlchI0ChFoYXJkX2NvdW50ZXJlZF9ieRgDIAMoCzIZ",
+            "Lm93bWV0YS5tb2RlbC5IZXJvQ291bnRlchIwCg1zb2Z0X2NvdW50ZXJzGAQg",
+            "AygLMhkub3dtZXRhLm1vZGVsLkhlcm9Db3VudGVyEjQKEXNvZnRfY291bnRl",
+            "cmVkX2J5GAUgAygLMhkub3dtZXRhLm1vZGVsLkhlcm9Db3VudGVyEiwKCXN5",
+            "bmVyZ2llcxgGIAMoCzIZLm93bWV0YS5tb2RlbC5IZXJvU3luZXJneRI0ChBz",
+            "d2FwX3N1Z2dlc3Rpb25zGAcgAygLMhoub3dtZXRhLm1vZGVsLkhlcm9BbmFs",
+            "eXNpcxISCgpoZXJvX3Njb3JlGAggASgFIuMCChJNYXRjaFN0YXRlQW5hbHlz",
+            "aXMSUgoSYmx1ZV90ZWFtX2FuYWx5c2lzGAEgAygLMjYub3dtZXRhLm1vZGVs",
+            "Lk1hdGNoU3RhdGVBbmFseXNpcy5CbHVlVGVhbUFuYWx5c2lzRW50cnkSUAoR",
+            "cmVkX3RlYW1fYW5hbHlzaXMYAiADKAsyNS5vd21ldGEubW9kZWwuTWF0Y2hT",
+            "dGF0ZUFuYWx5c2lzLlJlZFRlYW1BbmFseXNpc0VudHJ5GlMKFUJsdWVUZWFt",
+            "QW5hbHlzaXNFbnRyeRILCgNrZXkYASABKAUSKQoFdmFsdWUYAiABKAsyGi5v",
+            "d21ldGEubW9kZWwuSGVyb0FuYWx5c2lzOgI4ARpSChRSZWRUZWFtQW5hbHlz",
+            "aXNFbnRyeRILCgNrZXkYASABKAUSKQoFdmFsdWUYAiABKAsyGi5vd21ldGEu",
+            "bW9kZWwuSGVyb0FuYWx5c2lzOgI4ASLAAQoKTWF0Y2hTdGF0ZRIwCglibHVl",
+            "X3RlYW0YASABKAsyHS5vd21ldGEubW9kZWwuVGVhbUNvbXBvc2l0aW9uEi8K",
+            "CHJlZF90ZWFtGAIgASgLMh0ub3dtZXRhLm1vZGVsLlRlYW1Db21wb3NpdGlv",
+            "bhIrCgtwbGF5ZXJfaGVybxgDIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFt",
+            "ZRIiCgNtYXAYBCABKA4yFS5vd21ldGEubW9kZWwuTWFwTmFtZSLdAQoPVGVh",
+            "bUNvbXBvc2l0aW9uEiQKBHRhbmsYASABKA4yFi5vd21ldGEubW9kZWwuSGVy",
+            "b05hbWUSJwoHZGFtYWdlMRgCIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFt",
+            "ZRInCgdkYW1hZ2UyGAMgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lEigK",
+            "CHN1cHBvcnQxGAQgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lEigKCHN1",
+            "cHBvcnQyGAUgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lImsKDVdvcmtl",
+            "ck1lc3NhZ2USLQoLbWF0Y2hfc3RhdGUYASABKAsyGC5vd21ldGEubW9kZWwu",
+            "TWF0Y2hTdGF0ZRIrCgplcnJvcl9jb2RlGAIgASgOMhcub3dtZXRhLmVycmNv",
+            "ZGUuRXJyQ29kZSrJBAoISGVyb05hbWUSFAoQTkFNRV9VTlNQRUNJRklFRBAA",
+            "EgsKB1VOS05PV04QARIKCgZISURERU4QAhIHCgNBTkEQAxIICgRBU0hFEAQS",
+            "DAoIQkFQVElTVEUQBRILCgdCQVNUSU9OEAYSDAoIQlJJR0lUVEUQBxILCgdD",
+            "QVNTSURZEAgSBwoDRFZBEAkSDAoIRE9PTUZJU1QQChIICgRFQ0hPEAsSCQoF",
+            "R0VOSkkQDBIJCgVIQU5aTxANEgoKBklMTEFSSRAOEhAKDEpVTktFUl9RVUVF",
+            "ThAPEgsKB0pVTktSQVQQEBIICgRKVU5PEBESCgoGS0lSSUtPEBISDgoKTElG",
+            "RVdFQVZFUhATEgkKBUxVQ0lPEBQSCQoFTUFVR0EQFRIHCgNNRUkQFhIJCgVN",
+            "RVJDWRAXEgkKBU1PSVJBEBgSCQoFT1JJU0EQGRIKCgZQSEFSQUgQGhIMCghS",
+            "QU1BVFRSQRAbEgoKBlJFQVBFUhAcEg0KCVJFSU5IQVJEVBAdEgsKB1JPQURI",
+            "T0cQHhIJCgVTSUdNQRAfEg0KCVNPTERJRVI3NhAgEgoKBlNPTUJSQRAhEgsK",
+            "B1NPSk9VUk4QIhIMCghTWU1NRVRSQRAjEgwKCFRPUkJKT1JOECQSCgoGVFJB",
+            "Q0VSECUSCwoHVkVOVFVSRRAmEg4KCldJRE9XTUFLRVIQJxILCgdXSU5TVE9O",
+            "ECgSEQoNV1JFQ0tJTkdfQkFMTBApEgkKBVpBUllBECoSDAoIWkVOWUFUVEEQ",
+            "KxIKCgZIQVpBUkQQLCpDCghIZXJvUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVE",
+            "EAASCAoEVEFOSxABEgoKBkRBTUFHRRACEgsKB1NVUFBPUlQQAyo3CglIZXJv",
+            "U3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIJCgVBTElWRRABEggKBERF",
+            "QUQQAiovCgRUZWFtEhQKEFRFQU1fVU5TUEVDSUZJRUQQABIICgRCTFVFEAES",
+            "BwoDUkVEEAIqhwcKB01hcE5hbWUSEwoPTUFQX1VOU1BFQ0lGSUVEEAASDAoI",
+            "QUxMX01BUFMQARIiCh5BTlRBUkNUSUNfUEVOSU5TVUxBX0lDRUJSRUFLRVIQ",
+            "AhIcChhBTlRBUkNUSUNfUEVOSU5TVUxBX0xBQlMQAxIgChxBTlRBUkNUSUNf",
+            "UEVOSU5TVUxBX1NVQkxFVkVMEAQSEgoOQlVTQU5fRE9XTlRPV04QBRITCg9C",
+            "VVNBTl9TQU5DVFVBUlkQBhITCg9CVVNBTl9NRUtBX0JBU0UQBxIUChBJTElP",
+            "U19MSUdIVEhPVVNFEAgSDgoKSUxJT1NfV0VMTBAJEg8KC0lMSU9TX1JVSU5T",
+            "EAoSHgoaTElKSUFOR19UT1dFUl9OSUdIVF9NQVJLRVQQCxIYChRMSUpJQU5H",
+            "X1RPV0VSX0dBUkRFThAMEiAKHExJSklBTkdfVE9XRVJfQ09OVFJPTF9DRU5U",
+            "RVIQDRIRCg1ORVBBTF9WSUxMQUdFEA4SEAoMTkVQQUxfU0hSSU5FEA8SEQoN",
+            "TkVQQUxfU0FOQ1RVTRAQEhUKEU9BU0lTX0NJVFlfQ0VOVEVSEBESEQoNT0FT",
+            "SVNfR0FSREVOUxASEhQKEE9BU0lTX1VOSVZFUlNJVFkQExIPCgtTQU1PQV9C",
+            "RUFDSBAUEhIKDlNBTU9BX0RPV05UT1dOEBUSEQoNU0FNT0FfVk9MQ0FOTxAW",
+            "EhEKDUNJUkNVSVRfUk9ZQUwQFxIKCgZET1JBRE8QGBIKCgZIQVZBTkEQGRIO",
+            "CgpKVU5LRVJUT1dOEBoSCgoGUklBTFRPEBsSDAoIUk9VVEVfNjYQHBIWChJT",
+            "SEFNQkFMSV9NT05BU1RFUlkQHRIYChRXQVRDSFBPSU5UX0dJQlJBTFRBUhAe",
+            "EhEKDU5FV19KVU5LX0NJVFkQHxIMCghTVVJBVkFTQRAgEhIKDkJMSVpaQVJE",
+            "X1dPUkxEECESDwoLRUlDSEVOV0FMREUQIhINCglIT0xMWVdPT0QQIxINCglL",
+            "SU5HU19ST1cQJBILCgdNSURUT1dOECUSCwoHTlVNQkFOSRAmEgsKB1BBUkFJ",
+            "U08QJxIMCghDT0xPU1NFTxAoEg0KCUVTUEVSQU5DQRApEhQKEE5FV19RVUVF",
+            "Tl9TVFJFRVQQKhIMCghSVU5BU0FQSRArEgsKB0hBTkFPS0EQLBIUChBUSFJP",
+            "TkVfT0ZfQU5VQklTEC0qUgoPQ29tcG9zaXRpb25UeXBlEiAKHENPTVBPU0lU",
+            "SU9OX1RZUEVfVU5TUEVDSUZJRUQQABIICgRESVZFEAESCQoFQlJBV0wQAhII",
+            "CgRQT0tFEAMqRAoIU3RyZW5ndGgSGAoUU1RSRU5HVEhfVU5TUEVDSUZJRUQQ",
+            "ABIICgRTT0ZUEAESCAoESEFSRBACEgoKBk5VTExFRBADQipaGW93bWV0YS5p",
+            "by9nby9wa2cvb2NobW9kZWyqAgxPd21ldGEuTW9kZWxiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Owcounter.Errcode.ErrcodeReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owcounter.Model.HeroName), typeof(global::Owcounter.Model.HeroRole), typeof(global::Owcounter.Model.HeroState), typeof(global::Owcounter.Model.Team), typeof(global::Owcounter.Model.MapName), typeof(global::Owcounter.Model.CompositionType), typeof(global::Owcounter.Model.Strength), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.Hero), global::Owcounter.Model.Hero.Parser, new[]{ "Name", "Role", "CounteredBy", "Synergies", "BestCompositions", "IncompatibleCompositions", "StrongMaps", "WeakMaps" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.HeroCounter), global::Owcounter.Model.HeroCounter.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomCounterId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.HeroSynergy), global::Owcounter.Model.HeroSynergy.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomSynergyId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.HeroAnalysis), global::Owcounter.Model.HeroAnalysis.Parser, new[]{ "Hero", "HardCounters", "HardCounteredBy", "SoftCounters", "SoftCounteredBy", "Synergies", "SwapSuggestions", "HeroScore" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.MatchStateAnalysis), global::Owcounter.Model.MatchStateAnalysis.Parser, new[]{ "BlueTeamAnalysis", "RedTeamAnalysis" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, }),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.MatchState), global::Owcounter.Model.MatchState.Parser, new[]{ "BlueTeam", "RedTeam", "PlayerHero", "Map" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.TeamComposition), global::Owcounter.Model.TeamComposition.Parser, new[]{ "Tank", "Damage1", "Damage2", "Support1", "Support2" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owcounter.Model.WorkerMessage), global::Owcounter.Model.WorkerMessage.Parser, new[]{ "MatchState", "ErrorCode" }, null, null, null, null)
+          new pbr::FileDescriptor[] { global::Owmeta.Errcode.ErrcodeReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owmeta.Model.HeroName), typeof(global::Owmeta.Model.HeroRole), typeof(global::Owmeta.Model.HeroState), typeof(global::Owmeta.Model.Team), typeof(global::Owmeta.Model.MapName), typeof(global::Owmeta.Model.CompositionType), typeof(global::Owmeta.Model.Strength), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.Hero), global::Owmeta.Model.Hero.Parser, new[]{ "Name", "Role", "CounteredBy", "Synergies", "BestCompositions", "IncompatibleCompositions", "StrongMaps", "WeakMaps" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroCounter), global::Owmeta.Model.HeroCounter.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomCounterId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroSynergy), global::Owmeta.Model.HeroSynergy.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomSynergyId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroAnalysis), global::Owmeta.Model.HeroAnalysis.Parser, new[]{ "Hero", "HardCounters", "HardCounteredBy", "SoftCounters", "SoftCounteredBy", "Synergies", "SwapSuggestions", "HeroScore" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchStateAnalysis), global::Owmeta.Model.MatchStateAnalysis.Parser, new[]{ "BlueTeamAnalysis", "RedTeamAnalysis" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, }),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchState), global::Owmeta.Model.MatchState.Parser, new[]{ "BlueTeam", "RedTeam", "PlayerHero", "Map" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.TeamComposition), global::Owmeta.Model.TeamComposition.Parser, new[]{ "Tank", "Damage1", "Damage2", "Support1", "Support2" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.WorkerMessage), global::Owmeta.Model.WorkerMessage.Parser, new[]{ "MatchState", "ErrorCode" }, null, null, null, null)
           }));
     }
     #endregion
@@ -177,6 +174,7 @@ namespace Owcounter.Model {
     [pbr::OriginalName("WRECKING_BALL")] WreckingBall = 41,
     [pbr::OriginalName("ZARYA")] Zarya = 42,
     [pbr::OriginalName("ZENYATTA")] Zenyatta = 43,
+    [pbr::OriginalName("HAZARD")] Hazard = 44,
   }
 
   public enum HeroRole {
@@ -272,7 +270,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -307,9 +305,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "name" field.</summary>
     public const int NameFieldNumber = 1;
-    private global::Owcounter.Model.HeroName name_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName name_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Name {
+    public global::Owmeta.Model.HeroName Name {
       get { return name_; }
       set {
         name_ = value;
@@ -318,9 +316,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "role" field.</summary>
     public const int RoleFieldNumber = 2;
-    private global::Owcounter.Model.HeroRole role_ = global::Owcounter.Model.HeroRole.RoleUnspecified;
+    private global::Owmeta.Model.HeroRole role_ = global::Owmeta.Model.HeroRole.RoleUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroRole Role {
+    public global::Owmeta.Model.HeroRole Role {
       get { return role_; }
       set {
         role_ = value;
@@ -329,61 +327,61 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "countered_by" field.</summary>
     public const int CounteredByFieldNumber = 3;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroCounter> _repeated_counteredBy_codec
-        = pb::FieldCodec.ForMessage(26, global::Owcounter.Model.HeroCounter.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroCounter> counteredBy_ = new pbc::RepeatedField<global::Owcounter.Model.HeroCounter>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroCounter> _repeated_counteredBy_codec
+        = pb::FieldCodec.ForMessage(26, global::Owmeta.Model.HeroCounter.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroCounter> counteredBy_ = new pbc::RepeatedField<global::Owmeta.Model.HeroCounter>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroCounter> CounteredBy {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroCounter> CounteredBy {
       get { return counteredBy_; }
     }
 
     /// <summary>Field number for the "synergies" field.</summary>
     public const int SynergiesFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroSynergy> _repeated_synergies_codec
-        = pb::FieldCodec.ForMessage(34, global::Owcounter.Model.HeroSynergy.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroSynergy> synergies_ = new pbc::RepeatedField<global::Owcounter.Model.HeroSynergy>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroSynergy> _repeated_synergies_codec
+        = pb::FieldCodec.ForMessage(34, global::Owmeta.Model.HeroSynergy.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroSynergy> synergies_ = new pbc::RepeatedField<global::Owmeta.Model.HeroSynergy>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroSynergy> Synergies {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroSynergy> Synergies {
       get { return synergies_; }
     }
 
     /// <summary>Field number for the "best_compositions" field.</summary>
     public const int BestCompositionsFieldNumber = 5;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.CompositionType> _repeated_bestCompositions_codec
-        = pb::FieldCodec.ForEnum(42, x => (int) x, x => (global::Owcounter.Model.CompositionType) x);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.CompositionType> bestCompositions_ = new pbc::RepeatedField<global::Owcounter.Model.CompositionType>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.CompositionType> _repeated_bestCompositions_codec
+        = pb::FieldCodec.ForEnum(42, x => (int) x, x => (global::Owmeta.Model.CompositionType) x);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.CompositionType> bestCompositions_ = new pbc::RepeatedField<global::Owmeta.Model.CompositionType>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.CompositionType> BestCompositions {
+    public pbc::RepeatedField<global::Owmeta.Model.CompositionType> BestCompositions {
       get { return bestCompositions_; }
     }
 
     /// <summary>Field number for the "incompatible_compositions" field.</summary>
     public const int IncompatibleCompositionsFieldNumber = 6;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.CompositionType> _repeated_incompatibleCompositions_codec
-        = pb::FieldCodec.ForEnum(50, x => (int) x, x => (global::Owcounter.Model.CompositionType) x);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.CompositionType> incompatibleCompositions_ = new pbc::RepeatedField<global::Owcounter.Model.CompositionType>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.CompositionType> _repeated_incompatibleCompositions_codec
+        = pb::FieldCodec.ForEnum(50, x => (int) x, x => (global::Owmeta.Model.CompositionType) x);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.CompositionType> incompatibleCompositions_ = new pbc::RepeatedField<global::Owmeta.Model.CompositionType>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.CompositionType> IncompatibleCompositions {
+    public pbc::RepeatedField<global::Owmeta.Model.CompositionType> IncompatibleCompositions {
       get { return incompatibleCompositions_; }
     }
 
     /// <summary>Field number for the "strong_maps" field.</summary>
     public const int StrongMapsFieldNumber = 7;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.MapName> _repeated_strongMaps_codec
-        = pb::FieldCodec.ForEnum(58, x => (int) x, x => (global::Owcounter.Model.MapName) x);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.MapName> strongMaps_ = new pbc::RepeatedField<global::Owcounter.Model.MapName>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.MapName> _repeated_strongMaps_codec
+        = pb::FieldCodec.ForEnum(58, x => (int) x, x => (global::Owmeta.Model.MapName) x);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.MapName> strongMaps_ = new pbc::RepeatedField<global::Owmeta.Model.MapName>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.MapName> StrongMaps {
+    public pbc::RepeatedField<global::Owmeta.Model.MapName> StrongMaps {
       get { return strongMaps_; }
     }
 
     /// <summary>Field number for the "weak_maps" field.</summary>
     public const int WeakMapsFieldNumber = 8;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.MapName> _repeated_weakMaps_codec
-        = pb::FieldCodec.ForEnum(66, x => (int) x, x => (global::Owcounter.Model.MapName) x);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.MapName> weakMaps_ = new pbc::RepeatedField<global::Owcounter.Model.MapName>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.MapName> _repeated_weakMaps_codec
+        = pb::FieldCodec.ForEnum(66, x => (int) x, x => (global::Owmeta.Model.MapName) x);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.MapName> weakMaps_ = new pbc::RepeatedField<global::Owmeta.Model.MapName>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.MapName> WeakMaps {
+    public pbc::RepeatedField<global::Owmeta.Model.MapName> WeakMaps {
       get { return weakMaps_; }
     }
 
@@ -414,8 +412,8 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Name != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Name.GetHashCode();
-      if (Role != global::Owcounter.Model.HeroRole.RoleUnspecified) hash ^= Role.GetHashCode();
+      if (Name != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Name.GetHashCode();
+      if (Role != global::Owmeta.Model.HeroRole.RoleUnspecified) hash ^= Role.GetHashCode();
       hash ^= counteredBy_.GetHashCode();
       hash ^= synergies_.GetHashCode();
       hash ^= bestCompositions_.GetHashCode();
@@ -435,11 +433,11 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Name != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Name != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Name);
       }
-      if (Role != global::Owcounter.Model.HeroRole.RoleUnspecified) {
+      if (Role != global::Owmeta.Model.HeroRole.RoleUnspecified) {
         output.WriteRawTag(16);
         output.WriteEnum((int) Role);
       }
@@ -457,10 +455,10 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Name != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Name != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Name);
       }
-      if (Role != global::Owcounter.Model.HeroRole.RoleUnspecified) {
+      if (Role != global::Owmeta.Model.HeroRole.RoleUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Role);
       }
       size += counteredBy_.CalculateSize(_repeated_counteredBy_codec);
@@ -480,10 +478,10 @@ namespace Owcounter.Model {
       if (other == null) {
         return;
       }
-      if (other.Name != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Name != global::Owmeta.Model.HeroName.NameUnspecified) {
         Name = other.Name;
       }
-      if (other.Role != global::Owcounter.Model.HeroRole.RoleUnspecified) {
+      if (other.Role != global::Owmeta.Model.HeroRole.RoleUnspecified) {
         Role = other.Role;
       }
       counteredBy_.Add(other.counteredBy_);
@@ -504,11 +502,11 @@ namespace Owcounter.Model {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            Name = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Name = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 16: {
-            Role = (global::Owcounter.Model.HeroRole) input.ReadEnum();
+            Role = (global::Owmeta.Model.HeroRole) input.ReadEnum();
             break;
           }
           case 26: {
@@ -553,7 +551,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -585,9 +583,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "hero_name" field.</summary>
     public const int HeroNameFieldNumber = 1;
-    private global::Owcounter.Model.HeroName heroName_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName heroName_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName HeroName {
+    public global::Owmeta.Model.HeroName HeroName {
       get { return heroName_; }
       set {
         heroName_ = value;
@@ -607,9 +605,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "strength" field.</summary>
     public const int StrengthFieldNumber = 3;
-    private global::Owcounter.Model.Strength strength_ = global::Owcounter.Model.Strength.Unspecified;
+    private global::Owmeta.Model.Strength strength_ = global::Owmeta.Model.Strength.Unspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.Strength Strength {
+    public global::Owmeta.Model.Strength Strength {
       get { return strength_; }
       set {
         strength_ = value;
@@ -618,9 +616,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "specific_map" field.</summary>
     public const int SpecificMapFieldNumber = 4;
-    private global::Owcounter.Model.MapName specificMap_ = global::Owcounter.Model.MapName.MapUnspecified;
+    private global::Owmeta.Model.MapName specificMap_ = global::Owmeta.Model.MapName.MapUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.MapName SpecificMap {
+    public global::Owmeta.Model.MapName SpecificMap {
       get { return specificMap_; }
       set {
         specificMap_ = value;
@@ -662,10 +660,10 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= HeroName.GetHashCode();
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= HeroName.GetHashCode();
       if (Comment.Length != 0) hash ^= Comment.GetHashCode();
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) hash ^= Strength.GetHashCode();
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) hash ^= SpecificMap.GetHashCode();
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) hash ^= Strength.GetHashCode();
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) hash ^= SpecificMap.GetHashCode();
       if (CustomCounterId != 0L) hash ^= CustomCounterId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -680,7 +678,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(8);
         output.WriteEnum((int) HeroName);
       }
@@ -688,11 +686,11 @@ namespace Owcounter.Model {
         output.WriteRawTag(18);
         output.WriteString(Comment);
       }
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) {
         output.WriteRawTag(24);
         output.WriteEnum((int) Strength);
       }
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) SpecificMap);
       }
@@ -708,16 +706,16 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) HeroName);
       }
       if (Comment.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Comment);
       }
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Strength);
       }
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) SpecificMap);
       }
       if (CustomCounterId != 0L) {
@@ -734,16 +732,16 @@ namespace Owcounter.Model {
       if (other == null) {
         return;
       }
-      if (other.HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         HeroName = other.HeroName;
       }
       if (other.Comment.Length != 0) {
         Comment = other.Comment;
       }
-      if (other.Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (other.Strength != global::Owmeta.Model.Strength.Unspecified) {
         Strength = other.Strength;
       }
-      if (other.SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (other.SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         SpecificMap = other.SpecificMap;
       }
       if (other.CustomCounterId != 0L) {
@@ -761,7 +759,7 @@ namespace Owcounter.Model {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            HeroName = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            HeroName = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 18: {
@@ -769,11 +767,11 @@ namespace Owcounter.Model {
             break;
           }
           case 24: {
-            Strength = (global::Owcounter.Model.Strength) input.ReadEnum();
+            Strength = (global::Owmeta.Model.Strength) input.ReadEnum();
             break;
           }
           case 32: {
-            SpecificMap = (global::Owcounter.Model.MapName) input.ReadEnum();
+            SpecificMap = (global::Owmeta.Model.MapName) input.ReadEnum();
             break;
           }
           case 40: {
@@ -794,7 +792,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -826,9 +824,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "hero_name" field.</summary>
     public const int HeroNameFieldNumber = 1;
-    private global::Owcounter.Model.HeroName heroName_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName heroName_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName HeroName {
+    public global::Owmeta.Model.HeroName HeroName {
       get { return heroName_; }
       set {
         heroName_ = value;
@@ -848,9 +846,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "strength" field.</summary>
     public const int StrengthFieldNumber = 3;
-    private global::Owcounter.Model.Strength strength_ = global::Owcounter.Model.Strength.Unspecified;
+    private global::Owmeta.Model.Strength strength_ = global::Owmeta.Model.Strength.Unspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.Strength Strength {
+    public global::Owmeta.Model.Strength Strength {
       get { return strength_; }
       set {
         strength_ = value;
@@ -859,9 +857,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "specific_map" field.</summary>
     public const int SpecificMapFieldNumber = 4;
-    private global::Owcounter.Model.MapName specificMap_ = global::Owcounter.Model.MapName.MapUnspecified;
+    private global::Owmeta.Model.MapName specificMap_ = global::Owmeta.Model.MapName.MapUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.MapName SpecificMap {
+    public global::Owmeta.Model.MapName SpecificMap {
       get { return specificMap_; }
       set {
         specificMap_ = value;
@@ -903,10 +901,10 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= HeroName.GetHashCode();
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= HeroName.GetHashCode();
       if (Comment.Length != 0) hash ^= Comment.GetHashCode();
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) hash ^= Strength.GetHashCode();
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) hash ^= SpecificMap.GetHashCode();
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) hash ^= Strength.GetHashCode();
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) hash ^= SpecificMap.GetHashCode();
       if (CustomSynergyId != 0L) hash ^= CustomSynergyId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -921,7 +919,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(8);
         output.WriteEnum((int) HeroName);
       }
@@ -929,11 +927,11 @@ namespace Owcounter.Model {
         output.WriteRawTag(18);
         output.WriteString(Comment);
       }
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) {
         output.WriteRawTag(24);
         output.WriteEnum((int) Strength);
       }
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) SpecificMap);
       }
@@ -949,16 +947,16 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) HeroName);
       }
       if (Comment.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Comment);
       }
-      if (Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (Strength != global::Owmeta.Model.Strength.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Strength);
       }
-      if (SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) SpecificMap);
       }
       if (CustomSynergyId != 0L) {
@@ -975,16 +973,16 @@ namespace Owcounter.Model {
       if (other == null) {
         return;
       }
-      if (other.HeroName != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.HeroName != global::Owmeta.Model.HeroName.NameUnspecified) {
         HeroName = other.HeroName;
       }
       if (other.Comment.Length != 0) {
         Comment = other.Comment;
       }
-      if (other.Strength != global::Owcounter.Model.Strength.Unspecified) {
+      if (other.Strength != global::Owmeta.Model.Strength.Unspecified) {
         Strength = other.Strength;
       }
-      if (other.SpecificMap != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (other.SpecificMap != global::Owmeta.Model.MapName.MapUnspecified) {
         SpecificMap = other.SpecificMap;
       }
       if (other.CustomSynergyId != 0L) {
@@ -1002,7 +1000,7 @@ namespace Owcounter.Model {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            HeroName = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            HeroName = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 18: {
@@ -1010,11 +1008,11 @@ namespace Owcounter.Model {
             break;
           }
           case 24: {
-            Strength = (global::Owcounter.Model.Strength) input.ReadEnum();
+            Strength = (global::Owmeta.Model.Strength) input.ReadEnum();
             break;
           }
           case 32: {
-            SpecificMap = (global::Owcounter.Model.MapName) input.ReadEnum();
+            SpecificMap = (global::Owmeta.Model.MapName) input.ReadEnum();
             break;
           }
           case 40: {
@@ -1035,7 +1033,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1070,9 +1068,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "hero" field.</summary>
     public const int HeroFieldNumber = 1;
-    private global::Owcounter.Model.Hero hero_;
+    private global::Owmeta.Model.Hero hero_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.Hero Hero {
+    public global::Owmeta.Model.Hero Hero {
       get { return hero_; }
       set {
         hero_ = value;
@@ -1081,61 +1079,61 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "hard_counters" field.</summary>
     public const int HardCountersFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroCounter> _repeated_hardCounters_codec
-        = pb::FieldCodec.ForMessage(18, global::Owcounter.Model.HeroCounter.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroCounter> hardCounters_ = new pbc::RepeatedField<global::Owcounter.Model.HeroCounter>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroCounter> _repeated_hardCounters_codec
+        = pb::FieldCodec.ForMessage(18, global::Owmeta.Model.HeroCounter.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroCounter> hardCounters_ = new pbc::RepeatedField<global::Owmeta.Model.HeroCounter>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroCounter> HardCounters {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroCounter> HardCounters {
       get { return hardCounters_; }
     }
 
     /// <summary>Field number for the "hard_countered_by" field.</summary>
     public const int HardCounteredByFieldNumber = 3;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroCounter> _repeated_hardCounteredBy_codec
-        = pb::FieldCodec.ForMessage(26, global::Owcounter.Model.HeroCounter.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroCounter> hardCounteredBy_ = new pbc::RepeatedField<global::Owcounter.Model.HeroCounter>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroCounter> _repeated_hardCounteredBy_codec
+        = pb::FieldCodec.ForMessage(26, global::Owmeta.Model.HeroCounter.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroCounter> hardCounteredBy_ = new pbc::RepeatedField<global::Owmeta.Model.HeroCounter>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroCounter> HardCounteredBy {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroCounter> HardCounteredBy {
       get { return hardCounteredBy_; }
     }
 
     /// <summary>Field number for the "soft_counters" field.</summary>
     public const int SoftCountersFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroCounter> _repeated_softCounters_codec
-        = pb::FieldCodec.ForMessage(34, global::Owcounter.Model.HeroCounter.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroCounter> softCounters_ = new pbc::RepeatedField<global::Owcounter.Model.HeroCounter>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroCounter> _repeated_softCounters_codec
+        = pb::FieldCodec.ForMessage(34, global::Owmeta.Model.HeroCounter.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroCounter> softCounters_ = new pbc::RepeatedField<global::Owmeta.Model.HeroCounter>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroCounter> SoftCounters {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroCounter> SoftCounters {
       get { return softCounters_; }
     }
 
     /// <summary>Field number for the "soft_countered_by" field.</summary>
     public const int SoftCounteredByFieldNumber = 5;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroCounter> _repeated_softCounteredBy_codec
-        = pb::FieldCodec.ForMessage(42, global::Owcounter.Model.HeroCounter.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroCounter> softCounteredBy_ = new pbc::RepeatedField<global::Owcounter.Model.HeroCounter>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroCounter> _repeated_softCounteredBy_codec
+        = pb::FieldCodec.ForMessage(42, global::Owmeta.Model.HeroCounter.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroCounter> softCounteredBy_ = new pbc::RepeatedField<global::Owmeta.Model.HeroCounter>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroCounter> SoftCounteredBy {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroCounter> SoftCounteredBy {
       get { return softCounteredBy_; }
     }
 
     /// <summary>Field number for the "synergies" field.</summary>
     public const int SynergiesFieldNumber = 6;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroSynergy> _repeated_synergies_codec
-        = pb::FieldCodec.ForMessage(50, global::Owcounter.Model.HeroSynergy.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroSynergy> synergies_ = new pbc::RepeatedField<global::Owcounter.Model.HeroSynergy>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroSynergy> _repeated_synergies_codec
+        = pb::FieldCodec.ForMessage(50, global::Owmeta.Model.HeroSynergy.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroSynergy> synergies_ = new pbc::RepeatedField<global::Owmeta.Model.HeroSynergy>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroSynergy> Synergies {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroSynergy> Synergies {
       get { return synergies_; }
     }
 
     /// <summary>Field number for the "swap_suggestions" field.</summary>
     public const int SwapSuggestionsFieldNumber = 7;
-    private static readonly pb::FieldCodec<global::Owcounter.Model.HeroAnalysis> _repeated_swapSuggestions_codec
-        = pb::FieldCodec.ForMessage(58, global::Owcounter.Model.HeroAnalysis.Parser);
-    private readonly pbc::RepeatedField<global::Owcounter.Model.HeroAnalysis> swapSuggestions_ = new pbc::RepeatedField<global::Owcounter.Model.HeroAnalysis>();
+    private static readonly pb::FieldCodec<global::Owmeta.Model.HeroAnalysis> _repeated_swapSuggestions_codec
+        = pb::FieldCodec.ForMessage(58, global::Owmeta.Model.HeroAnalysis.Parser);
+    private readonly pbc::RepeatedField<global::Owmeta.Model.HeroAnalysis> swapSuggestions_ = new pbc::RepeatedField<global::Owmeta.Model.HeroAnalysis>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Owcounter.Model.HeroAnalysis> SwapSuggestions {
+    public pbc::RepeatedField<global::Owmeta.Model.HeroAnalysis> SwapSuggestions {
       get { return swapSuggestions_; }
     }
 
@@ -1245,7 +1243,7 @@ namespace Owcounter.Model {
       }
       if (other.hero_ != null) {
         if (hero_ == null) {
-          Hero = new global::Owcounter.Model.Hero();
+          Hero = new global::Owmeta.Model.Hero();
         }
         Hero.MergeFrom(other.Hero);
       }
@@ -1271,7 +1269,7 @@ namespace Owcounter.Model {
             break;
           case 10: {
             if (hero_ == null) {
-              Hero = new global::Owcounter.Model.Hero();
+              Hero = new global::Owmeta.Model.Hero();
             }
             input.ReadMessage(Hero);
             break;
@@ -1318,7 +1316,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1347,21 +1345,21 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "blue_team_analysis" field.</summary>
     public const int BlueTeamAnalysisFieldNumber = 1;
-    private static readonly pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>.Codec _map_blueTeamAnalysis_codec
-        = new pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Owcounter.Model.HeroAnalysis.Parser), 10);
-    private readonly pbc::MapField<int, global::Owcounter.Model.HeroAnalysis> blueTeamAnalysis_ = new pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>();
+    private static readonly pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>.Codec _map_blueTeamAnalysis_codec
+        = new pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Owmeta.Model.HeroAnalysis.Parser), 10);
+    private readonly pbc::MapField<int, global::Owmeta.Model.HeroAnalysis> blueTeamAnalysis_ = new pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::MapField<int, global::Owcounter.Model.HeroAnalysis> BlueTeamAnalysis {
+    public pbc::MapField<int, global::Owmeta.Model.HeroAnalysis> BlueTeamAnalysis {
       get { return blueTeamAnalysis_; }
     }
 
     /// <summary>Field number for the "red_team_analysis" field.</summary>
     public const int RedTeamAnalysisFieldNumber = 2;
-    private static readonly pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>.Codec _map_redTeamAnalysis_codec
-        = new pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Owcounter.Model.HeroAnalysis.Parser), 18);
-    private readonly pbc::MapField<int, global::Owcounter.Model.HeroAnalysis> redTeamAnalysis_ = new pbc::MapField<int, global::Owcounter.Model.HeroAnalysis>();
+    private static readonly pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>.Codec _map_redTeamAnalysis_codec
+        = new pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Owmeta.Model.HeroAnalysis.Parser), 18);
+    private readonly pbc::MapField<int, global::Owmeta.Model.HeroAnalysis> redTeamAnalysis_ = new pbc::MapField<int, global::Owmeta.Model.HeroAnalysis>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::MapField<int, global::Owcounter.Model.HeroAnalysis> RedTeamAnalysis {
+    public pbc::MapField<int, global::Owmeta.Model.HeroAnalysis> RedTeamAnalysis {
       get { return redTeamAnalysis_; }
     }
 
@@ -1459,7 +1457,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1490,9 +1488,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "blue_team" field.</summary>
     public const int BlueTeamFieldNumber = 1;
-    private global::Owcounter.Model.TeamComposition blueTeam_;
+    private global::Owmeta.Model.TeamComposition blueTeam_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.TeamComposition BlueTeam {
+    public global::Owmeta.Model.TeamComposition BlueTeam {
       get { return blueTeam_; }
       set {
         blueTeam_ = value;
@@ -1501,9 +1499,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "red_team" field.</summary>
     public const int RedTeamFieldNumber = 2;
-    private global::Owcounter.Model.TeamComposition redTeam_;
+    private global::Owmeta.Model.TeamComposition redTeam_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.TeamComposition RedTeam {
+    public global::Owmeta.Model.TeamComposition RedTeam {
       get { return redTeam_; }
       set {
         redTeam_ = value;
@@ -1512,9 +1510,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "player_hero" field.</summary>
     public const int PlayerHeroFieldNumber = 3;
-    private global::Owcounter.Model.HeroName playerHero_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName playerHero_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName PlayerHero {
+    public global::Owmeta.Model.HeroName PlayerHero {
       get { return playerHero_; }
       set {
         playerHero_ = value;
@@ -1523,9 +1521,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "map" field.</summary>
     public const int MapFieldNumber = 4;
-    private global::Owcounter.Model.MapName map_ = global::Owcounter.Model.MapName.MapUnspecified;
+    private global::Owmeta.Model.MapName map_ = global::Owmeta.Model.MapName.MapUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.MapName Map {
+    public global::Owmeta.Model.MapName Map {
       get { return map_; }
       set {
         map_ = value;
@@ -1557,8 +1555,8 @@ namespace Owcounter.Model {
       int hash = 1;
       if (blueTeam_ != null) hash ^= BlueTeam.GetHashCode();
       if (redTeam_ != null) hash ^= RedTeam.GetHashCode();
-      if (PlayerHero != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= PlayerHero.GetHashCode();
-      if (Map != global::Owcounter.Model.MapName.MapUnspecified) hash ^= Map.GetHashCode();
+      if (PlayerHero != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= PlayerHero.GetHashCode();
+      if (Map != global::Owmeta.Model.MapName.MapUnspecified) hash ^= Map.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1580,11 +1578,11 @@ namespace Owcounter.Model {
         output.WriteRawTag(18);
         output.WriteMessage(RedTeam);
       }
-      if (PlayerHero != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (PlayerHero != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(24);
         output.WriteEnum((int) PlayerHero);
       }
-      if (Map != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (Map != global::Owmeta.Model.MapName.MapUnspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) Map);
       }
@@ -1602,10 +1600,10 @@ namespace Owcounter.Model {
       if (redTeam_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(RedTeam);
       }
-      if (PlayerHero != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (PlayerHero != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) PlayerHero);
       }
-      if (Map != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (Map != global::Owmeta.Model.MapName.MapUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Map);
       }
       if (_unknownFields != null) {
@@ -1621,20 +1619,20 @@ namespace Owcounter.Model {
       }
       if (other.blueTeam_ != null) {
         if (blueTeam_ == null) {
-          BlueTeam = new global::Owcounter.Model.TeamComposition();
+          BlueTeam = new global::Owmeta.Model.TeamComposition();
         }
         BlueTeam.MergeFrom(other.BlueTeam);
       }
       if (other.redTeam_ != null) {
         if (redTeam_ == null) {
-          RedTeam = new global::Owcounter.Model.TeamComposition();
+          RedTeam = new global::Owmeta.Model.TeamComposition();
         }
         RedTeam.MergeFrom(other.RedTeam);
       }
-      if (other.PlayerHero != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.PlayerHero != global::Owmeta.Model.HeroName.NameUnspecified) {
         PlayerHero = other.PlayerHero;
       }
-      if (other.Map != global::Owcounter.Model.MapName.MapUnspecified) {
+      if (other.Map != global::Owmeta.Model.MapName.MapUnspecified) {
         Map = other.Map;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
@@ -1650,24 +1648,24 @@ namespace Owcounter.Model {
             break;
           case 10: {
             if (blueTeam_ == null) {
-              BlueTeam = new global::Owcounter.Model.TeamComposition();
+              BlueTeam = new global::Owmeta.Model.TeamComposition();
             }
             input.ReadMessage(BlueTeam);
             break;
           }
           case 18: {
             if (redTeam_ == null) {
-              RedTeam = new global::Owcounter.Model.TeamComposition();
+              RedTeam = new global::Owmeta.Model.TeamComposition();
             }
             input.ReadMessage(RedTeam);
             break;
           }
           case 24: {
-            PlayerHero = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            PlayerHero = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 32: {
-            Map = (global::Owcounter.Model.MapName) input.ReadEnum();
+            Map = (global::Owmeta.Model.MapName) input.ReadEnum();
             break;
           }
         }
@@ -1684,7 +1682,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1716,9 +1714,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "tank" field.</summary>
     public const int TankFieldNumber = 1;
-    private global::Owcounter.Model.HeroName tank_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName tank_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Tank {
+    public global::Owmeta.Model.HeroName Tank {
       get { return tank_; }
       set {
         tank_ = value;
@@ -1727,9 +1725,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "damage1" field.</summary>
     public const int Damage1FieldNumber = 2;
-    private global::Owcounter.Model.HeroName damage1_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName damage1_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Damage1 {
+    public global::Owmeta.Model.HeroName Damage1 {
       get { return damage1_; }
       set {
         damage1_ = value;
@@ -1738,9 +1736,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "damage2" field.</summary>
     public const int Damage2FieldNumber = 3;
-    private global::Owcounter.Model.HeroName damage2_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName damage2_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Damage2 {
+    public global::Owmeta.Model.HeroName Damage2 {
       get { return damage2_; }
       set {
         damage2_ = value;
@@ -1749,9 +1747,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "support1" field.</summary>
     public const int Support1FieldNumber = 4;
-    private global::Owcounter.Model.HeroName support1_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName support1_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Support1 {
+    public global::Owmeta.Model.HeroName Support1 {
       get { return support1_; }
       set {
         support1_ = value;
@@ -1760,9 +1758,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "support2" field.</summary>
     public const int Support2FieldNumber = 5;
-    private global::Owcounter.Model.HeroName support2_ = global::Owcounter.Model.HeroName.NameUnspecified;
+    private global::Owmeta.Model.HeroName support2_ = global::Owmeta.Model.HeroName.NameUnspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.HeroName Support2 {
+    public global::Owmeta.Model.HeroName Support2 {
       get { return support2_; }
       set {
         support2_ = value;
@@ -1793,11 +1791,11 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Tank != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Tank.GetHashCode();
-      if (Damage1 != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Damage1.GetHashCode();
-      if (Damage2 != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Damage2.GetHashCode();
-      if (Support1 != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Support1.GetHashCode();
-      if (Support2 != global::Owcounter.Model.HeroName.NameUnspecified) hash ^= Support2.GetHashCode();
+      if (Tank != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Tank.GetHashCode();
+      if (Damage1 != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Damage1.GetHashCode();
+      if (Damage2 != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Damage2.GetHashCode();
+      if (Support1 != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Support1.GetHashCode();
+      if (Support2 != global::Owmeta.Model.HeroName.NameUnspecified) hash ^= Support2.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1811,23 +1809,23 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Tank != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Tank != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Tank);
       }
-      if (Damage1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Damage1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(16);
         output.WriteEnum((int) Damage1);
       }
-      if (Damage2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Damage2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(24);
         output.WriteEnum((int) Damage2);
       }
-      if (Support1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Support1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) Support1);
       }
-      if (Support2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Support2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         output.WriteRawTag(40);
         output.WriteEnum((int) Support2);
       }
@@ -1839,19 +1837,19 @@ namespace Owcounter.Model {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Tank != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Tank != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Tank);
       }
-      if (Damage1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Damage1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Damage1);
       }
-      if (Damage2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Damage2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Damage2);
       }
-      if (Support1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Support1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Support1);
       }
-      if (Support2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (Support2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Support2);
       }
       if (_unknownFields != null) {
@@ -1865,19 +1863,19 @@ namespace Owcounter.Model {
       if (other == null) {
         return;
       }
-      if (other.Tank != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Tank != global::Owmeta.Model.HeroName.NameUnspecified) {
         Tank = other.Tank;
       }
-      if (other.Damage1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Damage1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         Damage1 = other.Damage1;
       }
-      if (other.Damage2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Damage2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         Damage2 = other.Damage2;
       }
-      if (other.Support1 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Support1 != global::Owmeta.Model.HeroName.NameUnspecified) {
         Support1 = other.Support1;
       }
-      if (other.Support2 != global::Owcounter.Model.HeroName.NameUnspecified) {
+      if (other.Support2 != global::Owmeta.Model.HeroName.NameUnspecified) {
         Support2 = other.Support2;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
@@ -1892,23 +1890,23 @@ namespace Owcounter.Model {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            Tank = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Tank = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 16: {
-            Damage1 = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Damage1 = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 24: {
-            Damage2 = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Damage2 = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 32: {
-            Support1 = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Support1 = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
           case 40: {
-            Support2 = (global::Owcounter.Model.HeroName) input.ReadEnum();
+            Support2 = (global::Owmeta.Model.HeroName) input.ReadEnum();
             break;
           }
         }
@@ -1925,7 +1923,7 @@ namespace Owcounter.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owcounter.Model.OchmodelReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1954,9 +1952,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "match_state" field.</summary>
     public const int MatchStateFieldNumber = 1;
-    private global::Owcounter.Model.MatchState matchState_;
+    private global::Owmeta.Model.MatchState matchState_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Model.MatchState MatchState {
+    public global::Owmeta.Model.MatchState MatchState {
       get { return matchState_; }
       set {
         matchState_ = value;
@@ -1965,9 +1963,9 @@ namespace Owcounter.Model {
 
     /// <summary>Field number for the "error_code" field.</summary>
     public const int ErrorCodeFieldNumber = 2;
-    private global::Owcounter.Errcode.ErrCode errorCode_ = global::Owcounter.Errcode.ErrCode.Unspecified;
+    private global::Owmeta.Errcode.ErrCode errorCode_ = global::Owmeta.Errcode.ErrCode.Unspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Owcounter.Errcode.ErrCode ErrorCode {
+    public global::Owmeta.Errcode.ErrCode ErrorCode {
       get { return errorCode_; }
       set {
         errorCode_ = value;
@@ -1996,7 +1994,7 @@ namespace Owcounter.Model {
     public override int GetHashCode() {
       int hash = 1;
       if (matchState_ != null) hash ^= MatchState.GetHashCode();
-      if (ErrorCode != global::Owcounter.Errcode.ErrCode.Unspecified) hash ^= ErrorCode.GetHashCode();
+      if (ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) hash ^= ErrorCode.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2014,7 +2012,7 @@ namespace Owcounter.Model {
         output.WriteRawTag(10);
         output.WriteMessage(MatchState);
       }
-      if (ErrorCode != global::Owcounter.Errcode.ErrCode.Unspecified) {
+      if (ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) {
         output.WriteRawTag(16);
         output.WriteEnum((int) ErrorCode);
       }
@@ -2029,7 +2027,7 @@ namespace Owcounter.Model {
       if (matchState_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MatchState);
       }
-      if (ErrorCode != global::Owcounter.Errcode.ErrCode.Unspecified) {
+      if (ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ErrorCode);
       }
       if (_unknownFields != null) {
@@ -2045,11 +2043,11 @@ namespace Owcounter.Model {
       }
       if (other.matchState_ != null) {
         if (matchState_ == null) {
-          MatchState = new global::Owcounter.Model.MatchState();
+          MatchState = new global::Owmeta.Model.MatchState();
         }
         MatchState.MergeFrom(other.MatchState);
       }
-      if (other.ErrorCode != global::Owcounter.Errcode.ErrCode.Unspecified) {
+      if (other.ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) {
         ErrorCode = other.ErrorCode;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
@@ -2065,13 +2063,13 @@ namespace Owcounter.Model {
             break;
           case 10: {
             if (matchState_ == null) {
-              MatchState = new global::Owcounter.Model.MatchState();
+              MatchState = new global::Owmeta.Model.MatchState();
             }
             input.ReadMessage(MatchState);
             break;
           }
           case 16: {
-            ErrorCode = (global::Owcounter.Errcode.ErrCode) input.ReadEnum();
+            ErrorCode = (global::Owmeta.Errcode.ErrCode) input.ReadEnum();
             break;
           }
         }

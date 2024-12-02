@@ -1,17 +1,17 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Owcounter.Authentication;
-using Owcounter.Model;
+using Owmeta.Authentication;
+using Owmeta.Model;
 using System.Net.Http;
 using System.Net.Http.Headers;
 
-namespace Owcounter.Services
+namespace Owmeta.Services
 {
     public class ApiService
     {
         private readonly HttpClient httpClient;
         private readonly KeycloakAuth keycloakAuth;
-        private readonly string tokenFileName = "owcounter_oauth_token.json";
+        private readonly string tokenFileName = "owmeta_oauth_token.json";
         private string? accessToken;
         private string? refreshToken;
         private readonly SemaphoreSlim tokenRefreshSemaphore = new SemaphoreSlim(1, 1);

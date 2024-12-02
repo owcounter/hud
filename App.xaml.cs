@@ -1,14 +1,14 @@
 ﻿using Hardcodet.Wpf.TaskbarNotification;
-using Owcounter.Authentication;
-using Owcounter.Display;
-using Owcounter.Services;
+using Owmeta.Authentication;
+using Owmeta.Display;
+using Owmeta.Services;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Windows;
 
-namespace Owcounter
+namespace Owmeta
 {
     [SupportedOSPlatform("windows")]
     public partial class App : Application
@@ -24,8 +24,8 @@ namespace Owcounter
         private KeycloakAuth? _keycloakAuth;
         private ScreenshotMonitoringService? _monitoringService;
         private Mutex? _mutex;
-        private const string MutexName = "Global\\OWCOUNTER_HUD_INSTANCE";
-        private const string ApiBaseUrl = "https://api.owcounter.com";
+        private const string MutexName = "Global\\OWMETA_HUD_INSTANCE";
+        private const string ApiBaseUrl = "https://api.owmeta.io";
 
 #if DEBUG
         public const bool DEV_MODE = true;  // Set this to false to test normal mode while debugging
@@ -42,8 +42,8 @@ namespace Owcounter
 
             if (!createdNew)
             {
-                MessageBox.Show("OWCOUNTER HUD is already running.\nCheck your system tray for the icon.",
-                    "OWCOUNTER HUD",
+                MessageBox.Show("OWMETA HUD is already running.\nCheck your system tray for the icon.",
+                    "OWMETA HUD",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 Current.Shutdown();
@@ -103,8 +103,8 @@ namespace Owcounter
             {
                 _notifyIcon = new TaskbarIcon
                 {
-                    Icon = new System.Drawing.Icon(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OWCounterHUD.ico")),
-                    ToolTipText = "OWCOUNTER HUD (F2: Toggle)"
+                    Icon = new System.Drawing.Icon(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OWMetaHUD.ico")),
+                    ToolTipText = "OWMETA HUD (F2: Toggle)"
                 };
 
                 _notifyIcon.ContextMenu = new System.Windows.Controls.ContextMenu();
@@ -149,8 +149,8 @@ namespace Owcounter
                 _monitoringService?.StartMonitoring();
                 if (!DEV_MODE)
                 {
-                    UpdateTrayTooltip("OWCOUNTER HUD - Monitoring");
-                    ShowNotification("OWCOUNTER HUD", "Press F2 or use the tray icon to toggle the hud visibility.");
+                    UpdateTrayTooltip("OWMETA HUD - Monitoring");
+                    ShowNotification("OWMETA HUD", "Press F2 or use the tray icon to toggle the hud visibility.");
                 }
             }
             catch (Exception ex)
@@ -193,7 +193,7 @@ namespace Owcounter
         private void ShowWelcomeMessage()
         {
             var disclaimerMessage =
-                "Welcome to OWCOUNTER HUD!\n\n" +
+                "Welcome to OWMETA HUD!\n\n" +
                 "Important Notice:\n" +
                 "The hero recommendations and analysis provided by this tool are meant to help you learn and understand the game better. " +
                 "They are based on general strategic principles and community knowledge, but should not be taken as absolute rules.\n\n" +
@@ -207,7 +207,7 @@ namespace Owcounter
 
             MessageBox.Show(
                 disclaimerMessage,
-                "OWCOUNTER HUD - Getting Started",
+                "OWMETA HUD - Getting Started",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information
             );
@@ -217,7 +217,7 @@ namespace Owcounter
         {
             try
             {
-                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OwcounterHUD.log");
+                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OwmetaHUD.log");
                 if (File.Exists(logPath))
                 {
                     Process.Start(new ProcessStartInfo
@@ -244,8 +244,8 @@ namespace Owcounter
             {
                 await _apiService!.Logout();
                 _monitoringService?.Dispose();
-                UpdateTrayTooltip("OWCOUNTER HUD - Not logged in");
-                ShowNotification("OWCOUNTER HUD", "Logged out successfully.");
+                UpdateTrayTooltip("OWMETA HUD - Not logged in");
+                ShowNotification("OWMETA HUD", "Logged out successfully.");
                 ShowLoginWindow();
             }
             catch (Exception ex)

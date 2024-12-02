@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Owcounter.Model
+namespace Owmeta.Model
 {
     public class ScreenshotProcessingResponse
     {

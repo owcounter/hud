@@ -2,20 +2,20 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>Owcounter</RootNamespace>
-    <AssemblyName>OWCounterHUD</AssemblyName>
-    <Product>OwcounterHUD</Product>
+    <RootNamespace>Owmeta</RootNamespace>
+    <AssemblyName>OWMetaHUD</AssemblyName>
+    <Product>OwmetaHUD</Product>
     <Copyright>Copyright © 2024</Copyright>
     <Nullable>enable</Nullable>
     <LangVersion>12.0</LangVersion>
     <NoWarn>CS8981</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>OWCounterHUD.ico</ApplicationIcon>
+    <ApplicationIcon>OWMetaHUD.ico</ApplicationIcon>
     <Version>1.0.1</Version>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="OWCounterHUD.ico">
+    <Content Include="OWMetaHUD.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,10 +1,10 @@
 ﻿using System.IO;
 
-namespace Owcounter
+namespace Owmeta
 {
     public static class Logger
     {
-        private static readonly string LogFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OwcounterHUD.log");
+        private static readonly string LogFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OwmetaHUD.log");
         private const int MaxLogSizeBytes = 10 * 1024 * 1024; // 10 MB
 
         public static void Log(string message)

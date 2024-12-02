@@ -1,11 +1,11 @@
-﻿using Owcounter.Model;
-using Owcounter.Services;
+﻿using Owmeta.Model;
+using Owmeta.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
-namespace Owcounter.Display
+namespace Owmeta.Display
 {
     public partial class SwapSuggestionsPanel : UserControl
     {

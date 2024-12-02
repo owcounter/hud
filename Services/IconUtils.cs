@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Owcounter.Model;
+using Owmeta.Model;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Net.Http;
 using System.Windows.Media.Imaging;
 
-namespace Owcounter.Services
+namespace Owmeta.Services
 {
     public class HeroPortraitData
     {

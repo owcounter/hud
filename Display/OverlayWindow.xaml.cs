@@ -1,5 +1,5 @@
 ﻿using Microsoft.Win32;
-using Owcounter.Model;
+using Owmeta.Model;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -8,7 +8,7 @@ using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace Owcounter.Display
+namespace Owmeta.Display
 {
     public partial class OverlayWindow : Window
     {

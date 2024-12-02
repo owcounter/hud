@@ -1,12 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System.Net.Http;
 
-namespace Owcounter.Authentication
+namespace Owmeta.Authentication
 {
     public class KeycloakAuth
     {
-        private readonly string keycloakUrl = "https://id.owcounter.com";
-        private readonly string realm = "owcounter";
+        private readonly string keycloakUrl = "https://id.owmeta.io";
+        private readonly string realm = "owmeta";
         private readonly string clientId = "default-client";
 
         public async Task<KeycloakConnectOutput> Authenticate(string username, string password)

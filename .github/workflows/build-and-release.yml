@@ -22,7 +22,7 @@ jobs:
     - name: Get version
       id: get_version
       run: |
-        $xml = [Xml](Get-Content OwcounterHUD.csproj)
+        $xml = [Xml](Get-Content OwmetaHUD.csproj)
         $version = $xml.Project.PropertyGroup.Version
         if ([string]::IsNullOrEmpty($version)) {
           $version = "1.0.0"
@@ -40,7 +40,7 @@ jobs:
     
     - name: Update project version
       run: |
-        $file = 'OwcounterHUD.csproj'
+        $file = 'OwmetaHUD.csproj'
         $xml = [Xml](Get-Content $file)
         if ($null -eq $xml.Project.PropertyGroup.Version) {
             $versionElement = $xml.CreateElement("Version")
@@ -52,24 +52,24 @@ jobs:
         $xml.Save($file)
     
     - name: Restore dependencies
-      run: dotnet restore OwcounterHUD.csproj
+      run: dotnet restore OwmetaHUD.csproj
     
     - name: Build
-      run: dotnet build OwcounterHUD.csproj --configuration Release --no-restore
+      run: dotnet build OwmetaHUD.csproj --configuration Release --no-restore
     
     - name: Test
       run: dotnet test --no-restore --verbosity normal
     
     - name: Publish (Self-contained)
-      run: dotnet publish OwcounterHUD.csproj -c Release -o publish-self-contained -r win-x64 --self-contained true
+      run: dotnet publish OwmetaHUD.csproj -c Release -o publish-self-contained -r win-x64 --self-contained true
     
     - name: Publish (Framework-dependent)
-      run: dotnet publish OwcounterHUD.csproj -c Release -o publish-framework-dependent
+      run: dotnet publish OwmetaHUD.csproj -c Release -o publish-framework-dependent
     
     - name: Zip artifacts
       run: |
-        Compress-Archive -Path publish-self-contained/* -DestinationPath OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
-        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
+        Compress-Archive -Path publish-self-contained/* -DestinationPath OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
     
     - name: Get commit message
       id: get_commit_message
@@ -89,7 +89,7 @@ jobs:
         tag_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
         release_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
         body: |
-          This release includes two versions of OWCOUNTER HUD:
+          This release includes two versions of OWMETA HUD:
           1. Framework-dependent: Smaller file, requires .NET 8.0 installed (https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
           2. Self-contained: Includes .NET runtime. Larger file, but works out-of-the-box.
           
@@ -106,8 +106,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
-        asset_name: OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        asset_path: ./OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        asset_name: OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
         asset_content_type: application/zip
     
     - name: Upload Release Asset (Framework-dependent)
@@ -116,8 +116,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
-        asset_name: OWCounterHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
+        asset_path: ./OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
+        asset_name: OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
         asset_content_type: application/zip
         
     - name: Commit version increment

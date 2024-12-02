@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 
-namespace Owcounter.Services
+namespace Owmeta.Services
 {
     public class ScreenshotMonitoringService : IDisposable
     {
