@@ -25,7 +25,7 @@ namespace Owmeta.Errcode {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cg1lcnJjb2RlLnByb3RvEg5vd21ldGEuZXJyY29kZRotZ2l0aHViLmNvbS9n",
-            "b2dvL3Byb3RvYnVmL2dvZ29wcm90by9nb2dvLnByb3RvKvIdCgdFcnJDb2Rl",
+            "b2dvL3Byb3RvYnVmL2dvZ29wcm90by9nb2dvLnByb3RvKpUeCgdFcnJDb2Rl",
             "Eg8KC1VOU1BFQ0lGSUVEEAASCwoHU1VDQ0VTUxABEgkKBFRPRE8QmgUSGAoT",
             "RVJSX05PVF9JTVBMRU1FTlRFRBCJBhITCg5FUlJfREVQUkVDQVRFRBD4BhIR",
             "CgxFUlJfSU5URVJOQUwQ5wcSFQoRRVJSX0lOVkFMSURfSU5QVVQQZRIVChFF",
@@ -104,15 +104,15 @@ namespace Owmeta.Errcode {
             "U1BFQ0lGSUNfTUFQEM0fEjIKLUVSUl9IRVJPX0RBVEFfUkVWRVJTRV9DT1VO",
             "VEVSX0VYSVNUU19BTExfTUFQUxDOHxIeChlFUlJfV0VCU09DS0VUX1NFTkRf",
             "RkFJTEVEEM8fEiEKHEVSUl9XRUJTT0NLRVRfTUFSU0hBTF9GQUlMRUQQ0B8S",
-            "HwoaRVJSX1VOU1VQUE9SVEVEX1JFU09MVVRJT04QiScSGwoWRVJSX0lOVkFM",
-            "SURfU0NSRUVOU0hPVBCKJxIfChpFUlJfSEVST19FWFRSQUNUSU9OX0ZBSUxF",
-            "RBCLJxIhChxFUlJfTVVMVElQTEVfVEFOS1NfQkxVRV9URUFNEIwnEiAKG0VS",
-            "Ul9NVUxUSVBMRV9UQU5LU19SRURfVEVBTRCNJxIiCh1FUlJfTVVMVElQTEVf",
-            "REFNQUdFX0JMVUVfVEVBTRCOJxIhChxFUlJfTVVMVElQTEVfREFNQUdFX1JF",
-            "RF9URUFNEI8nEiMKHkVSUl9NVUxUSVBMRV9TVVBQT1JUX0JMVUVfVEVBTRCQ",
-            "JxIiCh1FUlJfTVVMVElQTEVfU1VQUE9SVF9SRURfVEVBTRCRJ0IvWhhvd21l",
-            "dGEuaW8vZ28vcGtnL2VycmNvZGWqAg5Pd21ldGEuRXJyY29kZdDhHgBiBnBy",
-            "b3RvMw=="));
+            "IQocRVJSX1dPUktFUl9QUk9DRVNTSU5HX0ZBSUxFRBDRHxIfChpFUlJfVU5T",
+            "VVBQT1JURURfUkVTT0xVVElPThCJJxIbChZFUlJfSU5WQUxJRF9TQ1JFRU5T",
+            "SE9UEIonEh8KGkVSUl9IRVJPX0VYVFJBQ1RJT05fRkFJTEVEEIsnEiEKHEVS",
+            "Ul9NVUxUSVBMRV9UQU5LU19CTFVFX1RFQU0QjCcSIAobRVJSX01VTFRJUExF",
+            "X1RBTktTX1JFRF9URUFNEI0nEiIKHUVSUl9NVUxUSVBMRV9EQU1BR0VfQkxV",
+            "RV9URUFNEI4nEiEKHEVSUl9NVUxUSVBMRV9EQU1BR0VfUkVEX1RFQU0QjycS",
+            "IwoeRVJSX01VTFRJUExFX1NVUFBPUlRfQkxVRV9URUFNEJAnEiIKHUVSUl9N",
+            "VUxUSVBMRV9TVVBQT1JUX1JFRF9URUFNEJEnQi9aGG93bWV0YS5pby9nby9w",
+            "a2cvZXJyY29kZaoCDk93bWV0YS5FcnJjb2Rl0OEeAGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owmeta.Errcode.ErrCode), }, null, null));
@@ -250,6 +250,7 @@ namespace Owmeta.Errcode {
     [pbr::OriginalName("ERR_HERO_DATA_REVERSE_COUNTER_EXISTS_ALL_MAPS")] ErrHeroDataReverseCounterExistsAllMaps = 4046,
     [pbr::OriginalName("ERR_WEBSOCKET_SEND_FAILED")] ErrWebsocketSendFailed = 4047,
     [pbr::OriginalName("ERR_WEBSOCKET_MARSHAL_FAILED")] ErrWebsocketMarshalFailed = 4048,
+    [pbr::OriginalName("ERR_WORKER_PROCESSING_FAILED")] ErrWorkerProcessingFailed = 4049,
     [pbr::OriginalName("ERR_UNSUPPORTED_RESOLUTION")] ErrUnsupportedResolution = 5001,
     [pbr::OriginalName("ERR_INVALID_SCREENSHOT")] ErrInvalidScreenshot = 5002,
     [pbr::OriginalName("ERR_HERO_EXTRACTION_FAILED")] ErrHeroExtractionFailed = 5003,

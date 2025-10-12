@@ -104,10 +104,9 @@ namespace Owmeta
                 _notifyIcon = new TaskbarIcon
                 {
                     Icon = new System.Drawing.Icon(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OWMetaHUD.ico")),
-                    ToolTipText = "OWMETA HUD (F2: Toggle)"
+                    ToolTipText = "OWMETA HUD (F2: Toggle)",
+                    ContextMenu = new System.Windows.Controls.ContextMenu()
                 };
-
-                _notifyIcon.ContextMenu = new System.Windows.Controls.ContextMenu();
                 _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Toggle HUD (F2)", () => _overlayWindow?.ToggleVisibility()));
                 var logMenuItem = new System.Windows.Controls.MenuItem { Header = "Open Log" };
                 logMenuItem.Click += OpenLog;

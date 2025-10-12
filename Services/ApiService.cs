@@ -149,106 +149,53 @@ namespace Owmeta.Services
 
         public async Task<ScreenshotProcessingResponse?> SendScreenshotToServer(string screenshotBase64)
         {
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                throw new UnauthorizedException("No access token available");
+            }
+
+            // Pre-emptively refresh token if it's about to expire
+            if (IsTokenExpiredOrExpiringSoon())
+            {
+                await RefreshAndValidateToken();
+            }
+
             string formattedBase64 = $"data:image/jpeg;base64,{screenshotBase64}";
             var input = new { screenshot_base64 = formattedBase64, use_websocket = false };
             var content = new StringContent(JsonConvert.SerializeObject(input), System.Text.Encoding.UTF8, "application/json");
 
-            return await SendApiRequestWithRetry(async () =>
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var response = await httpClient.PostAsync("/process-screenshot", content);
+
+            if (response.IsSuccessStatusCode)
             {
-                // Pre-emptively refresh token if it's about to expire
-                if (IsTokenExpiredOrExpiringSoon())
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var settings = new JsonSerializerSettings
                 {
-                    await RefreshAndValidateToken();
-                }
-
-                var response = await httpClient.PostAsync("/process-screenshot", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    var settings = new JsonSerializerSettings
-                    {
-                        Converters = new List<JsonConverter>
-                        {
-                            new StringEnumConverter(),
-                            new ScreenshotProcessingResponseConverter()
-                        }
-                    };
-
-                    var result = JsonConvert.DeserializeObject<ScreenshotProcessingResponse>(jsonResponse, settings);
-                    if (result == null)
-                    {
-                        throw new ApiException("Failed to deserialize screenshot processing response");
-                    }
-                    return result;
-                }
-
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Logger.Log($"API request failed: {response.StatusCode} - {errorContent}");
-
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    throw new UnauthorizedException("Token expired");
-                }
-
-                throw new ApiException($"API request failed: {response.StatusCode}");
-            });
-        }
-
-        private async Task<T?> SendApiRequestWithRetry<T>(Func<Task<T>> apiCall)
-        {
-            int maxRetries = 3;
-            int currentRetry = 0;
-            bool tokenRefreshed = false;
-
-            while (currentRetry <= maxRetries)
+                    Converters = new List<JsonConverter>
             {
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    throw new UnauthorizedException("No access token available");
-                }
+                new StringEnumConverter(),
+                new ScreenshotProcessingResponseConverter()
+            }
+                };
 
-                // Proactively refresh token if it's about to expire
-                if (IsTokenExpiredOrExpiringSoon() && !tokenRefreshed)
+                var result = JsonConvert.DeserializeObject<ScreenshotProcessingResponse>(jsonResponse, settings);
+                if (result == null)
                 {
-                    Logger.Log("Token expired or expiring soon, attempting refresh");
-                    if (await RefreshAndValidateToken())
-                    {
-                        tokenRefreshed = true;
-                    }
-                    else
-                    {
-                        throw new UnauthorizedException("Failed to refresh expired token");
-                    }
+                    throw new ApiException("Failed to deserialize screenshot processing response");
                 }
-
-                try
-                {
-                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                    return await apiCall();
-                }
-                catch (UnauthorizedException)
-                {
-                    if (currentRetry < maxRetries && !tokenRefreshed && await RefreshAndValidateToken())
-                    {
-                        tokenRefreshed = true;
-                        currentRetry++;
-                        continue;
-                    }
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    Logger.Log($"API request failed: {e.Message}");
-                    if (currentRetry == maxRetries)
-                    {
-                        throw new ApiException($"Failed to process request after {maxRetries} retries");
-                    }
-                    currentRetry++;
-                    await Task.Delay(1000 * currentRetry); // Exponential backoff
-                }
+                return result;
             }
 
-            throw new ApiException("Unexpected error in request retry loop");
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Logger.Log($"API request failed: {response.StatusCode} - {errorContent}");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new UnauthorizedException("Token expired");
+            }
+
+            throw new ApiException($"API request failed: {response.StatusCode}");
         }
 
         private void DeleteTokenFile()
