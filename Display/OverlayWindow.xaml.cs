@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Owmeta.Model;
+using Owmeta.Services;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -24,6 +25,9 @@ namespace Owmeta.Display
         private const int WM_HOTKEY = 0x0312;
         private const int WM_DISPLAYCHANGE = 0x007E;
         private const int F2_HOTKEY_ID = 9000;
+        private const int F3_HOTKEY_ID = 9003;  // Composition dashboard toggle
+        private const int F5_HOTKEY_ID = 9001;  // Previous screenshot (dev mode)
+        private const int F6_HOTKEY_ID = 9002;  // Next screenshot (dev mode)
 
         private MatchState? _matchState;
         private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
@@ -71,6 +75,7 @@ namespace Owmeta.Display
         private HwndSource? _source;
         private IntPtr _windowHandle;
         private readonly bool _devMode;
+        private ScreenshotMonitoringService? _screenshotService;
 
         public OverlayWindow(bool devMode)
         {
@@ -93,6 +98,11 @@ namespace Owmeta.Display
 
             Loaded += OnWindowLoaded;
             Closing += OnWindowClosing;
+        }
+
+        public void SetScreenshotService(ScreenshotMonitoringService service)
+        {
+            _screenshotService = service;
         }
 
         private void OnDisplaySettingsChanged(object? sender, EventArgs e)
@@ -148,7 +158,21 @@ namespace Owmeta.Display
             _source = HwndSource.FromHwnd(_windowHandle);
             _source.AddHook(HandleMessages);
 
-            RegisterHotKey(_windowHandle, F2_HOTKEY_ID, 0, 0x71);
+            RegisterHotKey(_windowHandle, F2_HOTKEY_ID, 0, 0x71);  // F2
+            RegisterHotKey(_windowHandle, F3_HOTKEY_ID, 0, 0x72);  // F3
+
+            // Register F5/F6 for screenshot navigation in dev mode
+            if (_devMode)
+            {
+                RegisterHotKey(_windowHandle, F5_HOTKEY_ID, 0, 0x74);  // F5
+                RegisterHotKey(_windowHandle, F6_HOTKEY_ID, 0, 0x75);  // F6
+            }
+
+            // In dev mode, set resolution immediately since Overwatch isn't running
+            if (_devMode)
+            {
+                SetToScreenResolution();
+            }
 
             Visibility = _devMode ? Visibility.Visible : Visibility.Hidden;
             _positionTimer.Start();
@@ -226,6 +250,12 @@ namespace Owmeta.Display
             if (_windowHandle != IntPtr.Zero)
             {
                 UnregisterHotKey(_windowHandle, F2_HOTKEY_ID);
+                UnregisterHotKey(_windowHandle, F3_HOTKEY_ID);
+                if (_devMode)
+                {
+                    UnregisterHotKey(_windowHandle, F5_HOTKEY_ID);
+                    UnregisterHotKey(_windowHandle, F6_HOTKEY_ID);
+                }
             }
             _source?.RemoveHook(HandleMessages);
         }
@@ -256,15 +286,31 @@ namespace Owmeta.Display
                 }
                 else
                 {
-                    // Fallback to primary screen if Overwatch window isn't found
-                    Width = SystemParameters.PrimaryScreenWidth;
-                    Height = SystemParameters.PrimaryScreenHeight;
+                    // Fallback to primary screen actual pixels (not WPF logical units)
+                    var primaryScreen = Screen.PrimaryScreen;
+                    if (primaryScreen != null)
+                    {
+                        Left = primaryScreen.Bounds.Left;
+                        Top = primaryScreen.Bounds.Top;
+                        Width = primaryScreen.Bounds.Width;
+                        Height = primaryScreen.Bounds.Height;
+                        Logger.Log($"Using primary screen: pos=({Left},{Top}) size={Width}x{Height}");
+                    }
+                    else
+                    {
+                        Left = 0;
+                        Top = 0;
+                        Width = SystemParameters.PrimaryScreenWidth;
+                        Height = SystemParameters.PrimaryScreenHeight;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error setting screen resolution: {ex.Message}");
                 // Fallback to primary screen
+                Left = 0;
+                Top = 0;
                 Width = SystemParameters.PrimaryScreenWidth;
                 Height = SystemParameters.PrimaryScreenHeight;
             }
@@ -287,6 +333,47 @@ namespace Owmeta.Display
                 if (_matchState?.PlayerHero != null && _blueTeamAnalysis != null)
                 {
                     SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
+
+                    // Mark data as fresh
+                    DataFreshnessIndicator.MarkUpdated();
+                }
+
+                // Update composition dashboard (F3 layout)
+                if (_blueTeamAnalysis != null && _redTeamAnalysis != null)
+                {
+                    CompositionDashboard.Update(_blueTeamAnalysis, _redTeamAnalysis);
+                }
+            });
+        }
+
+        public void OnAnalysisStarted()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                DataFreshnessIndicator.SetAnalyzing();
+            });
+        }
+
+        public void OnAnalysisError(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                DataFreshnessIndicator.SetError(message);
+            });
+        }
+
+        public void RefreshDisplay()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_matchState?.PlayerHero != null && _blueTeamAnalysis != null)
+                {
+                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
+                }
+
+                if (_blueTeamAnalysis != null && _redTeamAnalysis != null)
+                {
+                    CompositionDashboard.Update(_blueTeamAnalysis, _redTeamAnalysis);
                 }
             });
         }
@@ -301,12 +388,66 @@ namespace Owmeta.Display
                 return;
             }
 
-            Visibility = IsVisible ? Visibility.Hidden : Visibility.Visible;
+            // If F3 layout is visible, switch to F2
+            if (CompositionLayout.Visibility == Visibility.Visible)
+            {
+                CompositionLayout.Visibility = Visibility.Hidden;
+                SwapLayout.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Toggle SwapLayout (F2)
+                SwapLayout.Visibility = SwapLayout.Visibility == Visibility.Visible
+                    ? Visibility.Hidden
+                    : Visibility.Visible;
+            }
+
+            UpdateWindowVisibility();
 
             if (IsVisible && overwatchRunning)
             {
                 PositionOverOverwatch(overwatchHandle);
             }
+        }
+
+        public void ToggleCompositionDashboard()
+        {
+            var overwatchHandle = FindOverwatchWindow();
+            bool overwatchRunning = overwatchHandle != IntPtr.Zero;
+
+            if (!_devMode && !overwatchRunning)
+            {
+                return;
+            }
+
+            // If F2 layout is visible, switch to F3
+            if (SwapLayout.Visibility == Visibility.Visible)
+            {
+                SwapLayout.Visibility = Visibility.Hidden;
+                CompositionLayout.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Toggle CompositionLayout (F3)
+                CompositionLayout.Visibility = CompositionLayout.Visibility == Visibility.Visible
+                    ? Visibility.Hidden
+                    : Visibility.Visible;
+            }
+
+            UpdateWindowVisibility();
+
+            if (IsVisible && overwatchRunning)
+            {
+                PositionOverOverwatch(overwatchHandle);
+            }
+        }
+
+        private void UpdateWindowVisibility()
+        {
+            // Show window if any layout is visible
+            bool anyVisible = SwapLayout.Visibility == Visibility.Visible ||
+                              CompositionLayout.Visibility == Visibility.Visible;
+            Visibility = anyVisible ? Visibility.Visible : Visibility.Hidden;
         }
 
         private IntPtr HandleMessages(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -315,6 +456,18 @@ namespace Owmeta.Display
             {
                 case WM_HOTKEY when wParam.ToInt32() == F2_HOTKEY_ID:
                     ToggleVisibility();
+                    handled = true;
+                    break;
+                case WM_HOTKEY when wParam.ToInt32() == F3_HOTKEY_ID:
+                    ToggleCompositionDashboard();
+                    handled = true;
+                    break;
+                case WM_HOTKEY when wParam.ToInt32() == F5_HOTKEY_ID:
+                    _screenshotService?.PreviousScreenshot();
+                    handled = true;
+                    break;
+                case WM_HOTKEY when wParam.ToInt32() == F6_HOTKEY_ID:
+                    _screenshotService?.NextScreenshot();
                     handled = true;
                     break;
                 case WM_DISPLAYCHANGE:

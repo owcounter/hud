@@ -24,6 +24,7 @@ namespace Owmeta
         private KeycloakAuth? _keycloakAuth;
         private ScreenshotMonitoringService? _monitoringService;
         private Mutex? _mutex;
+        private bool _mutexOwned;
         private const string MutexName = "Global\\OWMETA_HUD_INSTANCE";
         private const string ApiBaseUrl = "https://api.owmeta.io";
 
@@ -37,8 +38,12 @@ namespace Owmeta
         {
             base.OnStartup(e);
 
+            // Parse command-line arguments for settings
+            ParseSettingsArgs(e.Args);
+
             // Check for existing instance
             _mutex = new Mutex(true, MutexName, out bool createdNew);
+            _mutexOwned = createdNew;
 
             if (!createdNew)
             {
@@ -80,6 +85,7 @@ namespace Owmeta
                 _overlayWindow = new OverlayWindow(DEV_MODE);
                 _overlayWindow.Show();
                 _monitoringService = new ScreenshotMonitoringService(_apiService);
+                _overlayWindow.SetScreenshotService(_monitoringService);
 
                 _monitoringService.ScreenshotProcessed += (sender, response) =>
                 {
@@ -87,6 +93,16 @@ namespace Owmeta
                     {
                         _overlayWindow?.OnScreenshotProcessed(sender ?? this, response);
                     }
+                };
+
+                _monitoringService.AnalysisStarted += (sender, e) =>
+                {
+                    _overlayWindow?.OnAnalysisStarted();
+                };
+
+                _monitoringService.AnalysisError += (sender, message) =>
+                {
+                    _overlayWindow?.OnAnalysisError(message);
                 };
             }
             catch (Exception ex)
@@ -104,13 +120,15 @@ namespace Owmeta
                 _notifyIcon = new TaskbarIcon
                 {
                     Icon = new System.Drawing.Icon(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OWMetaHUD.ico")),
-                    ToolTipText = "OWMETA HUD (F2: Toggle)",
+                    ToolTipText = "OWMETA HUD (F2/F3: Toggle)",
                     ContextMenu = new System.Windows.Controls.ContextMenu()
                 };
-                _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Toggle HUD (F2)", () => _overlayWindow?.ToggleVisibility()));
+                _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Swap Suggestions (F2)", () => _overlayWindow?.ToggleVisibility()));
+                _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Team Composition (F3)", () => _overlayWindow?.ToggleCompositionDashboard()));
                 var logMenuItem = new System.Windows.Controls.MenuItem { Header = "Open Log" };
                 logMenuItem.Click += OpenLog;
                 _notifyIcon.ContextMenu.Items.Add(logMenuItem);
+                _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Settings", () => ShowSettingsWindow()));
                 _notifyIcon.ContextMenu.Items.Add(new System.Windows.Controls.Separator());
                 _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Logout", () => Logout()));
                 _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Exit", () => ExitApplication()));
@@ -131,12 +149,15 @@ namespace Owmeta
 
         private async void InitializeApplication()
         {
+            Logger.Log("[DEV] InitializeApplication - checking tokens...");
             if (await _apiService!.LoadAndValidateTokens())
             {
+                Logger.Log("[DEV] Tokens valid - starting services");
                 StartServices();
             }
             else
             {
+                Logger.Log("[DEV] Tokens invalid - showing login");
                 ShowLoginWindow();
             }
         }
@@ -212,6 +233,15 @@ namespace Owmeta
             );
         }
 
+        private void ShowSettingsWindow()
+        {
+            var settingsWindow = new SettingsWindow();
+            if (settingsWindow.ShowDialog() == true)
+            {
+                _overlayWindow?.RefreshDisplay();
+            }
+        }
+
         private void OpenLog(object? sender, EventArgs e)
         {
             try
@@ -255,10 +285,7 @@ namespace Owmeta
 
         private void ExitApplication()
         {
-            _notifyIcon?.Dispose();
             _monitoringService?.Dispose();
-            _mutex?.ReleaseMutex();
-            _mutex?.Dispose();
             Current.Shutdown();
         }
 
@@ -278,9 +305,35 @@ namespace Owmeta
         protected override void OnExit(ExitEventArgs e)
         {
             _notifyIcon?.Dispose();
-            _mutex?.ReleaseMutex();
+            if (_mutexOwned)
+            {
+                _mutex?.ReleaseMutex();
+            }
             _mutex?.Dispose();
             base.OnExit(e);
+        }
+
+        private void ParseSettingsArgs(string[] args)
+        {
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith("--min-score-f2=", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(arg.Substring("--min-score-f2=".Length), out int value))
+                    {
+                        AppSettings.Instance.MinScoreF2 = value;
+                        AppSettings.Instance.Save();
+                    }
+                }
+                else if (arg.StartsWith("--min-score-f3=", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(arg.Substring("--min-score-f3=".Length), out int value))
+                    {
+                        AppSettings.Instance.MinScoreF3 = value;
+                        AppSettings.Instance.Save();
+                    }
+                }
+            }
         }
     }
 }

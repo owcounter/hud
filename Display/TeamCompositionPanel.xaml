@@ -2,13 +2,87 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Owmeta.Display">
-    <!-- Added BorderThickness and made Border color bindable -->
-    <Border Background="#111827" 
-            CornerRadius="16" 
+    <!-- Glassmorphism style with semi-transparent background -->
+    <Border Background="#BF111827"
+            CornerRadius="16"
             Padding="16,9"
             BorderThickness="2"
             x:Name="MainBorder">
-        <ItemsControl x:Name="CompositionList">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="0" Opacity="0.5"/>
+        </Border.Effect>
+        <Grid>
+            <!-- Compact View (horizontal, single line) -->
+            <ItemsControl x:Name="CompactList" Visibility="Collapsed">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,40,0">
+                            <!-- Composition Icon -->
+                            <Viewbox Width="48" Height="48" Margin="0,0,12,0">
+                                <Path Data="{Binding PathData}"
+                                      Stroke="{Binding Color}"
+                                      StrokeThickness="2"
+                                      Fill="Transparent"
+                                      Stretch="Uniform"/>
+                            </Viewbox>
+                            <!-- Composition Name -->
+                            <TextBlock Text="{Binding Name}"
+                                     FontSize="28"
+                                     FontWeight="SemiBold"
+                                     Foreground="{Binding Color}"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,16,0"/>
+                            <!-- Score dots -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ItemsControl ItemsSource="{Binding GoodHeroes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Ellipse Width="16" Height="16" Fill="#22C55E" Margin="2,0"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding NeutralHeroes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Ellipse Width="16" Height="16" Fill="#EAB308" Margin="2,0"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding BadHeroes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Ellipse Width="16" Height="16" Fill="#EF4444" Margin="2,0"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Full View (vertical, multiple rows) -->
+            <ItemsControl x:Name="CompositionList" x:FieldModifier="private" Visibility="Visible">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel />
@@ -29,10 +103,11 @@
                                   Orientation="Horizontal" 
                                   VerticalAlignment="Center"
                                   Margin="16,0,0,0">
-                            <!-- Reduced icon size from 48 to 41 -->
-                            <Viewbox Width="41" Height="41" Margin="0,0,11,0">
+                            <Viewbox Width="48" Height="48" Margin="0,0,12,0">
                                 <Path Data="{Binding PathData}"
-                                      Fill="{Binding Color}"
+                                      Stroke="{Binding Color}"
+                                      StrokeThickness="2"
+                                      Fill="Transparent"
                                       Stretch="Uniform"/>
                             </Viewbox>
                             <!-- Reduced font size from 24 to 20 -->
@@ -151,23 +226,53 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Stats -->
+                        <!-- Stats as dots -->
                         <StackPanel Grid.Column="2"
                                   Orientation="Horizontal"
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Right"
                                   Margin="0,0,16,0">
-                            <!-- Reduced font size from 19 to 16 -->
-                            <TextBlock Text="Good: " Foreground="#22C55E" FontSize="16"/>
-                            <TextBlock Text="{Binding GoodCount}" Foreground="#22C55E" FontSize="16"/>
-                            <TextBlock Text=" - Ok: " Foreground="#EAB308" Margin="5,0" FontSize="16"/>
-                            <TextBlock Text="{Binding OkCount}" Foreground="#EAB308" FontSize="16"/>
-                            <TextBlock Text=" - Bad: " Foreground="#EF4444" Margin="5,0" FontSize="16"/>
-                            <TextBlock Text="{Binding BadCount}" Foreground="#EF4444" FontSize="16"/>
+                            <ItemsControl ItemsSource="{Binding GoodHeroes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Ellipse Width="16" Height="16" Fill="#22C55E" Margin="2,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding NeutralHeroes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Ellipse Width="16" Height="16" Fill="#EAB308" Margin="2,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding BadHeroes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Ellipse Width="16" Height="16" Fill="#EF4444" Margin="2,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+        </Grid>
     </Border>
 </UserControl>

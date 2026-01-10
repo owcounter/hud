@@ -10,6 +10,13 @@ namespace Owmeta.Services
         private readonly ApiService apiService;
         private readonly SynchronizationContext synchronizationContext;
         public event EventHandler<Model.ScreenshotProcessingResponse>? ScreenshotProcessed;
+        public event EventHandler? AnalysisStarted;
+        public event EventHandler<string>? AnalysisError;
+
+        // Dev mode navigation
+        private List<string> _allScreenshots = new();
+        private int _currentScreenshotIndex = 0;
+        private string _screenshotsPath = "";
 
         public ScreenshotMonitoringService(ApiService apiService)
         {
@@ -18,11 +25,19 @@ namespace Owmeta.Services
         }
         public void StartMonitoring()
         {
-            // Monitor Battle.net path
+            Logger.Log("[DEV] StartMonitoring called");
+            // Monitor Battle.net path - check both possible locations
             string bnetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Overwatch", "ScreenShots", "Overwatch");
+            string bnetPathAlt = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Overwatch", "ScreenShots");
+
             if (Directory.Exists(bnetPath))
             {
                 AddWatcher(bnetPath);
+            }
+            else if (Directory.Exists(bnetPathAlt))
+            {
+                AddWatcher(bnetPathAlt);
+                bnetPath = bnetPathAlt;
             }
             else
             {
@@ -41,23 +56,114 @@ namespace Owmeta.Services
             }
 
             // In dev mode, process the latest file immediately
-            if (App.DEV_MODE && Directory.Exists(bnetPath))
+            if (App.DEV_MODE)
             {
-                var latestFile = Directory.GetFiles(bnetPath, "*.jpg")
-                    .Concat(Directory.GetFiles(bnetPath, "*.png"))
-                    .OrderByDescending(f => File.GetLastWriteTime(f))
-                    .FirstOrDefault();
+                ProcessLatestScreenshotForDev(bnetPath);
+            }
+        }
 
+        private void ProcessLatestScreenshotForDev(string bnetPath)
+        {
+            // First check for dev-screenshots folder in app directory (easiest for testing)
+            string devScreenshotsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dev-screenshots");
+
+            string? latestFile = null;
+
+            // Priority 1: dev-screenshots folder in app directory
+            if (Directory.Exists(devScreenshotsPath))
+            {
+                _screenshotsPath = devScreenshotsPath;
+                LoadAllScreenshots(devScreenshotsPath);
+                latestFile = _allScreenshots.FirstOrDefault();
                 if (latestFile != null)
                 {
-                    var directory = Path.GetDirectoryName(latestFile);
-                    if (directory != null)
-                    {
-                        Task.Delay(200).Wait(); // Keep the file write delay
-                        OnFileCreated(this, new FileSystemEventArgs(WatcherChangeTypes.Created, directory, Path.GetFileName(latestFile)));
-                    }
+                    Logger.Log($"[DEV] Found {_allScreenshots.Count} screenshots in dev-screenshots folder");
                 }
             }
+
+            // Priority 2: Overwatch screenshots folder
+            if (latestFile == null && Directory.Exists(bnetPath))
+            {
+                _screenshotsPath = bnetPath;
+                LoadAllScreenshots(bnetPath);
+                latestFile = _allScreenshots.FirstOrDefault();
+                if (latestFile != null)
+                {
+                    Logger.Log($"[DEV] Found {_allScreenshots.Count} screenshots in Overwatch folder");
+                }
+            }
+
+            if (latestFile != null)
+            {
+                _currentScreenshotIndex = 0;
+                Logger.Log($"[DEV] Auto-processing screenshot: {Path.GetFileName(latestFile)}");
+                Logger.Log($"[DEV] Use F3/F4 to navigate between screenshots");
+                var directory = Path.GetDirectoryName(latestFile);
+                if (directory != null)
+                {
+                    // Small delay to ensure UI is ready
+                    Task.Delay(500).ContinueWith(_ =>
+                    {
+                        synchronizationContext.Post(__ =>
+                        {
+                            OnFileCreated(this, new FileSystemEventArgs(WatcherChangeTypes.Created, directory, Path.GetFileName(latestFile)));
+                        }, null);
+                    });
+                }
+            }
+            else
+            {
+                Logger.Log($"[DEV] No screenshots found. To test:");
+                Logger.Log($"[DEV]   1. Create folder: {devScreenshotsPath}");
+                Logger.Log($"[DEV]   2. Put an Overwatch Tab screen screenshot (.jpg or .png) in it");
+                Logger.Log($"[DEV]   OR use screenshots from: {bnetPath}");
+            }
+        }
+
+        private void LoadAllScreenshots(string path)
+        {
+            _allScreenshots = Directory.GetFiles(path, "*.jpg", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(path, "*.png", SearchOption.AllDirectories))
+                .OrderByDescending(f => File.GetLastWriteTime(f))
+                .ToList();
+        }
+
+        public void NextScreenshot()
+        {
+            if (!App.DEV_MODE || _allScreenshots.Count == 0) return;
+
+            _currentScreenshotIndex = (_currentScreenshotIndex + 1) % _allScreenshots.Count;
+            ProcessScreenshotAtIndex(_currentScreenshotIndex);
+        }
+
+        public void PreviousScreenshot()
+        {
+            if (!App.DEV_MODE || _allScreenshots.Count == 0) return;
+
+            _currentScreenshotIndex = (_currentScreenshotIndex - 1 + _allScreenshots.Count) % _allScreenshots.Count;
+            ProcessScreenshotAtIndex(_currentScreenshotIndex);
+        }
+
+        private void ProcessScreenshotAtIndex(int index)
+        {
+            if (index < 0 || index >= _allScreenshots.Count) return;
+
+            var file = _allScreenshots[index];
+            var directory = Path.GetDirectoryName(file);
+            if (directory != null)
+            {
+                Logger.Log($"[DEV] Processing screenshot {index + 1}/{_allScreenshots.Count}: {Path.GetFileName(file)}");
+                OnFileCreated(this, new FileSystemEventArgs(WatcherChangeTypes.Created, directory, Path.GetFileName(file)));
+            }
+        }
+
+        private string? FindLatestScreenshot(string path, int skip = 0)
+        {
+            return Directory.GetFiles(path, "*.jpg", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(path, "*.png", SearchOption.AllDirectories))
+                .OrderByDescending(f => File.GetLastWriteTime(f))
+                .Skip(skip)
+                .FirstOrDefault();
         }
 
         private string? GetSteamScreenshotPath()
@@ -190,11 +296,17 @@ namespace Owmeta.Services
 
                 try
                 {
+                    Logger.Log($"[DEV] Processing file: {e.FullPath}");
+                    // Notify that analysis is starting
+                    AnalysisStarted?.Invoke(sender ?? this, EventArgs.Empty);
+
                     using (var image = Image.FromFile(e.FullPath))
                     using (var ms = new MemoryStream())
                     {
+                        Logger.Log($"[DEV] Image size: {image.Width}x{image.Height}");
                         image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
                         var imageBytes = ms.ToArray();
+                        Logger.Log($"[DEV] Base64 length: {imageBytes.Length} bytes");
                         var base64String = Convert.ToBase64String(imageBytes);
 
                         var response = await apiService.SendScreenshotToServer(base64String);
@@ -205,12 +317,14 @@ namespace Owmeta.Services
                         else
                         {
                             Logger.Log("Received null response from screenshot processing");
+                            AnalysisError?.Invoke(sender ?? this, "No response from server");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Log($"Error processing screenshot: {ex.Message}");
+                    AnalysisError?.Invoke(sender ?? this, "Error processing screenshot");
                 }
             }, null);
         }

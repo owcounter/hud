@@ -11,8 +11,12 @@ namespace Owmeta
         {
             try
             {
+                var logMessage = $"[{DateTime.Now}] {message}";
+#if DEBUG
+                Console.WriteLine(logMessage);
+#endif
                 CheckLogFileSize();
-                File.AppendAllText(LogFilePath, $"[{DateTime.Now}] {message}{Environment.NewLine}");
+                File.AppendAllText(LogFilePath, logMessage + Environment.NewLine);
             }
             catch (Exception ex)
             {

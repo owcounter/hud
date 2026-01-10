@@ -22,41 +22,67 @@
             <Grid Width="2560" Height="1440"
                   Background="transparent">
                 <Grid x:Name="MainGrid">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <!-- F2 Layout - Swap Suggestions -->
+                    <Grid x:Name="SwapLayout" Visibility="Hidden">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <!-- Left Panel -->
-                    <Border Grid.Column="0"
-                            Grid.Row="0"
-                            Background="Transparent"
-                            VerticalAlignment="Top"
-                            Margin="27,67,13,0">
-                        <local:TeamCompositionPanel x:Name="BlueTeamPanel" IsBlueTeam="True"/>
-                    </Border>
+                        <!-- Left Panel - Blue Team Composition -->
+                        <Border Grid.Column="0"
+                                Grid.Row="1"
+                                Background="Transparent"
+                                VerticalAlignment="Top"
+                                Margin="27,20,13,0">
+                            <local:TeamCompositionPanel x:Name="BlueTeamPanel" IsBlueTeam="True" IsCompact="True"/>
+                        </Border>
 
-                    <!-- Right Panel -->
-                    <Border Grid.Column="1"
-                            Grid.Row="0"
-                            Background="Transparent"
-                            VerticalAlignment="Top"
-                            Margin="13,67,27,0">
-                        <local:TeamCompositionPanel x:Name="RedTeamPanel" IsBlueTeam="False"/>
-                    </Border>
+                        <!-- Right Panel - Red Team Composition -->
+                        <Border Grid.Column="2"
+                                Grid.Row="1"
+                                Background="Transparent"
+                                VerticalAlignment="Top"
+                                Margin="13,20,27,0">
+                            <local:TeamCompositionPanel x:Name="RedTeamPanel" IsBlueTeam="False" IsCompact="True"/>
+                        </Border>
 
-                    <!-- Swap Suggestions Panel -->
-                    <Border Grid.Row="1" Grid.ColumnSpan="2"
-                            Background="Transparent"
-                            VerticalAlignment="Top"
-                            Margin="27,20,27,0">
-                        <local:SwapSuggestionsPanel x:Name="SwapSuggestionsPanel"/>
-                    </Border>
+                        <!-- Swap Suggestions Panel -->
+                        <Border Grid.Row="2" Grid.ColumnSpan="3"
+                                Background="Transparent"
+                                VerticalAlignment="Top"
+                                Margin="27,16,27,0">
+                            <local:SwapSuggestionsPanel x:Name="SwapSuggestionsPanel"/>
+                        </Border>
+
+                        <!-- Data Freshness Indicator (Bottom right) -->
+                        <Border Grid.Row="3" Grid.Column="2"
+                                Background="Transparent"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right"
+                                Margin="0,10,27,0">
+                            <local:DataFreshnessIndicator x:Name="DataFreshnessIndicator"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- F3 Layout - Composition Dashboard -->
+                    <Grid x:Name="CompositionLayout" Visibility="Hidden">
+                        <Border Background="Transparent"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Stretch"
+                                Margin="27,20,27,0">
+                            <local:CompositionDashboard x:Name="CompositionDashboard"/>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Grid>
         </Viewbox>
