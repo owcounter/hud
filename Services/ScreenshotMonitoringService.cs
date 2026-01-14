@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Windows.Forms;
 
 namespace Owmeta.Services
 {
@@ -97,7 +99,7 @@ namespace Owmeta.Services
             {
                 _currentScreenshotIndex = 0;
                 Logger.Log($"[DEV] Auto-processing screenshot: {Path.GetFileName(latestFile)}");
-                Logger.Log($"[DEV] Use F3/F4 to navigate between screenshots");
+                Logger.Log($"[DEV] Use F5/F6 to navigate between screenshots");
                 var directory = Path.GetDirectoryName(latestFile);
                 if (directory != null)
                 {
@@ -142,6 +144,76 @@ namespace Owmeta.Services
 
             _currentScreenshotIndex = (_currentScreenshotIndex - 1 + _allScreenshots.Count) % _allScreenshots.Count;
             ProcessScreenshotAtIndex(_currentScreenshotIndex);
+        }
+
+        public void CaptureAndProcessScreenshot()
+        {
+            synchronizationContext.Post(async _ =>
+            {
+                // Check if Overwatch is running (unless in dev mode)
+                var overwatchProcess = Process.GetProcessesByName("Overwatch").FirstOrDefault();
+                if (!App.DEV_MODE && overwatchProcess == null)
+                {
+                    Logger.Log("TAB pressed but Overwatch is not running - ignoring");
+                    return;
+                }
+
+                // Wait for the scoreboard to appear after TAB is pressed
+                await Task.Delay(AppSettings.Instance.ScreenshotDelayMs);
+
+                try
+                {
+                    // Capture the screen where Overwatch is running
+                    Screen? screen = null;
+                    if (overwatchProcess != null && overwatchProcess.MainWindowHandle != IntPtr.Zero)
+                    {
+                        screen = Screen.FromHandle(overwatchProcess.MainWindowHandle);
+                    }
+                    screen ??= Screen.PrimaryScreen;
+
+                    if (screen == null)
+                    {
+                        Logger.Log("Could not get screen for capture");
+                        return;
+                    }
+
+                    Logger.Log($"Capturing screen: {screen.DeviceName} ({screen.Bounds.Width}x{screen.Bounds.Height})");
+
+                    var bounds = screen.Bounds;
+                    using var bitmap = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
+                    using (var graphics = Graphics.FromImage(bitmap))
+                    {
+                        graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+                    }
+
+                    // Notify that analysis is starting
+                    AnalysisStarted?.Invoke(this, EventArgs.Empty);
+
+                    // Convert to base64 directly in memory (no temp file needed)
+                    using var ms = new MemoryStream();
+                    bitmap.Save(ms, ImageFormat.Jpeg);
+                    var imageBytes = ms.ToArray();
+                    var base64String = Convert.ToBase64String(imageBytes);
+
+                    Logger.Log($"Screenshot captured ({imageBytes.Length} bytes)");
+
+                    var response = await apiService.SendScreenshotToServer(base64String);
+                    if (response != null)
+                    {
+                        ScreenshotProcessed?.Invoke(this, response);
+                    }
+                    else
+                    {
+                        Logger.Log("Received null response from screenshot processing");
+                        AnalysisError?.Invoke(this, "No response from server");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Error capturing/processing screenshot: {ex.Message}");
+                    AnalysisError?.Invoke(this, "Error capturing screenshot");
+                }
+            }, null);
         }
 
         private void ProcessScreenshotAtIndex(int index)

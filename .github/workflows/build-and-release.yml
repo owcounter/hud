@@ -1,8 +1,9 @@
-name: Windows Build and Auto-Release
+name: Windows Build and Release
 
 on:
   push:
-    branches: [ master ]
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v1.2.3, etc.
 
 permissions:
   contents: write
@@ -10,44 +11,32 @@ permissions:
 jobs:
   build-and-release:
     runs-on: windows-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-    
-    - name: Get version
+
+    - name: Get version from tag
       id: get_version
       run: |
-        $xml = [Xml](Get-Content OwmetaHUD.csproj)
-        $version = $xml.Project.PropertyGroup.Version
-        if ([string]::IsNullOrEmpty($version)) {
-          $version = "1.0.0"
-        }
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-    
-    - name: Increment version
-      id: increment_version
-      run: |
-        $version = "${{ steps.get_version.outputs.VERSION }}"
-        $parts = $version.Split('.')
-        $parts[2] = [int]$parts[2] + 1
-        $newVersion = $parts -join '.'
-        echo "NEW_VERSION=$newVersion" >> $env:GITHUB_OUTPUT
-    
+
     - name: Update project version
       run: |
         $file = 'OwmetaHUD.csproj'
         $xml = [Xml](Get-Content $file)
         if ($null -eq $xml.Project.PropertyGroup.Version) {
             $versionElement = $xml.CreateElement("Version")
-            $versionElement.InnerText = "${{ steps.increment_version.outputs.NEW_VERSION }}"
+            $versionElement.InnerText = "${{ steps.get_version.outputs.VERSION }}"
             $xml.Project.PropertyGroup.AppendChild($versionElement)
         } else {
-            $xml.Project.PropertyGroup.Version = "${{ steps.increment_version.outputs.NEW_VERSION }}"
+            $xml.Project.PropertyGroup.Version = "${{ steps.get_version.outputs.VERSION }}"
         }
         $xml.Save($file)
     
@@ -62,22 +51,27 @@ jobs:
     
     - name: Publish (Self-contained)
       run: dotnet publish OwmetaHUD.csproj -c Release -o publish-self-contained -r win-x64 --self-contained true
-    
+
     - name: Publish (Framework-dependent)
       run: dotnet publish OwmetaHUD.csproj -c Release -o publish-framework-dependent
-    
+
     - name: Zip artifacts
       run: |
-        Compress-Archive -Path publish-self-contained/* -DestinationPath OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
-        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
-    
-    - name: Get commit message
-      id: get_commit_message
+        Compress-Archive -Path publish-self-contained/* -DestinationPath OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-self-contained.zip
+        Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-framework-dependent.zip
+
+    - name: Get commits since last tag
+      id: get_changelog
       run: |
-        $commit_message = (git log --format=%B -n 1 ${{ github.sha }}) -replace "`r?`n","`n"
-        $formatted_message = $commit_message -split "`n" | Where-Object { $_ } | ForEach-Object { "- $_`n" }
-        echo "COMMIT_MESSAGE<<EOF" >> $env:GITHUB_OUTPUT
-        echo "$formatted_message" >> $env:GITHUB_OUTPUT
+        $previousTag = git describe --tags --abbrev=0 HEAD^ 2>$null
+        if ($previousTag) {
+          $commits = git log --format="- %s" "$previousTag..HEAD" | Out-String
+        } else {
+          $commits = git log --format="- %s" -10 HEAD | Out-String
+        }
+        $commits = $commits -replace "`r?`n","`n"
+        echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
+        echo "$commits" >> $env:GITHUB_OUTPUT
         echo "EOF" >> $env:GITHUB_OUTPUT
 
     - name: Create Release
@@ -86,43 +80,36 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
-        release_name: v${{ steps.increment_version.outputs.NEW_VERSION }}
+        tag_name: ${{ github.ref_name }}
+        release_name: ${{ github.ref_name }}
         body: |
           This release includes two versions of OWMETA HUD:
-          1. Framework-dependent: Smaller file, requires .NET 8.0 installed (https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
-          2. Self-contained: Includes .NET runtime. Larger file, but works out-of-the-box.
-          
+          1. **Framework-dependent**: Smaller file, requires .NET 8.0 installed (https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+          2. **Self-contained**: Includes .NET runtime. Larger file, but works out-of-the-box.
+
           Choose self-contained for convenience, framework-dependent for smaller download.
 
           **Changes:**
-          ${{ steps.get_commit_message.outputs.COMMIT_MESSAGE }}
+          ${{ steps.get_changelog.outputs.CHANGELOG }}
         draft: false
         prerelease: false
-    
+
     - name: Upload Release Asset (Self-contained)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
-        asset_name: OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-self-contained.zip
+        asset_path: ./OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-self-contained.zip
+        asset_name: OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-self-contained.zip
         asset_content_type: application/zip
-    
+
     - name: Upload Release Asset (Framework-dependent)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
-        asset_name: OWMetaHUD-v${{ steps.increment_version.outputs.NEW_VERSION }}-framework-dependent.zip
+        asset_path: ./OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-framework-dependent.zip
+        asset_name: OWMetaHUD-v${{ steps.get_version.outputs.VERSION }}-framework-dependent.zip
         asset_content_type: application/zip
-        
-    - name: Commit version increment
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -am "Bump version to ${{ steps.increment_version.outputs.NEW_VERSION }}"
-        git push

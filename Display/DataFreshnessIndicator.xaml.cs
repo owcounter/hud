@@ -113,5 +113,11 @@ namespace Owmeta.Display
             StatusText.Text = message;
             StatusDot.Fill = OldBrush;
         }
+
+        public void SetStaleWarning()
+        {
+            StatusText.Text = "Using cached data";
+            StatusDot.Fill = StaleBrush;
+        }
     }
 }

@@ -25,6 +25,7 @@ namespace Owmeta
         private ScreenshotMonitoringService? _monitoringService;
         private Mutex? _mutex;
         private bool _mutexOwned;
+        private bool _isShowingLogin;
         private const string MutexName = "Global\\OWMETA_HUD_INSTANCE";
         private const string ApiBaseUrl = "https://api.owmeta.io";
 
@@ -81,6 +82,10 @@ namespace Owmeta
             {
                 _keycloakAuth = new KeycloakAuth();
                 _apiService = new ApiService(ApiBaseUrl, _keycloakAuth);
+
+                // Subscribe to session expiry to show login prompt
+                _apiService.SessionExpired += OnSessionExpired;
+
                 IconUtils.Initialize();
                 _overlayWindow = new OverlayWindow(DEV_MODE);
                 _overlayWindow.Show();
@@ -181,6 +186,9 @@ namespace Owmeta
 
         private void ShowLoginWindow()
         {
+            if (_isShowingLogin) return;
+            _isShowingLogin = true;
+
             var loginWindow = new LoginWindow(_keycloakAuth!);
             if (loginWindow.ShowDialog() == true)
             {
@@ -190,6 +198,7 @@ namespace Owmeta
                     {
                         Dispatcher.Invoke(() =>
                         {
+                            _isShowingLogin = false;
                             ShowWelcomeMessage();
                             StartServices();
                         });
@@ -198,6 +207,7 @@ namespace Owmeta
                     {
                         Dispatcher.Invoke(() =>
                         {
+                            _isShowingLogin = false;
                             MessageBox.Show("Login failed. Please try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ShowLoginWindow();
                         });
@@ -206,6 +216,7 @@ namespace Owmeta
             }
             else
             {
+                _isShowingLogin = false;
                 ExitApplication();
             }
         }
@@ -283,9 +294,25 @@ namespace Owmeta
             }
         }
 
+        private void OnSessionExpired(object? sender, EventArgs e)
+        {
+            Logger.Log("Session expired - prompting for re-login");
+            Dispatcher.Invoke(() =>
+            {
+                UpdateTrayTooltip("OWMETA HUD - Session expired");
+                ShowNotification("OWMETA HUD", "Your session has expired. Please login again.");
+                ShowLoginWindow();
+            });
+        }
+
         private void ExitApplication()
         {
             _monitoringService?.Dispose();
+            if (_apiService != null)
+            {
+                _apiService.SessionExpired -= OnSessionExpired;
+                _apiService.Dispose();
+            }
             Current.Shutdown();
         }
 
@@ -305,6 +332,7 @@ namespace Owmeta
         protected override void OnExit(ExitEventArgs e)
         {
             _notifyIcon?.Dispose();
+            _apiService?.Dispose();
             if (_mutexOwned)
             {
                 _mutex?.ReleaseMutex();

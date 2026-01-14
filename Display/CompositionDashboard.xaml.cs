@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace Owmeta.Display
 {
@@ -13,6 +14,12 @@ namespace Owmeta.Display
         public ObservableCollection<VulnerableHeroViewModel> VulnerableTeammates { get; } = new();
         public ObservableCollection<DangerousHeroViewModel> DangerousEnemies { get; } = new();
         public ObservableCollection<TeamSwapViewModel> TeamSwapSuggestions { get; } = new();
+
+        // Matchup indicator colors and threshold
+        private const int MatchupAdvantageThreshold = 3;
+        private static readonly SolidColorBrush AdvantageColor = new(Color.FromRgb(0x10, 0xB9, 0x81)); // Green #10B981
+        private static readonly SolidColorBrush DisadvantageColor = new(Color.FromRgb(0xEF, 0x44, 0x44)); // Red #EF4444
+        private static readonly SolidColorBrush EvenColor = new(Color.FromRgb(0xF5, 0x9E, 0x0B)); // Amber #F59E0B
 
         public CompositionDashboard()
         {
@@ -23,6 +30,40 @@ namespace Owmeta.Display
         }
 
         private MapName? _currentMap;
+
+        private void UpdateMatchupIndicator()
+        {
+            int blueScore = BlueTeamPanel.LastScore;
+            int redScore = RedTeamPanel.LastScore;
+            int diff = blueScore - redScore;
+
+            string text;
+            SolidColorBrush color;
+
+            if (diff >= MatchupAdvantageThreshold)
+            {
+                text = "ADVANTAGE";
+                color = AdvantageColor;
+            }
+            else if (diff <= -MatchupAdvantageThreshold)
+            {
+                text = "DISADVANTAGE";
+                color = DisadvantageColor;
+            }
+            else
+            {
+                text = "EVEN";
+                color = EvenColor;
+            }
+
+            MatchupText.Text = text;
+            MatchupText.Foreground = color;
+
+            if (MatchupIcon != null)
+            {
+                MatchupIcon.Stroke = color;
+            }
+        }
 
         public void Update(
             Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis,
@@ -36,6 +77,9 @@ namespace Owmeta.Display
                 // Update team composition panels
                 BlueTeamPanel.UpdateCompositions(blueTeamAnalysis);
                 RedTeamPanel.UpdateCompositions(redTeamAnalysis);
+
+                // Update matchup indicator
+                UpdateMatchupIndicator();
 
                 VulnerableTeammates.Clear();
                 DangerousEnemies.Clear();

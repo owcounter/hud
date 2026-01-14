@@ -9,15 +9,36 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Team Composition Panels (no parent container) -->
+        <!-- Team Composition Panels with Matchup Indicator -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="26"/>
+                <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <local:TeamCompositionPanel x:Name="BlueTeamPanel" IsBlueTeam="True" Grid.Column="0"/>
+
+            <!-- Matchup Advantage Indicator -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- Swords Icon -->
+                <Viewbox Width="32" Height="32" Margin="0,0,0,6">
+                    <Path x:Name="MatchupIcon"
+                          Data="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6 3.5 3.5c1.5 1.5 1.5 4 0 5.5s-4 1.5-5.5 0L13 19M5 19l6-6-3.5-3.5c-1.5-1.5-4-1.5-5.5 0s-1.5 4 0 5.5L5 19"
+                          Stroke="#10B981"
+                          StrokeThickness="1.5"
+                          Fill="Transparent"
+                          Stretch="Uniform"/>
+                </Viewbox>
+                <!-- Advantage Text -->
+                <TextBlock x:Name="MatchupText"
+                          Text="EVEN"
+                          FontSize="11"
+                          FontWeight="Bold"
+                          Foreground="#F59E0B"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+
             <local:TeamCompositionPanel x:Name="RedTeamPanel" IsBlueTeam="False" Grid.Column="2"/>
         </Grid>
 

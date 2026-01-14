@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 
 namespace Owmeta.Display
 {
@@ -16,11 +17,18 @@ namespace Owmeta.Display
             { CompositionType.Poke, ("#c084fc", "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4z") }
         };
 
+        // Neon glow colors
+        private static readonly Color CyanGlow = Color.FromRgb(0x00, 0xf0, 0xff);      // #00f0ff
+        private static readonly Color MagentaGlow = Color.FromRgb(0xff, 0x00, 0xaa);   // #ff00aa
+        private static readonly Color CyanBorder = Color.FromRgb(0x38, 0xbd, 0xf8);    // #38bdf8
+        private static readonly Color MagentaBorder = Color.FromRgb(0xf4, 0x3f, 0x5e); // #f43f5e
+
         private bool isBlueTeam;
         private bool isCompact;
         private readonly int ICON_SIZE = 54;
 
         public ObservableCollection<CompositionViewModel> Compositions { get; } = new();
+        public int LastScore { get; private set; }
 
         public bool IsBlueTeam
         {
@@ -28,11 +36,24 @@ namespace Owmeta.Display
             set
             {
                 isBlueTeam = value;
-                MainBorder.BorderBrush = new SolidColorBrush(
-                    isBlueTeam ?
-                    Color.FromRgb(82, 133, 255) :
-                    Color.FromRgb(255, 65, 65));
+                UpdateTeamStyling();
             }
+        }
+
+        private void UpdateTeamStyling()
+        {
+            // Update border color
+            MainBorder.BorderBrush = new SolidColorBrush(isBlueTeam ? CyanBorder : MagentaBorder);
+
+            // Update glow effect
+            if (MainBorder.Effect is DropShadowEffect glowEffect)
+            {
+                glowEffect.Color = isBlueTeam ? CyanGlow : MagentaGlow;
+            }
+
+            // Update team label
+            TeamLabelText.Text = isBlueTeam ? "YOUR TEAM" : "ENEMY TEAM";
+            TeamLabelText.Foreground = new SolidColorBrush(isBlueTeam ? CyanBorder : MagentaBorder);
         }
 
         public bool IsCompact
@@ -73,6 +94,9 @@ namespace Owmeta.Display
 
             try
             {
+                // Calculate and display team score
+                int teamScore = teamData.Values.Sum(a => a.HeroScore);
+                UpdateScoreDisplay(teamScore);
                 var compositions = new List<CompositionViewModel>();
 
                 foreach (var compType in Enum.GetValues<CompositionType>().Where(c => c != CompositionType.Unspecified))
@@ -130,6 +154,23 @@ namespace Owmeta.Display
             {
                 Logger.Log($"Failed to update compositions: {ex.Message}");
             }
+        }
+
+        private void UpdateScoreDisplay(int score)
+        {
+            LastScore = score;
+            string prefix = score > 0 ? "+" : "";
+            TeamScoreText.Text = $"{prefix}{score}";
+
+            // Score colors
+            var greenColor = Color.FromRgb(0x10, 0xB9, 0x81);  // #10B981
+            var redColor = Color.FromRgb(0xEF, 0x44, 0x44);    // #EF4444
+
+            TeamScoreText.Foreground = new SolidColorBrush(score >= 0 ? greenColor : redColor);
+
+            // Update badge background with transparency
+            var bgColor = score >= 0 ? greenColor : redColor;
+            ScoreBadgeBackground.Color = Color.FromArgb(0x26, bgColor.R, bgColor.G, bgColor.B); // 15% opacity
         }
     }
 

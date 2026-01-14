@@ -2,12 +2,18 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="OWMETA HUD Settings"
-        Height="200" Width="350"
+        Height="450" Width="420"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#1F2937">
+        Background="#1F2937"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewMouseDown="Window_PreviewMouseDown">
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -21,7 +27,7 @@
                 <ColumnDefinition Width="80"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="Min Score for F2 (Swap Suggestions)"
+                <TextBlock Text="Min Score for Swap Suggestions"
                            Foreground="White" FontWeight="SemiBold"/>
                 <TextBlock Text="Only show heroes with score >= this value"
                            Foreground="#9CA3AF" FontSize="11"/>
@@ -38,7 +44,7 @@
                 <ColumnDefinition Width="80"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="Min Score for F3 (Team Swaps)"
+                <TextBlock Text="Min Score for Team Swaps"
                            Foreground="White" FontWeight="SemiBold"/>
                 <TextBlock Text="Only show swaps with score >= this value"
                            Foreground="#9CA3AF" FontSize="11"/>
@@ -48,8 +54,71 @@
                      Width="60" Height="28" FontSize="14" TextAlignment="Center"/>
         </Grid>
 
+        <!-- Keybinding: Swap Suggestions -->
+        <Grid Grid.Row="2" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Swap Suggestions Hotkey"
+                           Foreground="White" FontWeight="SemiBold"/>
+                <TextBlock Text="Toggle swap suggestions overlay"
+                           Foreground="#9CA3AF" FontSize="11"/>
+            </StackPanel>
+            <Button x:Name="SwapKeyButton" Grid.Column="1"
+                    Content="F2" Height="28"
+                    VerticalAlignment="Center" HorizontalAlignment="Right"
+                    Width="100" Click="SwapKeyButton_Click"/>
+        </Grid>
+
+        <!-- Keybinding: Team Composition -->
+        <Grid Grid.Row="3" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Team Composition Hotkey"
+                           Foreground="White" FontWeight="SemiBold"/>
+                <TextBlock Text="Toggle team composition overlay"
+                           Foreground="#9CA3AF" FontSize="11"/>
+            </StackPanel>
+            <Button x:Name="TeamKeyButton" Grid.Column="1"
+                    Content="F3" Height="28"
+                    VerticalAlignment="Center" HorizontalAlignment="Right"
+                    Width="100" Click="TeamKeyButton_Click"/>
+        </Grid>
+
+        <!-- Auto Screenshot Toggle + Key -->
+        <Grid Grid.Row="4" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+            <CheckBox x:Name="TabScreenshotCheckBox" Grid.Column="0"
+                      VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Auto-capture on Scoreboard Key"
+                           Foreground="White" FontWeight="SemiBold"/>
+                <TextBlock Text="Set to same key as OW scoreboard (TAB default)"
+                           Foreground="#9CA3AF" FontSize="11"/>
+            </StackPanel>
+            <Button x:Name="ScreenshotKeyButton" Grid.Column="2"
+                    Content="Tab" Height="28"
+                    VerticalAlignment="Center" HorizontalAlignment="Right"
+                    Width="100" Click="ScreenshotKeyButton_Click"/>
+        </Grid>
+
+        <!-- Info text -->
+        <TextBlock Grid.Row="5"
+                   Text="Click a button then press any key or Mouse4/Mouse5 to rebind. Press Escape to cancel."
+                   Foreground="#6B7280" FontSize="11" TextWrapping="Wrap"
+                   Margin="0,0,0,10"/>
+
         <!-- Buttons -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="CancelButton" Content="Cancel" Width="80" Height="30"
                     Margin="0,0,10,0" Click="CancelButton_Click"/>
             <Button x:Name="SaveButton" Content="Save" Width="80" Height="30"
