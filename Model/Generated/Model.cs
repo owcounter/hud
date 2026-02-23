@@ -42,7 +42,7 @@ namespace Owmeta.Model {
             "Lkhlcm9OYW1lEg8KB2NvbW1lbnQYAiABKAkSKAoIc3RyZW5ndGgYAyABKA4y",
             "Fi5vd21ldGEubW9kZWwuU3RyZW5ndGgSKwoMc3BlY2lmaWNfbWFwGAQgASgO",
             "MhUub3dtZXRhLm1vZGVsLk1hcE5hbWUSGQoRY3VzdG9tX3N5bmVyZ3lfaWQY",
-            "BSABKAMi+AIKDEhlcm9BbmFseXNpcxIgCgRoZXJvGAEgASgLMhIub3dtZXRh",
+            "BSABKAMiowMKDEhlcm9BbmFseXNpcxIgCgRoZXJvGAEgASgLMhIub3dtZXRh",
             "Lm1vZGVsLkhlcm8SMAoNaGFyZF9jb3VudGVycxgCIAMoCzIZLm93bWV0YS5t",
             "b2RlbC5IZXJvQ291bnRlchI0ChFoYXJkX2NvdW50ZXJlZF9ieRgDIAMoCzIZ",
             "Lm93bWV0YS5tb2RlbC5IZXJvQ291bnRlchIwCg1zb2Z0X2NvdW50ZXJzGAQg",
@@ -50,76 +50,81 @@ namespace Owmeta.Model {
             "cmVkX2J5GAUgAygLMhkub3dtZXRhLm1vZGVsLkhlcm9Db3VudGVyEiwKCXN5",
             "bmVyZ2llcxgGIAMoCzIZLm93bWV0YS5tb2RlbC5IZXJvU3luZXJneRI0ChBz",
             "d2FwX3N1Z2dlc3Rpb25zGAcgAygLMhoub3dtZXRhLm1vZGVsLkhlcm9BbmFs",
-            "eXNpcxISCgpoZXJvX3Njb3JlGAggASgFIuMCChJNYXRjaFN0YXRlQW5hbHlz",
-            "aXMSUgoSYmx1ZV90ZWFtX2FuYWx5c2lzGAEgAygLMjYub3dtZXRhLm1vZGVs",
-            "Lk1hdGNoU3RhdGVBbmFseXNpcy5CbHVlVGVhbUFuYWx5c2lzRW50cnkSUAoR",
-            "cmVkX3RlYW1fYW5hbHlzaXMYAiADKAsyNS5vd21ldGEubW9kZWwuTWF0Y2hT",
-            "dGF0ZUFuYWx5c2lzLlJlZFRlYW1BbmFseXNpc0VudHJ5GlMKFUJsdWVUZWFt",
-            "QW5hbHlzaXNFbnRyeRILCgNrZXkYASABKAUSKQoFdmFsdWUYAiABKAsyGi5v",
-            "d21ldGEubW9kZWwuSGVyb0FuYWx5c2lzOgI4ARpSChRSZWRUZWFtQW5hbHlz",
-            "aXNFbnRyeRILCgNrZXkYASABKAUSKQoFdmFsdWUYAiABKAsyGi5vd21ldGEu",
-            "bW9kZWwuSGVyb0FuYWx5c2lzOgI4ASLAAQoKTWF0Y2hTdGF0ZRIwCglibHVl",
-            "X3RlYW0YASABKAsyHS5vd21ldGEubW9kZWwuVGVhbUNvbXBvc2l0aW9uEi8K",
-            "CHJlZF90ZWFtGAIgASgLMh0ub3dtZXRhLm1vZGVsLlRlYW1Db21wb3NpdGlv",
-            "bhIrCgtwbGF5ZXJfaGVybxgDIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFt",
-            "ZRIiCgNtYXAYBCABKA4yFS5vd21ldGEubW9kZWwuTWFwTmFtZSLdAQoPVGVh",
-            "bUNvbXBvc2l0aW9uEiQKBHRhbmsYASABKA4yFi5vd21ldGEubW9kZWwuSGVy",
-            "b05hbWUSJwoHZGFtYWdlMRgCIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFt",
-            "ZRInCgdkYW1hZ2UyGAMgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lEigK",
-            "CHN1cHBvcnQxGAQgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lEigKCHN1",
-            "cHBvcnQyGAUgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9OYW1lImsKDVdvcmtl",
-            "ck1lc3NhZ2USLQoLbWF0Y2hfc3RhdGUYASABKAsyGC5vd21ldGEubW9kZWwu",
-            "TWF0Y2hTdGF0ZRIrCgplcnJvcl9jb2RlGAIgASgOMhcub3dtZXRhLmVycmNv",
-            "ZGUuRXJyQ29kZSruBAoISGVyb05hbWUSFAoQTkFNRV9VTlNQRUNJRklFRBAA",
-            "EgsKB1VOS05PV04QARIKCgZISURERU4QAhIHCgNBTkEQAxIICgRBU0hFEAQS",
-            "DAoIQkFQVElTVEUQBRILCgdCQVNUSU9OEAYSDAoIQlJJR0lUVEUQBxILCgdD",
-            "QVNTSURZEAgSBwoDRFZBEAkSDAoIRE9PTUZJU1QQChIICgRFQ0hPEAsSCQoF",
-            "R0VOSkkQDBIJCgVIQU5aTxANEgoKBklMTEFSSRAOEhAKDEpVTktFUl9RVUVF",
-            "ThAPEgsKB0pVTktSQVQQEBIICgRKVU5PEBESCgoGS0lSSUtPEBISDgoKTElG",
-            "RVdFQVZFUhATEgkKBUxVQ0lPEBQSCQoFTUFVR0EQFRIHCgNNRUkQFhIJCgVN",
-            "RVJDWRAXEgkKBU1PSVJBEBgSCQoFT1JJU0EQGRIKCgZQSEFSQUgQGhIMCghS",
-            "QU1BVFRSQRAbEgoKBlJFQVBFUhAcEg0KCVJFSU5IQVJEVBAdEgsKB1JPQURI",
-            "T0cQHhIJCgVTSUdNQRAfEg0KCVNPTERJRVI3NhAgEgoKBlNPTUJSQRAhEgsK",
-            "B1NPSk9VUk4QIhIMCghTWU1NRVRSQRAjEgwKCFRPUkJKT1JOECQSCgoGVFJB",
-            "Q0VSECUSCwoHVkVOVFVSRRAmEg4KCldJRE9XTUFLRVIQJxILCgdXSU5TVE9O",
-            "ECgSEQoNV1JFQ0tJTkdfQkFMTBApEgkKBVpBUllBECoSDAoIWkVOWUFUVEEQ",
-            "KxIKCgZIQVpBUkQQLBIJCgVGUkVKQRAtEgoKBldVWUFORxAuEgwKCFZFTkRF",
-            "VFRBEC8qQwoISGVyb1JvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEggKBFRB",
-            "TksQARIKCgZEQU1BR0UQAhILCgdTVVBQT1JUEAMqNwoJSGVyb1N0YXRlEhUK",
-            "EVNUQVRFX1VOU1BFQ0lGSUVEEAASCQoFQUxJVkUQARIICgRERUFEEAIqLwoE",
-            "VGVhbRIUChBURUFNX1VOU1BFQ0lGSUVEEAASCAoEQkxVRRABEgcKA1JFRBAC",
-            "KocHCgdNYXBOYW1lEhMKD01BUF9VTlNQRUNJRklFRBAAEgwKCEFMTF9NQVBT",
-            "EAESIgoeQU5UQVJDVElDX1BFTklOU1VMQV9JQ0VCUkVBS0VSEAISHAoYQU5U",
-            "QVJDVElDX1BFTklOU1VMQV9MQUJTEAMSIAocQU5UQVJDVElDX1BFTklOU1VM",
-            "QV9TVUJMRVZFTBAEEhIKDkJVU0FOX0RPV05UT1dOEAUSEwoPQlVTQU5fU0FO",
-            "Q1RVQVJZEAYSEwoPQlVTQU5fTUVLQV9CQVNFEAcSFAoQSUxJT1NfTElHSFRI",
-            "T1VTRRAIEg4KCklMSU9TX1dFTEwQCRIPCgtJTElPU19SVUlOUxAKEh4KGkxJ",
-            "SklBTkdfVE9XRVJfTklHSFRfTUFSS0VUEAsSGAoUTElKSUFOR19UT1dFUl9H",
-            "QVJERU4QDBIgChxMSUpJQU5HX1RPV0VSX0NPTlRST0xfQ0VOVEVSEA0SEQoN",
-            "TkVQQUxfVklMTEFHRRAOEhAKDE5FUEFMX1NIUklORRAPEhEKDU5FUEFMX1NB",
-            "TkNUVU0QEBIVChFPQVNJU19DSVRZX0NFTlRFUhAREhEKDU9BU0lTX0dBUkRF",
-            "TlMQEhIUChBPQVNJU19VTklWRVJTSVRZEBMSDwoLU0FNT0FfQkVBQ0gQFBIS",
-            "Cg5TQU1PQV9ET1dOVE9XThAVEhEKDVNBTU9BX1ZPTENBTk8QFhIRCg1DSVJD",
-            "VUlUX1JPWUFMEBcSCgoGRE9SQURPEBgSCgoGSEFWQU5BEBkSDgoKSlVOS0VS",
-            "VE9XThAaEgoKBlJJQUxUTxAbEgwKCFJPVVRFXzY2EBwSFgoSU0hBTUJBTElf",
-            "TU9OQVNURVJZEB0SGAoUV0FUQ0hQT0lOVF9HSUJSQUxUQVIQHhIRCg1ORVdf",
-            "SlVOS19DSVRZEB8SDAoIU1VSQVZBU0EQIBISCg5CTElaWkFSRF9XT1JMRBAh",
-            "Eg8KC0VJQ0hFTldBTERFECISDQoJSE9MTFlXT09EECMSDQoJS0lOR1NfUk9X",
-            "ECQSCwoHTUlEVE9XThAlEgsKB05VTUJBTkkQJhILCgdQQVJBSVNPECcSDAoI",
-            "Q09MT1NTRU8QKBINCglFU1BFUkFOQ0EQKRIUChBORVdfUVVFRU5fU1RSRUVU",
-            "ECoSDAoIUlVOQVNBUEkQKxILCgdIQU5BT0tBECwSFAoQVEhST05FX09GX0FO",
-            "VUJJUxAtKlIKD0NvbXBvc2l0aW9uVHlwZRIgChxDT01QT1NJVElPTl9UWVBF",
-            "X1VOU1BFQ0lGSUVEEAASCAoERElWRRABEgkKBUJSQVdMEAISCAoEUE9LRRAD",
-            "KkQKCFN0cmVuZ3RoEhgKFFNUUkVOR1RIX1VOU1BFQ0lGSUVEEAASCAoEU09G",
-            "VBABEggKBEhBUkQQAhIKCgZOVUxMRUQQA0IqWhlvd21ldGEuaW8vZ28vcGtn",
-            "L29jaG1vZGVsqgIMT3dtZXRhLk1vZGVsYgZwcm90bzM="));
+            "eXNpcxISCgpoZXJvX3Njb3JlGAggASgFEikKCWhlcm9fdGllchgJIAEoDjIW",
+            "Lm93bWV0YS5tb2RlbC5IZXJvVGllciLjAgoSTWF0Y2hTdGF0ZUFuYWx5c2lz",
+            "ElIKEmJsdWVfdGVhbV9hbmFseXNpcxgBIAMoCzI2Lm93bWV0YS5tb2RlbC5N",
+            "YXRjaFN0YXRlQW5hbHlzaXMuQmx1ZVRlYW1BbmFseXNpc0VudHJ5ElAKEXJl",
+            "ZF90ZWFtX2FuYWx5c2lzGAIgAygLMjUub3dtZXRhLm1vZGVsLk1hdGNoU3Rh",
+            "dGVBbmFseXNpcy5SZWRUZWFtQW5hbHlzaXNFbnRyeRpTChVCbHVlVGVhbUFu",
+            "YWx5c2lzRW50cnkSCwoDa2V5GAEgASgFEikKBXZhbHVlGAIgASgLMhoub3dt",
+            "ZXRhLm1vZGVsLkhlcm9BbmFseXNpczoCOAEaUgoUUmVkVGVhbUFuYWx5c2lz",
+            "RW50cnkSCwoDa2V5GAEgASgFEikKBXZhbHVlGAIgASgLMhoub3dtZXRhLm1v",
+            "ZGVsLkhlcm9BbmFseXNpczoCOAEiwAEKCk1hdGNoU3RhdGUSMAoJYmx1ZV90",
+            "ZWFtGAEgASgLMh0ub3dtZXRhLm1vZGVsLlRlYW1Db21wb3NpdGlvbhIvCghy",
+            "ZWRfdGVhbRgCIAEoCzIdLm93bWV0YS5tb2RlbC5UZWFtQ29tcG9zaXRpb24S",
+            "KwoLcGxheWVyX2hlcm8YAyABKA4yFi5vd21ldGEubW9kZWwuSGVyb05hbWUS",
+            "IgoDbWFwGAQgASgOMhUub3dtZXRhLm1vZGVsLk1hcE5hbWUi3QEKD1RlYW1D",
+            "b21wb3NpdGlvbhIkCgR0YW5rGAEgASgOMhYub3dtZXRhLm1vZGVsLkhlcm9O",
+            "YW1lEicKB2RhbWFnZTEYAiABKA4yFi5vd21ldGEubW9kZWwuSGVyb05hbWUS",
+            "JwoHZGFtYWdlMhgDIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZRIoCghz",
+            "dXBwb3J0MRgEIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZRIoCghzdXBw",
+            "b3J0MhgFIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZSJrCg1Xb3JrZXJN",
+            "ZXNzYWdlEi0KC21hdGNoX3N0YXRlGAEgASgLMhgub3dtZXRhLm1vZGVsLk1h",
+            "dGNoU3RhdGUSKwoKZXJyb3JfY29kZRgCIAEoDjIXLm93bWV0YS5lcnJjb2Rl",
+            "LkVyckNvZGUqrAUKCEhlcm9OYW1lEhQKEE5BTUVfVU5TUEVDSUZJRUQQABIL",
+            "CgdVTktOT1dOEAESCgoGSElEREVOEAISBwoDQU5BEAMSCAoEQVNIRRAEEgwK",
+            "CEJBUFRJU1RFEAUSCwoHQkFTVElPThAGEgwKCEJSSUdJVFRFEAcSCwoHQ0FT",
+            "U0lEWRAIEgcKA0RWQRAJEgwKCERPT01GSVNUEAoSCAoERUNITxALEgkKBUdF",
+            "TkpJEAwSCQoFSEFOWk8QDRIKCgZJTExBUkkQDhIQCgxKVU5LRVJfUVVFRU4Q",
+            "DxILCgdKVU5LUkFUEBASCAoESlVOTxAREgoKBktJUklLTxASEg4KCkxJRkVX",
+            "RUFWRVIQExIJCgVMVUNJTxAUEgkKBU1BVUdBEBUSBwoDTUVJEBYSCQoFTUVS",
+            "Q1kQFxIJCgVNT0lSQRAYEgkKBU9SSVNBEBkSCgoGUEhBUkFIEBoSDAoIUkFN",
+            "QVRUUkEQGxIKCgZSRUFQRVIQHBINCglSRUlOSEFSRFQQHRILCgdST0FESE9H",
+            "EB4SCQoFU0lHTUEQHxINCglTT0xESUVSNzYQIBIKCgZTT01CUkEQIRILCgdT",
+            "T0pPVVJOECISDAoIU1lNTUVUUkEQIxIMCghUT1JCSk9SThAkEgoKBlRSQUNF",
+            "UhAlEgsKB1ZFTlRVUkUQJhIOCgpXSURPV01BS0VSECcSCwoHV0lOU1RPThAo",
+            "EhEKDVdSRUNLSU5HX0JBTEwQKRIJCgVaQVJZQRAqEgwKCFpFTllBVFRBECsS",
+            "CgoGSEFaQVJEECwSCQoFRlJFSkEQLRIKCgZXVVlBTkcQLhIMCghWRU5ERVRU",
+            "QRAvEgkKBUFOUkFOEDASCgoGRE9NSU5BEDESCAoERU1SRRAyEg8KC0pFVFBB",
+            "Q0tfQ0FUEDMSCgoGTUlaVUtJEDQqQwoISGVyb1JvbGUSFAoQUk9MRV9VTlNQ",
+            "RUNJRklFRBAAEggKBFRBTksQARIKCgZEQU1BR0UQAhILCgdTVVBQT1JUEAMq",
+            "NwoJSGVyb1N0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASCQoFQUxJVkUQ",
+            "ARIICgRERUFEEAIqLwoEVGVhbRIUChBURUFNX1VOU1BFQ0lGSUVEEAASCAoE",
+            "QkxVRRABEgcKA1JFRBACKocHCgdNYXBOYW1lEhMKD01BUF9VTlNQRUNJRklF",
+            "RBAAEgwKCEFMTF9NQVBTEAESIgoeQU5UQVJDVElDX1BFTklOU1VMQV9JQ0VC",
+            "UkVBS0VSEAISHAoYQU5UQVJDVElDX1BFTklOU1VMQV9MQUJTEAMSIAocQU5U",
+            "QVJDVElDX1BFTklOU1VMQV9TVUJMRVZFTBAEEhIKDkJVU0FOX0RPV05UT1dO",
+            "EAUSEwoPQlVTQU5fU0FOQ1RVQVJZEAYSEwoPQlVTQU5fTUVLQV9CQVNFEAcS",
+            "FAoQSUxJT1NfTElHSFRIT1VTRRAIEg4KCklMSU9TX1dFTEwQCRIPCgtJTElP",
+            "U19SVUlOUxAKEh4KGkxJSklBTkdfVE9XRVJfTklHSFRfTUFSS0VUEAsSGAoU",
+            "TElKSUFOR19UT1dFUl9HQVJERU4QDBIgChxMSUpJQU5HX1RPV0VSX0NPTlRS",
+            "T0xfQ0VOVEVSEA0SEQoNTkVQQUxfVklMTEFHRRAOEhAKDE5FUEFMX1NIUklO",
+            "RRAPEhEKDU5FUEFMX1NBTkNUVU0QEBIVChFPQVNJU19DSVRZX0NFTlRFUhAR",
+            "EhEKDU9BU0lTX0dBUkRFTlMQEhIUChBPQVNJU19VTklWRVJTSVRZEBMSDwoL",
+            "U0FNT0FfQkVBQ0gQFBISCg5TQU1PQV9ET1dOVE9XThAVEhEKDVNBTU9BX1ZP",
+            "TENBTk8QFhIRCg1DSVJDVUlUX1JPWUFMEBcSCgoGRE9SQURPEBgSCgoGSEFW",
+            "QU5BEBkSDgoKSlVOS0VSVE9XThAaEgoKBlJJQUxUTxAbEgwKCFJPVVRFXzY2",
+            "EBwSFgoSU0hBTUJBTElfTU9OQVNURVJZEB0SGAoUV0FUQ0hQT0lOVF9HSUJS",
+            "QUxUQVIQHhIRCg1ORVdfSlVOS19DSVRZEB8SDAoIU1VSQVZBU0EQIBISCg5C",
+            "TElaWkFSRF9XT1JMRBAhEg8KC0VJQ0hFTldBTERFECISDQoJSE9MTFlXT09E",
+            "ECMSDQoJS0lOR1NfUk9XECQSCwoHTUlEVE9XThAlEgsKB05VTUJBTkkQJhIL",
+            "CgdQQVJBSVNPECcSDAoIQ09MT1NTRU8QKBINCglFU1BFUkFOQ0EQKRIUChBO",
+            "RVdfUVVFRU5fU1RSRUVUECoSDAoIUlVOQVNBUEkQKxILCgdIQU5BT0tBECwS",
+            "FAoQVEhST05FX09GX0FOVUJJUxAtKlIKD0NvbXBvc2l0aW9uVHlwZRIgChxD",
+            "T01QT1NJVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASCAoERElWRRABEgkKBUJS",
+            "QVdMEAISCAoEUE9LRRADKkQKCFN0cmVuZ3RoEhgKFFNUUkVOR1RIX1VOU1BF",
+            "Q0lGSUVEEAASCAoEU09GVBABEggKBEhBUkQQAhIKCgZOVUxMRUQQAyp6CghI",
+            "ZXJvVGllchIZChVIRVJPX1RJRVJfVU5TUEVDSUZJRUQQABIPCgtIRVJPX1RJ",
+            "RVJfUxABEg8KC0hFUk9fVElFUl9BEAISDwoLSEVST19USUVSX0IQAxIPCgtI",
+            "RVJPX1RJRVJfQxAEEg8KC0hFUk9fVElFUl9EEAVCKloZb3dtZXRhLmlvL2dv",
+            "L3BrZy9vY2htb2RlbKoCDE93bWV0YS5Nb2RlbGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Owmeta.Errcode.ErrcodeReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owmeta.Model.HeroName), typeof(global::Owmeta.Model.HeroRole), typeof(global::Owmeta.Model.HeroState), typeof(global::Owmeta.Model.Team), typeof(global::Owmeta.Model.MapName), typeof(global::Owmeta.Model.CompositionType), typeof(global::Owmeta.Model.Strength), }, null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owmeta.Model.HeroName), typeof(global::Owmeta.Model.HeroRole), typeof(global::Owmeta.Model.HeroState), typeof(global::Owmeta.Model.Team), typeof(global::Owmeta.Model.MapName), typeof(global::Owmeta.Model.CompositionType), typeof(global::Owmeta.Model.Strength), typeof(global::Owmeta.Model.HeroTier), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.Hero), global::Owmeta.Model.Hero.Parser, new[]{ "Name", "Role", "CounteredBy", "Synergies", "BestCompositions", "IncompatibleCompositions", "StrongMaps", "WeakMaps" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroCounter), global::Owmeta.Model.HeroCounter.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomCounterId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroSynergy), global::Owmeta.Model.HeroSynergy.Parser, new[]{ "HeroName", "Comment", "Strength", "SpecificMap", "CustomSynergyId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroAnalysis), global::Owmeta.Model.HeroAnalysis.Parser, new[]{ "Hero", "HardCounters", "HardCounteredBy", "SoftCounters", "SoftCounteredBy", "Synergies", "SwapSuggestions", "HeroScore" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.HeroAnalysis), global::Owmeta.Model.HeroAnalysis.Parser, new[]{ "Hero", "HardCounters", "HardCounteredBy", "SoftCounters", "SoftCounteredBy", "Synergies", "SwapSuggestions", "HeroScore", "HeroTier" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchStateAnalysis), global::Owmeta.Model.MatchStateAnalysis.Parser, new[]{ "BlueTeamAnalysis", "RedTeamAnalysis" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchState), global::Owmeta.Model.MatchState.Parser, new[]{ "BlueTeam", "RedTeam", "PlayerHero", "Map" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.TeamComposition), global::Owmeta.Model.TeamComposition.Parser, new[]{ "Tank", "Damage1", "Damage2", "Support1", "Support2" }, null, null, null, null),
@@ -179,6 +184,11 @@ namespace Owmeta.Model {
     [pbr::OriginalName("FREJA")] Freja = 45,
     [pbr::OriginalName("WUYANG")] Wuyang = 46,
     [pbr::OriginalName("VENDETTA")] Vendetta = 47,
+    [pbr::OriginalName("ANRAN")] Anran = 48,
+    [pbr::OriginalName("DOMINA")] Domina = 49,
+    [pbr::OriginalName("EMRE")] Emre = 50,
+    [pbr::OriginalName("JETPACK_CAT")] JetpackCat = 51,
+    [pbr::OriginalName("MIZUKI")] Mizuki = 52,
   }
 
   public enum HeroRole {
@@ -261,6 +271,15 @@ namespace Owmeta.Model {
     [pbr::OriginalName("SOFT")] Soft = 1,
     [pbr::OriginalName("HARD")] Hard = 2,
     [pbr::OriginalName("NULLED")] Nulled = 3,
+  }
+
+  public enum HeroTier {
+    [pbr::OriginalName("HERO_TIER_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("HERO_TIER_S")] S = 1,
+    [pbr::OriginalName("HERO_TIER_A")] A = 2,
+    [pbr::OriginalName("HERO_TIER_B")] B = 3,
+    [pbr::OriginalName("HERO_TIER_C")] C = 4,
+    [pbr::OriginalName("HERO_TIER_D")] D = 5,
   }
 
   #endregion
@@ -1062,6 +1081,7 @@ namespace Owmeta.Model {
       synergies_ = other.synergies_.Clone();
       swapSuggestions_ = other.swapSuggestions_.Clone();
       heroScore_ = other.heroScore_;
+      heroTier_ = other.heroTier_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1152,6 +1172,17 @@ namespace Owmeta.Model {
       }
     }
 
+    /// <summary>Field number for the "hero_tier" field.</summary>
+    public const int HeroTierFieldNumber = 9;
+    private global::Owmeta.Model.HeroTier heroTier_ = global::Owmeta.Model.HeroTier.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Owmeta.Model.HeroTier HeroTier {
+      get { return heroTier_; }
+      set {
+        heroTier_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as HeroAnalysis);
@@ -1173,6 +1204,7 @@ namespace Owmeta.Model {
       if(!synergies_.Equals(other.synergies_)) return false;
       if(!swapSuggestions_.Equals(other.swapSuggestions_)) return false;
       if (HeroScore != other.HeroScore) return false;
+      if (HeroTier != other.HeroTier) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1187,6 +1219,7 @@ namespace Owmeta.Model {
       hash ^= synergies_.GetHashCode();
       hash ^= swapSuggestions_.GetHashCode();
       if (HeroScore != 0) hash ^= HeroScore.GetHashCode();
+      if (HeroTier != global::Owmeta.Model.HeroTier.Unspecified) hash ^= HeroTier.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1214,6 +1247,10 @@ namespace Owmeta.Model {
         output.WriteRawTag(64);
         output.WriteInt32(HeroScore);
       }
+      if (HeroTier != global::Owmeta.Model.HeroTier.Unspecified) {
+        output.WriteRawTag(72);
+        output.WriteEnum((int) HeroTier);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1233,6 +1270,9 @@ namespace Owmeta.Model {
       size += swapSuggestions_.CalculateSize(_repeated_swapSuggestions_codec);
       if (HeroScore != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(HeroScore);
+      }
+      if (HeroTier != global::Owmeta.Model.HeroTier.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) HeroTier);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1259,6 +1299,9 @@ namespace Owmeta.Model {
       swapSuggestions_.Add(other.swapSuggestions_);
       if (other.HeroScore != 0) {
         HeroScore = other.HeroScore;
+      }
+      if (other.HeroTier != global::Owmeta.Model.HeroTier.Unspecified) {
+        HeroTier = other.HeroTier;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1304,6 +1347,10 @@ namespace Owmeta.Model {
           }
           case 64: {
             HeroScore = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            HeroTier = (global::Owmeta.Model.HeroTier) input.ReadEnum();
             break;
           }
         }
