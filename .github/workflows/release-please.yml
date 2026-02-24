@@ -1,0 +1,91 @@
+name: Release Please & Build
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore OwmetaHUD.csproj
+
+      - name: Build
+        run: dotnet build OwmetaHUD.csproj --configuration Release --no-restore
+
+      - name: Publish (Self-contained)
+        run: dotnet publish OwmetaHUD.csproj -c Release -o publish-self-contained -r win-x64 --self-contained true
+
+      - name: Publish (Framework-dependent)
+        run: dotnet publish OwmetaHUD.csproj -c Release -o publish-framework-dependent
+
+      - name: Zip artifacts
+        run: |
+          Compress-Archive -Path publish-self-contained/* -DestinationPath OWMetaHUD-${{ needs.release-please.outputs.tag_name }}-self-contained.zip
+          Compress-Archive -Path publish-framework-dependent/* -DestinationPath OWMetaHUD-${{ needs.release-please.outputs.tag_name }}-framework-dependent.zip
+
+      - name: Upload Self-contained artifact
+        run: |
+          gh release upload "${{ needs.release-please.outputs.tag_name }}" `
+            "OWMetaHUD-${{ needs.release-please.outputs.tag_name }}-self-contained.zip" `
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Framework-dependent artifact
+        run: |
+          gh release upload "${{ needs.release-please.outputs.tag_name }}" `
+            "OWMetaHUD-${{ needs.release-please.outputs.tag_name }}-framework-dependent.zip" `
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update release body with download instructions
+        run: |
+          $version = "${{ needs.release-please.outputs.tag_name }}"
+          $repo = "${{ github.repository }}"
+          $existing = gh release view $version --json body --jq .body
+          $header = @"
+          ## Downloads
+
+          | Variant | Description |
+          |---------|-------------|
+          | **[Self-contained](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-self-contained.zip)** | Includes .NET runtime. Works out-of-the-box. |
+          | **[Framework-dependent](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-framework-dependent.zip)** | Smaller file. Requires [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) installed. |
+
+          ---
+
+          "@
+          $body = "$header`n$existing"
+          $body | Out-File -FilePath release-body.txt -Encoding utf8
+          gh release edit $version --notes-file release-body.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

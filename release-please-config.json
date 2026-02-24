@@ -1,0 +1,16 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false,
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "OwmetaHUD.csproj",
+          "xpath": "//PropertyGroup/Version"
+        }
+      ]
+    }
+  }
+}
