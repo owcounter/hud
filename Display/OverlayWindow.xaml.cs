@@ -148,6 +148,10 @@ namespace Owmeta.Display
         private Visibility _compVisibilityBeforeScreenshot;
         private int _screenshotKeyPressed; // 0 = not pressed, 1 = pressed (use Interlocked for thread safety)
 
+        // Track hotkey pressed state to prevent flickering from key repeat
+        private volatile bool _swapKeyHeld;
+        private volatile bool _teamKeyHeld;
+
         public OverlayWindow(bool devMode)
         {
             _devMode = devMode;
@@ -304,54 +308,28 @@ namespace Owmeta.Display
 
             var settings = AppSettings.Instance;
 
-            // Update Swap Suggestions hotkey
-            if (!KeyHelper.IsMouseButton(settings.SwapSuggestionsKey))
-            {
-                if (_swapHotkeyRegistered && _currentSwapKey != settings.SwapSuggestionsKey)
-                {
-                    UnregisterHotKey(_windowHandle, SWAP_HOTKEY_ID);
-                    _swapHotkeyRegistered = false;
-                }
-
-                if (!_swapHotkeyRegistered && settings.SwapSuggestionsKey > 0)
-                {
-                    RegisterHotKey(_windowHandle, SWAP_HOTKEY_ID, 0, (uint)settings.SwapSuggestionsKey);
-                    _swapHotkeyRegistered = true;
-                    _currentSwapKey = settings.SwapSuggestionsKey;
-                    Logger.Log($"Swap hotkey registered: {KeyHelper.GetKeyName(settings.SwapSuggestionsKey)}");
-                }
-            }
-            else if (_swapHotkeyRegistered)
+            // Unregister old hotkeys if they were registered (we now use keyboard hook instead)
+            if (_swapHotkeyRegistered)
             {
                 UnregisterHotKey(_windowHandle, SWAP_HOTKEY_ID);
                 _swapHotkeyRegistered = false;
             }
-
-            // Update Team Composition hotkey
-            if (!KeyHelper.IsMouseButton(settings.TeamCompositionKey))
-            {
-                if (_teamHotkeyRegistered && _currentTeamKey != settings.TeamCompositionKey)
-                {
-                    UnregisterHotKey(_windowHandle, TEAM_HOTKEY_ID);
-                    _teamHotkeyRegistered = false;
-                }
-
-                if (!_teamHotkeyRegistered && settings.TeamCompositionKey > 0)
-                {
-                    RegisterHotKey(_windowHandle, TEAM_HOTKEY_ID, 0, (uint)settings.TeamCompositionKey);
-                    _teamHotkeyRegistered = true;
-                    _currentTeamKey = settings.TeamCompositionKey;
-                    Logger.Log($"Team hotkey registered: {KeyHelper.GetKeyName(settings.TeamCompositionKey)}");
-                }
-            }
-            else if (_teamHotkeyRegistered)
+            if (_teamHotkeyRegistered)
             {
                 UnregisterHotKey(_windowHandle, TEAM_HOTKEY_ID);
                 _teamHotkeyRegistered = false;
             }
 
-            // Update mouse hook
+            // Track current keys for keyboard hook
+            _currentSwapKey = settings.SwapSuggestionsKey;
+            _currentTeamKey = settings.TeamCompositionKey;
+            Logger.Log($"Hotkeys updated: Swap={KeyHelper.GetKeyName(settings.SwapSuggestionsKey)}, Team={KeyHelper.GetKeyName(settings.TeamCompositionKey)}");
+
+            // Update mouse hook for mouse button bindings
             SetupMouseHookIfNeeded();
+
+            // Update keyboard hook for keyboard bindings
+            UpdateScreenshotHotkeyRegistration();
         }
 
         private IntPtr FindOverwatchWindow()
@@ -435,8 +413,7 @@ namespace Owmeta.Display
 
             if (_windowHandle != IntPtr.Zero)
             {
-                UnregisterHotKey(_windowHandle, SWAP_HOTKEY_ID);
-                UnregisterHotKey(_windowHandle, TEAM_HOTKEY_ID);
+                // F2/F3 now use keyboard hook, only F5/F6 use RegisterHotKey
                 if (_devMode)
                 {
                     UnregisterHotKey(_windowHandle, F5_HOTKEY_ID);
@@ -451,26 +428,29 @@ namespace Owmeta.Display
             if (_windowHandle == IntPtr.Zero) return;
 
             var settings = AppSettings.Instance;
-            bool shouldBeEnabled = settings.TabScreenshotEnabled && settings.ScreenshotKey > 0;
+            bool needScreenshotHook = settings.TabScreenshotEnabled && settings.ScreenshotKey > 0;
+            bool needSwapHook = !KeyHelper.IsMouseButton(settings.SwapSuggestionsKey) && settings.SwapSuggestionsKey > 0;
+            bool needTeamHook = !KeyHelper.IsMouseButton(settings.TeamCompositionKey) && settings.TeamCompositionKey > 0;
+            bool shouldBeEnabled = needScreenshotHook || needSwapHook || needTeamHook;
 
             if (shouldBeEnabled && _keyboardHookId == IntPtr.Zero)
             {
-                // Install keyboard hook to detect screenshot key press/release without blocking
+                // Install keyboard hook to detect key press/release without blocking
                 _keyboardProc = KeyboardHookCallback;
                 _keyboardHookId = SetWindowsHookExKeyboard(WH_KEYBOARD_LL, _keyboardProc, GetModuleHandle(null), 0);
                 _currentScreenshotKey = settings.ScreenshotKey;
-                Logger.Log($"Screenshot keyboard hook installed for: {KeyHelper.GetKeyName(settings.ScreenshotKey)}");
+                Logger.Log($"Keyboard hook installed for hotkeys");
             }
             else if (!shouldBeEnabled && _keyboardHookId != IntPtr.Zero)
             {
                 RemoveKeyboardHook();
-                Logger.Log("Screenshot keyboard hook removed");
+                Logger.Log("Keyboard hook removed");
             }
-            else if (shouldBeEnabled && _currentScreenshotKey != settings.ScreenshotKey)
+
+            // Update tracked keys
+            if (shouldBeEnabled)
             {
-                // Key changed, just update the tracked key (hook handles all keys)
                 _currentScreenshotKey = settings.ScreenshotKey;
-                Logger.Log($"Screenshot key changed to: {KeyHelper.GetKeyName(settings.ScreenshotKey)}");
             }
         }
 
@@ -566,8 +546,14 @@ namespace Owmeta.Display
                     SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
 
                     // Show appropriate status indicator
+                    bool hasPersistedSlots = response.PersistedBlueTeamSlots.Count > 0 ||
+                                             response.PersistedRedTeamSlots.Count > 0;
+
                     if (usingCachedData)
                         DataFreshnessIndicator.SetStaleWarning();
+                    else if (hasPersistedSlots)
+                        DataFreshnessIndicator.SetPartialUpdate(
+                            response.PersistedBlueTeamSlots.Count + response.PersistedRedTeamSlots.Count);
                     else
                         DataFreshnessIndicator.MarkUpdated();
                 }
@@ -735,7 +721,7 @@ namespace Owmeta.Display
                 var hookStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
                 int vkCode = (int)hookStruct.vkCode;
 
-                // Only handle our screenshot key
+                // Handle screenshot key
                 if (vkCode == _currentScreenshotKey)
                 {
                     if (wParam == (IntPtr)WM_KEYDOWN)
@@ -782,6 +768,34 @@ namespace Owmeta.Display
                         }
                     }
                 }
+
+                // Handle swap key (F2) - track held state to prevent flicker from key repeat
+                if (vkCode == _currentSwapKey && !KeyHelper.IsMouseButton(_currentSwapKey))
+                {
+                    if (wParam == (IntPtr)WM_KEYDOWN && !_swapKeyHeld)
+                    {
+                        _swapKeyHeld = true;
+                        Dispatcher.BeginInvoke(new Action(() => ToggleVisibility()));
+                    }
+                    else if (wParam == (IntPtr)WM_KEYUP)
+                    {
+                        _swapKeyHeld = false;
+                    }
+                }
+
+                // Handle team key (F3) - track held state to prevent flicker from key repeat
+                if (vkCode == _currentTeamKey && !KeyHelper.IsMouseButton(_currentTeamKey))
+                {
+                    if (wParam == (IntPtr)WM_KEYDOWN && !_teamKeyHeld)
+                    {
+                        _teamKeyHeld = true;
+                        Dispatcher.BeginInvoke(new Action(() => ToggleCompositionDashboard()));
+                    }
+                    else if (wParam == (IntPtr)WM_KEYUP)
+                    {
+                        _teamKeyHeld = false;
+                    }
+                }
             }
 
             // IMPORTANT: Always pass the key to the next hook so it reaches the game
@@ -792,14 +806,7 @@ namespace Owmeta.Display
         {
             switch (msg)
             {
-                case WM_HOTKEY when wParam.ToInt32() == SWAP_HOTKEY_ID:
-                    ToggleVisibility();
-                    handled = true;
-                    break;
-                case WM_HOTKEY when wParam.ToInt32() == TEAM_HOTKEY_ID:
-                    ToggleCompositionDashboard();
-                    handled = true;
-                    break;
+                // F2/F3 hotkeys now handled via keyboard hook to prevent flicker from key repeat
                 case WM_HOTKEY when wParam.ToInt32() == F5_HOTKEY_ID:
                     Logger.Log("[DEV] F5 pressed - previous screenshot");
                     _screenshotService?.PreviousScreenshot();
