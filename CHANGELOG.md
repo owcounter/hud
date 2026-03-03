@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/owcounter/hud/compare/v1.1.0...v1.1.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* preserve newlines in release notes formatting ([eea06b1](https://github.com/owcounter/hud/commit/eea06b1177dc6d8d405f62f22595c90de7c97cbc))
+
 ## [1.1.0](https://github.com/owcounter/hud/compare/v1.0.7...v1.1.0) (2026-03-03)
 
 
