@@ -19,18 +19,36 @@ namespace Owmeta.Services
         private Timer? _tokenRefreshTimer;
         private bool _disposed;
         private bool _sessionExpiredFired;
+        private MatchState? _lastMatchState;
 
         // Event fired when session expires and re-login is required
         public event EventHandler? SessionExpired;
+
+        private readonly bool _useOverrideToken;
 
         public ApiService(string apiBaseUrl, KeycloakAuth keycloakAuth)
         {
             httpClient = new HttpClient { BaseAddress = new Uri(apiBaseUrl) };
             this.keycloakAuth = keycloakAuth;
+
+            // If an override token is set, use it directly (for local testing with -sso-unsafe)
+            if (!string.IsNullOrEmpty(App.OverrideToken))
+            {
+                accessToken = App.OverrideToken;
+                _useOverrideToken = true;
+                tokenExpiryTime = DateTime.UtcNow.AddHours(24); // Fake long expiry
+                Logger.Log("ApiService using override token - Keycloak auth bypassed");
+            }
         }
 
         public async Task<bool> LoadAndValidateTokens()
         {
+            if (_useOverrideToken)
+            {
+                Logger.Log("Override token active - skipping Keycloak validation");
+                return true;
+            }
+
             if (!System.IO.File.Exists(tokenFileName))
                 return false;
 
@@ -243,8 +261,8 @@ namespace Owmeta.Services
                 throw new UnauthorizedException("No access token available");
             }
 
-            // Pre-emptively refresh token if it's about to expire
-            if (IsTokenExpiredOrExpiringSoon())
+            // Skip token refresh for override tokens (local testing)
+            if (!_useOverrideToken && IsTokenExpiredOrExpiringSoon())
             {
                 var refreshed = await RefreshAndValidateToken();
                 if (!refreshed)
@@ -255,14 +273,47 @@ namespace Owmeta.Services
                 }
             }
 
-            return await SendScreenshotRequest(screenshotBase64, retryOnUnauthorized: true);
+            return await SendScreenshotRequest(screenshotBase64, retryOnUnauthorized: !_useOverrideToken);
+        }
+
+        private static object? SerializeMatchState(MatchState? matchState)
+        {
+            if (matchState == null) return null;
+            return new
+            {
+                blue_team = matchState.BlueTeam != null ? new
+                {
+                    tank = (int)matchState.BlueTeam.Tank,
+                    damage1 = (int)matchState.BlueTeam.Damage1,
+                    damage2 = (int)matchState.BlueTeam.Damage2,
+                    support1 = (int)matchState.BlueTeam.Support1,
+                    support2 = (int)matchState.BlueTeam.Support2
+                } : null,
+                red_team = matchState.RedTeam != null ? new
+                {
+                    tank = (int)matchState.RedTeam.Tank,
+                    damage1 = (int)matchState.RedTeam.Damage1,
+                    damage2 = (int)matchState.RedTeam.Damage2,
+                    support1 = (int)matchState.RedTeam.Support1,
+                    support2 = (int)matchState.RedTeam.Support2
+                } : null,
+                player_hero = (int)matchState.PlayerHero,
+                map = (int)matchState.Map
+            };
         }
 
         private async Task<ScreenshotProcessingResponse?> SendScreenshotRequest(string screenshotBase64, bool retryOnUnauthorized)
         {
             string formattedBase64 = $"data:image/jpeg;base64,{screenshotBase64}";
-            var input = new { screenshot_base64 = formattedBase64, use_websocket = false };
-            var content = new StringContent(JsonConvert.SerializeObject(input), System.Text.Encoding.UTF8, "application/json");
+            var input = new
+            {
+                screenshot_base64 = formattedBase64,
+                use_websocket = false,
+                previous_match_state = SerializeMatchState(_lastMatchState)
+            };
+            var serializedInput = JsonConvert.SerializeObject(input);
+            Logger.Log($"Sending request with previous_match_state: {(_lastMatchState != null ? "present" : "null")}");
+            var content = new StringContent(serializedInput, System.Text.Encoding.UTF8, "application/json");
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             var response = await httpClient.PostAsync("/process-screenshot", content);
@@ -284,6 +335,8 @@ namespace Owmeta.Services
                 {
                     throw new ApiException("Failed to deserialize screenshot processing response");
                 }
+                _lastMatchState = result.MatchState;
+                Logger.Log($"Response persisted slots: blue={result.PersistedBlueTeamSlots.Count}, red={result.PersistedRedTeamSlots.Count}");
                 return result;
             }
 
@@ -325,6 +378,7 @@ namespace Owmeta.Services
                 accessToken = null;
                 refreshToken = null;
                 tokenExpiryTime = null;
+                _lastMatchState = null;
             }
             catch (Exception ex)
             {

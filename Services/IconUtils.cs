@@ -30,6 +30,7 @@ namespace Owmeta.Services
                 HeroName.JunkerQueen => "junker-queen",
                 HeroName.WreckingBall => "wrecking-ball",
                 HeroName.Dva => "dva",
+                HeroName.JetpackCat => "jetpack-cat",
                 _ => heroName.ToString().ToLower().Replace("_", "-")
             };
         }

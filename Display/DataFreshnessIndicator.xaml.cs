@@ -15,6 +15,7 @@ namespace Owmeta.Display
         private static readonly SolidColorBrush StaleBrush = new(Color.FromRgb(0xF5, 0x9E, 0x0B));    // Yellow/Amber - 1-3 min
         private static readonly SolidColorBrush OldBrush = new(Color.FromRgb(0xEF, 0x44, 0x44));      // Red - > 3 min
         private static readonly SolidColorBrush AnalyzingBrush = new(Color.FromRgb(0x3B, 0x82, 0xF6)); // Blue
+        private static readonly SolidColorBrush PartialBrush = new(Color.FromRgb(0x38, 0xBD, 0xF8));  // Light blue
 
         static DataFreshnessIndicator()
         {
@@ -23,6 +24,7 @@ namespace Owmeta.Display
             StaleBrush.Freeze();
             OldBrush.Freeze();
             AnalyzingBrush.Freeze();
+            PartialBrush.Freeze();
         }
 
         public DataFreshnessIndicator()
@@ -118,6 +120,13 @@ namespace Owmeta.Display
         {
             StatusText.Text = "Using cached data";
             StatusDot.Fill = StaleBrush;
+        }
+
+        public void SetPartialUpdate(int persistedCount)
+        {
+            _lastUpdateTime = DateTime.Now;
+            StatusText.Text = $"Updated ({persistedCount} heroes from memory)";
+            StatusDot.Fill = PartialBrush;
         }
     }
 }

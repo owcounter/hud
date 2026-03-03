@@ -8,6 +8,8 @@ namespace Owmeta.Model
         public required MatchState MatchState { get; set; }
         public required Dictionary<HeroName, HeroAnalysis> BlueTeamAnalysis { get; set; }
         public required Dictionary<HeroName, HeroAnalysis> RedTeamAnalysis { get; set; }
+        public List<string> PersistedBlueTeamSlots { get; set; } = new();
+        public List<string> PersistedRedTeamSlots { get; set; } = new();
     }
 
     public class ScreenshotProcessingResponseConverter : JsonConverter
@@ -82,6 +84,14 @@ namespace Owmeta.Model
                 }
             }
 
+            var persistedBlue = jo["persistedBlueTeamSlots"] as JArray;
+            if (persistedBlue != null)
+                response.PersistedBlueTeamSlots = persistedBlue.Select(t => t.ToString()).ToList();
+
+            var persistedRed = jo["persistedRedTeamSlots"] as JArray;
+            if (persistedRed != null)
+                response.PersistedRedTeamSlots = persistedRed.Select(t => t.ToString()).ToList();
+
             return response;
         }
 
@@ -123,6 +133,11 @@ namespace Owmeta.Model
             matchStateAnalysis["redTeamAnalysis"] = redTeam;
 
             jo["matchStateAnalysis"] = matchStateAnalysis;
+
+            if (response.PersistedBlueTeamSlots?.Count > 0)
+                jo["persistedBlueTeamSlots"] = new JArray(response.PersistedBlueTeamSlots);
+            if (response.PersistedRedTeamSlots?.Count > 0)
+                jo["persistedRedTeamSlots"] = new JArray(response.PersistedRedTeamSlots);
 
             jo.WriteTo(writer);
         }
