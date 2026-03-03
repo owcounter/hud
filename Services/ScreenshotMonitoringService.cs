@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Owmeta.Model;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -60,7 +61,14 @@ namespace Owmeta.Services
             // In dev mode, process the latest file immediately
             if (App.DEV_MODE)
             {
-                ProcessLatestScreenshotForDev(bnetPath);
+                if (App.AutoTestMode)
+                {
+                    RunAutoTest(bnetPath);
+                }
+                else
+                {
+                    ProcessLatestScreenshotForDev(bnetPath);
+                }
             }
         }
 
@@ -119,6 +127,111 @@ namespace Owmeta.Services
                 Logger.Log($"[DEV]   1. Create folder: {devScreenshotsPath}");
                 Logger.Log($"[DEV]   2. Put an Overwatch Tab screen screenshot (.jpg or .png) in it");
                 Logger.Log($"[DEV]   OR use screenshots from: {bnetPath}");
+            }
+        }
+
+        private void RunAutoTest(string bnetPath)
+        {
+            string screenshotsPath = App.AutoTestDir ?? bnetPath;
+
+            if (!Directory.Exists(screenshotsPath))
+            {
+                Logger.Log($"[AUTO-TEST] Screenshot directory not found: {screenshotsPath}");
+                return;
+            }
+
+            LoadAllScreenshots(screenshotsPath);
+            Logger.Log($"[AUTO-TEST] Found {_allScreenshots.Count} screenshots in {screenshotsPath}");
+            Logger.Log($"[AUTO-TEST] Processing newest first, {App.AutoTestIntervalSeconds}s interval");
+
+            _ = Task.Run(async () =>
+            {
+                var stopwatch = new Stopwatch();
+                for (int i = 0; i < _allScreenshots.Count; i++)
+                {
+                    var file = _allScreenshots[i];
+                    var fileName = Path.GetFileName(file);
+
+                    Logger.Log($"\n[AUTO-TEST] === [{i + 1}/{_allScreenshots.Count}] {fileName} ===");
+
+                    try
+                    {
+                        using var image = Image.FromFile(file);
+                        using var ms = new MemoryStream();
+                        Logger.Log($"[AUTO-TEST] Image: {image.Width}x{image.Height}");
+                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        var base64String = Convert.ToBase64String(ms.ToArray());
+                        Logger.Log($"[AUTO-TEST] Sending {ms.Length} bytes...");
+
+                        stopwatch.Restart();
+
+                        synchronizationContext.Post(_ =>
+                        {
+                            AnalysisStarted?.Invoke(this, EventArgs.Empty);
+                        }, null);
+
+                        var response = await apiService.SendScreenshotToServer(base64String);
+                        stopwatch.Stop();
+
+                        if (response != null)
+                        {
+                            LogAutoTestResponse(response, stopwatch.ElapsedMilliseconds);
+                            synchronizationContext.Post(_ =>
+                            {
+                                ScreenshotProcessed?.Invoke(this, response);
+                            }, null);
+                        }
+                        else
+                        {
+                            Logger.Log($"[AUTO-TEST] NULL response ({stopwatch.ElapsedMilliseconds}ms)");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log($"[AUTO-TEST] ERROR: {ex.Message}");
+                        synchronizationContext.Post(_ =>
+                        {
+                            AnalysisError?.Invoke(this, ex.Message);
+                        }, null);
+                    }
+
+                    if (i < _allScreenshots.Count - 1)
+                    {
+                        Logger.Log($"[AUTO-TEST] Waiting {App.AutoTestIntervalSeconds}s...");
+                        await Task.Delay(App.AutoTestIntervalSeconds * 1000);
+                    }
+                }
+                Logger.Log($"\n[AUTO-TEST] === Done ({_allScreenshots.Count} screenshots) ===");
+            });
+        }
+
+        private static void LogAutoTestResponse(ScreenshotProcessingResponse response, long elapsedMs)
+        {
+            var ms = response.MatchState;
+            Logger.Log($"[AUTO-TEST] Response in {elapsedMs}ms:");
+            if (ms.BlueTeam != null)
+            {
+                Logger.Log($"[AUTO-TEST]   BLUE: T={ms.BlueTeam.Tank} D1={ms.BlueTeam.Damage1} D2={ms.BlueTeam.Damage2} S1={ms.BlueTeam.Support1} S2={ms.BlueTeam.Support2}");
+            }
+            if (ms.RedTeam != null)
+            {
+                Logger.Log($"[AUTO-TEST]   RED:  T={ms.RedTeam.Tank} D1={ms.RedTeam.Damage1} D2={ms.RedTeam.Damage2} S1={ms.RedTeam.Support1} S2={ms.RedTeam.Support2}");
+            }
+            if (ms.Map != MapName.MapUnspecified)
+            {
+                Logger.Log($"[AUTO-TEST]   Map: {ms.Map}");
+            }
+            if (ms.PlayerHero != HeroName.NameUnspecified)
+            {
+                Logger.Log($"[AUTO-TEST]   Player: {ms.PlayerHero}");
+            }
+            if (response.PersistedBlueTeamSlots.Count > 0)
+            {
+                Logger.Log($"[AUTO-TEST]   Persisted Blue: {string.Join(", ", response.PersistedBlueTeamSlots)}");
+            }
+            if (response.PersistedRedTeamSlots.Count > 0)
+            {
+                Logger.Log($"[AUTO-TEST]   Persisted Red: {string.Join(", ", response.PersistedRedTeamSlots)}");
             }
         }
 

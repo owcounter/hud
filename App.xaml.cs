@@ -27,13 +27,19 @@ namespace Owmeta
         private bool _mutexOwned;
         private bool _isShowingLogin;
         private const string MutexName = "Global\\OWMETA_HUD_INSTANCE";
-        private const string ApiBaseUrl = "https://api.owmeta.io";
+        private static string ApiBaseUrl = "https://api.owmeta.io";
 
 #if DEBUG
         public const bool DEV_MODE = true;  // Set this to false to test normal mode while debugging
 #else
         public const bool DEV_MODE = false;
 #endif
+
+        // CLI test mode
+        public static bool AutoTestMode { get; private set; }
+        public static int AutoTestIntervalSeconds { get; private set; } = 10;
+        public static string? AutoTestDir { get; private set; }
+        public static string? OverrideToken { get; private set; }
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -343,23 +349,82 @@ namespace Owmeta
 
         private void ParseSettingsArgs(string[] args)
         {
-            foreach (var arg in args)
+            for (int i = 0; i < args.Length; i++)
             {
-                if (arg.StartsWith("--min-score-f2=", StringComparison.OrdinalIgnoreCase))
+                if (args[i].StartsWith("--min-score-f2=", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (int.TryParse(arg.Substring("--min-score-f2=".Length), out int value))
+                    if (int.TryParse(args[i].Substring("--min-score-f2=".Length), out int value))
                     {
                         AppSettings.Instance.MinScoreF2 = value;
                         AppSettings.Instance.Save();
                     }
                 }
-                else if (arg.StartsWith("--min-score-f3=", StringComparison.OrdinalIgnoreCase))
+                else if (args[i].StartsWith("--min-score-f3=", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (int.TryParse(arg.Substring("--min-score-f3=".Length), out int value))
+                    if (int.TryParse(args[i].Substring("--min-score-f3=".Length), out int value))
                     {
                         AppSettings.Instance.MinScoreF3 = value;
                         AppSettings.Instance.Save();
                     }
+                }
+                else if (args[i].StartsWith("--api-url=", StringComparison.OrdinalIgnoreCase))
+                {
+                    ApiBaseUrl = args[i].Substring("--api-url=".Length);
+                    Logger.Log($"API URL overridden to: {ApiBaseUrl}");
+                }
+                else if (args[i] == "--api-url" && i + 1 < args.Length)
+                {
+                    ApiBaseUrl = args[++i];
+                    Logger.Log($"API URL overridden to: {ApiBaseUrl}");
+                }
+                else if (args[i] == "--auto-test")
+                {
+                    AutoTestMode = true;
+                    Logger.Log("Auto-test mode enabled");
+                }
+                else if (args[i].StartsWith("--interval=", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(args[i].Substring("--interval=".Length), out int value))
+                    {
+                        AutoTestIntervalSeconds = value;
+                    }
+                }
+                else if (args[i] == "--interval" && i + 1 < args.Length)
+                {
+                    if (int.TryParse(args[++i], out int value))
+                    {
+                        AutoTestIntervalSeconds = value;
+                    }
+                }
+                else if (args[i].StartsWith("--dir=", StringComparison.OrdinalIgnoreCase))
+                {
+                    AutoTestDir = args[i].Substring("--dir=".Length);
+                }
+                else if (args[i] == "--dir" && i + 1 < args.Length)
+                {
+                    AutoTestDir = args[++i];
+                }
+                else if (args[i] == "--test-token")
+                {
+                    OverrideToken = Environment.GetEnvironmentVariable("OWMETA_TEST_TOKEN") ?? "";
+                    if (string.IsNullOrEmpty(OverrideToken))
+                    {
+                        Logger.Log("--test-token: OWMETA_TEST_TOKEN env var not set");
+                    }
+                    else
+                    {
+                        Logger.Log("Using test token from OWMETA_TEST_TOKEN env var");
+                    }
+                }
+                else if (args[i].StartsWith("--token=", StringComparison.OrdinalIgnoreCase))
+                {
+                    OverrideToken = args[i].Substring("--token=".Length);
+                    Logger.Log("Using custom override token");
+                }
+                else if (args[i] == "--token" && i + 1 < args.Length)
+                {
+                    OverrideToken = args[++i];
+                    Logger.Log("Using custom override token");
                 }
             }
         }
