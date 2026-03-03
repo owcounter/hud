@@ -72,8 +72,8 @@ jobs:
         run: |
           $version = "${{ needs.release-please.outputs.tag_name }}"
           $repo = "${{ github.repository }}"
-          $existing = gh release view $version --json body --jq .body
-          $header = @"
+          gh release view $version --json body --jq .body | Out-File -FilePath existing-body.txt -Encoding utf8
+          @"
           ## Downloads
 
           | Variant | Description |
@@ -83,9 +83,8 @@ jobs:
 
           ---
 
-          "@
-          $body = "$header`n$existing"
-          $body | Out-File -FilePath release-body.txt -Encoding utf8
+          "@ | Out-File -FilePath release-body.txt -Encoding utf8
+          Get-Content existing-body.txt | Add-Content release-body.txt
           gh release edit $version --notes-file release-body.txt
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
