@@ -68,56 +68,61 @@ namespace Owmeta.Model {
             "YW1lEicKB2RhbWFnZTEYAiABKA4yFi5vd21ldGEubW9kZWwuSGVyb05hbWUS",
             "JwoHZGFtYWdlMhgDIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZRIoCghz",
             "dXBwb3J0MRgEIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZRIoCghzdXBw",
-            "b3J0MhgFIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZSJrCg1Xb3JrZXJN",
-            "ZXNzYWdlEi0KC21hdGNoX3N0YXRlGAEgASgLMhgub3dtZXRhLm1vZGVsLk1h",
-            "dGNoU3RhdGUSKwoKZXJyb3JfY29kZRgCIAEoDjIXLm93bWV0YS5lcnJjb2Rl",
-            "LkVyckNvZGUqrAUKCEhlcm9OYW1lEhQKEE5BTUVfVU5TUEVDSUZJRUQQABIL",
-            "CgdVTktOT1dOEAESCgoGSElEREVOEAISBwoDQU5BEAMSCAoEQVNIRRAEEgwK",
-            "CEJBUFRJU1RFEAUSCwoHQkFTVElPThAGEgwKCEJSSUdJVFRFEAcSCwoHQ0FT",
-            "U0lEWRAIEgcKA0RWQRAJEgwKCERPT01GSVNUEAoSCAoERUNITxALEgkKBUdF",
-            "TkpJEAwSCQoFSEFOWk8QDRIKCgZJTExBUkkQDhIQCgxKVU5LRVJfUVVFRU4Q",
-            "DxILCgdKVU5LUkFUEBASCAoESlVOTxAREgoKBktJUklLTxASEg4KCkxJRkVX",
-            "RUFWRVIQExIJCgVMVUNJTxAUEgkKBU1BVUdBEBUSBwoDTUVJEBYSCQoFTUVS",
-            "Q1kQFxIJCgVNT0lSQRAYEgkKBU9SSVNBEBkSCgoGUEhBUkFIEBoSDAoIUkFN",
-            "QVRUUkEQGxIKCgZSRUFQRVIQHBINCglSRUlOSEFSRFQQHRILCgdST0FESE9H",
-            "EB4SCQoFU0lHTUEQHxINCglTT0xESUVSNzYQIBIKCgZTT01CUkEQIRILCgdT",
-            "T0pPVVJOECISDAoIU1lNTUVUUkEQIxIMCghUT1JCSk9SThAkEgoKBlRSQUNF",
-            "UhAlEgsKB1ZFTlRVUkUQJhIOCgpXSURPV01BS0VSECcSCwoHV0lOU1RPThAo",
-            "EhEKDVdSRUNLSU5HX0JBTEwQKRIJCgVaQVJZQRAqEgwKCFpFTllBVFRBECsS",
-            "CgoGSEFaQVJEECwSCQoFRlJFSkEQLRIKCgZXVVlBTkcQLhIMCghWRU5ERVRU",
-            "QRAvEgkKBUFOUkFOEDASCgoGRE9NSU5BEDESCAoERU1SRRAyEg8KC0pFVFBB",
-            "Q0tfQ0FUEDMSCgoGTUlaVUtJEDQqQwoISGVyb1JvbGUSFAoQUk9MRV9VTlNQ",
-            "RUNJRklFRBAAEggKBFRBTksQARIKCgZEQU1BR0UQAhILCgdTVVBQT1JUEAMq",
-            "NwoJSGVyb1N0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASCQoFQUxJVkUQ",
-            "ARIICgRERUFEEAIqLwoEVGVhbRIUChBURUFNX1VOU1BFQ0lGSUVEEAASCAoE",
-            "QkxVRRABEgcKA1JFRBACKocHCgdNYXBOYW1lEhMKD01BUF9VTlNQRUNJRklF",
-            "RBAAEgwKCEFMTF9NQVBTEAESIgoeQU5UQVJDVElDX1BFTklOU1VMQV9JQ0VC",
-            "UkVBS0VSEAISHAoYQU5UQVJDVElDX1BFTklOU1VMQV9MQUJTEAMSIAocQU5U",
-            "QVJDVElDX1BFTklOU1VMQV9TVUJMRVZFTBAEEhIKDkJVU0FOX0RPV05UT1dO",
-            "EAUSEwoPQlVTQU5fU0FOQ1RVQVJZEAYSEwoPQlVTQU5fTUVLQV9CQVNFEAcS",
-            "FAoQSUxJT1NfTElHSFRIT1VTRRAIEg4KCklMSU9TX1dFTEwQCRIPCgtJTElP",
-            "U19SVUlOUxAKEh4KGkxJSklBTkdfVE9XRVJfTklHSFRfTUFSS0VUEAsSGAoU",
-            "TElKSUFOR19UT1dFUl9HQVJERU4QDBIgChxMSUpJQU5HX1RPV0VSX0NPTlRS",
-            "T0xfQ0VOVEVSEA0SEQoNTkVQQUxfVklMTEFHRRAOEhAKDE5FUEFMX1NIUklO",
-            "RRAPEhEKDU5FUEFMX1NBTkNUVU0QEBIVChFPQVNJU19DSVRZX0NFTlRFUhAR",
-            "EhEKDU9BU0lTX0dBUkRFTlMQEhIUChBPQVNJU19VTklWRVJTSVRZEBMSDwoL",
-            "U0FNT0FfQkVBQ0gQFBISCg5TQU1PQV9ET1dOVE9XThAVEhEKDVNBTU9BX1ZP",
-            "TENBTk8QFhIRCg1DSVJDVUlUX1JPWUFMEBcSCgoGRE9SQURPEBgSCgoGSEFW",
-            "QU5BEBkSDgoKSlVOS0VSVE9XThAaEgoKBlJJQUxUTxAbEgwKCFJPVVRFXzY2",
-            "EBwSFgoSU0hBTUJBTElfTU9OQVNURVJZEB0SGAoUV0FUQ0hQT0lOVF9HSUJS",
-            "QUxUQVIQHhIRCg1ORVdfSlVOS19DSVRZEB8SDAoIU1VSQVZBU0EQIBISCg5C",
-            "TElaWkFSRF9XT1JMRBAhEg8KC0VJQ0hFTldBTERFECISDQoJSE9MTFlXT09E",
-            "ECMSDQoJS0lOR1NfUk9XECQSCwoHTUlEVE9XThAlEgsKB05VTUJBTkkQJhIL",
-            "CgdQQVJBSVNPECcSDAoIQ09MT1NTRU8QKBINCglFU1BFUkFOQ0EQKRIUChBO",
-            "RVdfUVVFRU5fU1RSRUVUECoSDAoIUlVOQVNBUEkQKxILCgdIQU5BT0tBECwS",
-            "FAoQVEhST05FX09GX0FOVUJJUxAtKlIKD0NvbXBvc2l0aW9uVHlwZRIgChxD",
-            "T01QT1NJVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASCAoERElWRRABEgkKBUJS",
-            "QVdMEAISCAoEUE9LRRADKkQKCFN0cmVuZ3RoEhgKFFNUUkVOR1RIX1VOU1BF",
-            "Q0lGSUVEEAASCAoEU09GVBABEggKBEhBUkQQAhIKCgZOVUxMRUQQAyp6CghI",
-            "ZXJvVGllchIZChVIRVJPX1RJRVJfVU5TUEVDSUZJRUQQABIPCgtIRVJPX1RJ",
-            "RVJfUxABEg8KC0hFUk9fVElFUl9BEAISDwoLSEVST19USUVSX0IQAxIPCgtI",
-            "RVJPX1RJRVJfQxAEEg8KC0hFUk9fVElFUl9EEAVCKloZb3dtZXRhLmlvL2dv",
-            "L3BrZy9vY2htb2RlbKoCDE93bWV0YS5Nb2RlbGIGcHJvdG8z"));
+            "b3J0MhgFIAEoDjIWLm93bWV0YS5tb2RlbC5IZXJvTmFtZSJrChVSZWNvZ25p",
+            "dGlvbkNvbmZpZGVuY2USDAoEdGFuaxgBIAEoAhIPCgdkYW1hZ2UxGAIgASgC",
+            "Eg8KB2RhbWFnZTIYAyABKAISEAoIc3VwcG9ydDEYBCABKAISEAoIc3VwcG9y",
+            "dDIYBSABKAIi5gEKDVdvcmtlck1lc3NhZ2USLQoLbWF0Y2hfc3RhdGUYASAB",
+            "KAsyGC5vd21ldGEubW9kZWwuTWF0Y2hTdGF0ZRIrCgplcnJvcl9jb2RlGAIg",
+            "ASgOMhcub3dtZXRhLmVycmNvZGUuRXJyQ29kZRI8Cg9ibHVlX2NvbmZpZGVu",
+            "Y2UYAyABKAsyIy5vd21ldGEubW9kZWwuUmVjb2duaXRpb25Db25maWRlbmNl",
+            "EjsKDnJlZF9jb25maWRlbmNlGAQgASgLMiMub3dtZXRhLm1vZGVsLlJlY29n",
+            "bml0aW9uQ29uZmlkZW5jZSqsBQoISGVyb05hbWUSFAoQTkFNRV9VTlNQRUNJ",
+            "RklFRBAAEgsKB1VOS05PV04QARIKCgZISURERU4QAhIHCgNBTkEQAxIICgRB",
+            "U0hFEAQSDAoIQkFQVElTVEUQBRILCgdCQVNUSU9OEAYSDAoIQlJJR0lUVEUQ",
+            "BxILCgdDQVNTSURZEAgSBwoDRFZBEAkSDAoIRE9PTUZJU1QQChIICgRFQ0hP",
+            "EAsSCQoFR0VOSkkQDBIJCgVIQU5aTxANEgoKBklMTEFSSRAOEhAKDEpVTktF",
+            "Ul9RVUVFThAPEgsKB0pVTktSQVQQEBIICgRKVU5PEBESCgoGS0lSSUtPEBIS",
+            "DgoKTElGRVdFQVZFUhATEgkKBUxVQ0lPEBQSCQoFTUFVR0EQFRIHCgNNRUkQ",
+            "FhIJCgVNRVJDWRAXEgkKBU1PSVJBEBgSCQoFT1JJU0EQGRIKCgZQSEFSQUgQ",
+            "GhIMCghSQU1BVFRSQRAbEgoKBlJFQVBFUhAcEg0KCVJFSU5IQVJEVBAdEgsK",
+            "B1JPQURIT0cQHhIJCgVTSUdNQRAfEg0KCVNPTERJRVI3NhAgEgoKBlNPTUJS",
+            "QRAhEgsKB1NPSk9VUk4QIhIMCghTWU1NRVRSQRAjEgwKCFRPUkJKT1JOECQS",
+            "CgoGVFJBQ0VSECUSCwoHVkVOVFVSRRAmEg4KCldJRE9XTUFLRVIQJxILCgdX",
+            "SU5TVE9OECgSEQoNV1JFQ0tJTkdfQkFMTBApEgkKBVpBUllBECoSDAoIWkVO",
+            "WUFUVEEQKxIKCgZIQVpBUkQQLBIJCgVGUkVKQRAtEgoKBldVWUFORxAuEgwK",
+            "CFZFTkRFVFRBEC8SCQoFQU5SQU4QMBIKCgZET01JTkEQMRIICgRFTVJFEDIS",
+            "DwoLSkVUUEFDS19DQVQQMxIKCgZNSVpVS0kQNCpDCghIZXJvUm9sZRIUChBS",
+            "T0xFX1VOU1BFQ0lGSUVEEAASCAoEVEFOSxABEgoKBkRBTUFHRRACEgsKB1NV",
+            "UFBPUlQQAyo3CglIZXJvU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIJ",
+            "CgVBTElWRRABEggKBERFQUQQAiovCgRUZWFtEhQKEFRFQU1fVU5TUEVDSUZJ",
+            "RUQQABIICgRCTFVFEAESBwoDUkVEEAIqhwcKB01hcE5hbWUSEwoPTUFQX1VO",
+            "U1BFQ0lGSUVEEAASDAoIQUxMX01BUFMQARIiCh5BTlRBUkNUSUNfUEVOSU5T",
+            "VUxBX0lDRUJSRUFLRVIQAhIcChhBTlRBUkNUSUNfUEVOSU5TVUxBX0xBQlMQ",
+            "AxIgChxBTlRBUkNUSUNfUEVOSU5TVUxBX1NVQkxFVkVMEAQSEgoOQlVTQU5f",
+            "RE9XTlRPV04QBRITCg9CVVNBTl9TQU5DVFVBUlkQBhITCg9CVVNBTl9NRUtB",
+            "X0JBU0UQBxIUChBJTElPU19MSUdIVEhPVVNFEAgSDgoKSUxJT1NfV0VMTBAJ",
+            "Eg8KC0lMSU9TX1JVSU5TEAoSHgoaTElKSUFOR19UT1dFUl9OSUdIVF9NQVJL",
+            "RVQQCxIYChRMSUpJQU5HX1RPV0VSX0dBUkRFThAMEiAKHExJSklBTkdfVE9X",
+            "RVJfQ09OVFJPTF9DRU5URVIQDRIRCg1ORVBBTF9WSUxMQUdFEA4SEAoMTkVQ",
+            "QUxfU0hSSU5FEA8SEQoNTkVQQUxfU0FOQ1RVTRAQEhUKEU9BU0lTX0NJVFlf",
+            "Q0VOVEVSEBESEQoNT0FTSVNfR0FSREVOUxASEhQKEE9BU0lTX1VOSVZFUlNJ",
+            "VFkQExIPCgtTQU1PQV9CRUFDSBAUEhIKDlNBTU9BX0RPV05UT1dOEBUSEQoN",
+            "U0FNT0FfVk9MQ0FOTxAWEhEKDUNJUkNVSVRfUk9ZQUwQFxIKCgZET1JBRE8Q",
+            "GBIKCgZIQVZBTkEQGRIOCgpKVU5LRVJUT1dOEBoSCgoGUklBTFRPEBsSDAoI",
+            "Uk9VVEVfNjYQHBIWChJTSEFNQkFMSV9NT05BU1RFUlkQHRIYChRXQVRDSFBP",
+            "SU5UX0dJQlJBTFRBUhAeEhEKDU5FV19KVU5LX0NJVFkQHxIMCghTVVJBVkFT",
+            "QRAgEhIKDkJMSVpaQVJEX1dPUkxEECESDwoLRUlDSEVOV0FMREUQIhINCglI",
+            "T0xMWVdPT0QQIxINCglLSU5HU19ST1cQJBILCgdNSURUT1dOECUSCwoHTlVN",
+            "QkFOSRAmEgsKB1BBUkFJU08QJxIMCghDT0xPU1NFTxAoEg0KCUVTUEVSQU5D",
+            "QRApEhQKEE5FV19RVUVFTl9TVFJFRVQQKhIMCghSVU5BU0FQSRArEgsKB0hB",
+            "TkFPS0EQLBIUChBUSFJPTkVfT0ZfQU5VQklTEC0qUgoPQ29tcG9zaXRpb25U",
+            "eXBlEiAKHENPTVBPU0lUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIICgRESVZF",
+            "EAESCQoFQlJBV0wQAhIICgRQT0tFEAMqRAoIU3RyZW5ndGgSGAoUU1RSRU5H",
+            "VEhfVU5TUEVDSUZJRUQQABIICgRTT0ZUEAESCAoESEFSRBACEgoKBk5VTExF",
+            "RBADKnoKCEhlcm9UaWVyEhkKFUhFUk9fVElFUl9VTlNQRUNJRklFRBAAEg8K",
+            "C0hFUk9fVElFUl9TEAESDwoLSEVST19USUVSX0EQAhIPCgtIRVJPX1RJRVJf",
+            "QhADEg8KC0hFUk9fVElFUl9DEAQSDwoLSEVST19USUVSX0QQBUIqWhlvd21l",
+            "dGEuaW8vZ28vcGtnL29jaG1vZGVsqgIMT3dtZXRhLk1vZGVsYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Owmeta.Errcode.ErrcodeReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Owmeta.Model.HeroName), typeof(global::Owmeta.Model.HeroRole), typeof(global::Owmeta.Model.HeroState), typeof(global::Owmeta.Model.Team), typeof(global::Owmeta.Model.MapName), typeof(global::Owmeta.Model.CompositionType), typeof(global::Owmeta.Model.Strength), typeof(global::Owmeta.Model.HeroTier), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -128,7 +133,8 @@ namespace Owmeta.Model {
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchStateAnalysis), global::Owmeta.Model.MatchStateAnalysis.Parser, new[]{ "BlueTeamAnalysis", "RedTeamAnalysis" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.MatchState), global::Owmeta.Model.MatchState.Parser, new[]{ "BlueTeam", "RedTeam", "PlayerHero", "Map" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.TeamComposition), global::Owmeta.Model.TeamComposition.Parser, new[]{ "Tank", "Damage1", "Damage2", "Support1", "Support2" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.WorkerMessage), global::Owmeta.Model.WorkerMessage.Parser, new[]{ "MatchState", "ErrorCode" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.RecognitionConfidence), global::Owmeta.Model.RecognitionConfidence.Parser, new[]{ "Tank", "Damage1", "Damage2", "Support1", "Support2" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Owmeta.Model.WorkerMessage), global::Owmeta.Model.WorkerMessage.Parser, new[]{ "MatchState", "ErrorCode", "BlueConfidence", "RedConfidence" }, null, null, null, null)
           }));
     }
     #endregion
@@ -1966,6 +1972,247 @@ namespace Owmeta.Model {
 
   }
 
+  public sealed partial class RecognitionConfidence : pb::IMessage<RecognitionConfidence> {
+    private static readonly pb::MessageParser<RecognitionConfidence> _parser = new pb::MessageParser<RecognitionConfidence>(() => new RecognitionConfidence());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<RecognitionConfidence> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[7]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RecognitionConfidence() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RecognitionConfidence(RecognitionConfidence other) : this() {
+      tank_ = other.tank_;
+      damage1_ = other.damage1_;
+      damage2_ = other.damage2_;
+      support1_ = other.support1_;
+      support2_ = other.support2_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RecognitionConfidence Clone() {
+      return new RecognitionConfidence(this);
+    }
+
+    /// <summary>Field number for the "tank" field.</summary>
+    public const int TankFieldNumber = 1;
+    private float tank_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Tank {
+      get { return tank_; }
+      set {
+        tank_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "damage1" field.</summary>
+    public const int Damage1FieldNumber = 2;
+    private float damage1_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Damage1 {
+      get { return damage1_; }
+      set {
+        damage1_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "damage2" field.</summary>
+    public const int Damage2FieldNumber = 3;
+    private float damage2_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Damage2 {
+      get { return damage2_; }
+      set {
+        damage2_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "support1" field.</summary>
+    public const int Support1FieldNumber = 4;
+    private float support1_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Support1 {
+      get { return support1_; }
+      set {
+        support1_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "support2" field.</summary>
+    public const int Support2FieldNumber = 5;
+    private float support2_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Support2 {
+      get { return support2_; }
+      set {
+        support2_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as RecognitionConfidence);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(RecognitionConfidence other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Tank, other.Tank)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Damage1, other.Damage1)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Damage2, other.Damage2)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Support1, other.Support1)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Support2, other.Support2)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Tank != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Tank);
+      if (Damage1 != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Damage1);
+      if (Damage2 != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Damage2);
+      if (Support1 != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Support1);
+      if (Support2 != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Support2);
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Tank != 0F) {
+        output.WriteRawTag(13);
+        output.WriteFloat(Tank);
+      }
+      if (Damage1 != 0F) {
+        output.WriteRawTag(21);
+        output.WriteFloat(Damage1);
+      }
+      if (Damage2 != 0F) {
+        output.WriteRawTag(29);
+        output.WriteFloat(Damage2);
+      }
+      if (Support1 != 0F) {
+        output.WriteRawTag(37);
+        output.WriteFloat(Support1);
+      }
+      if (Support2 != 0F) {
+        output.WriteRawTag(45);
+        output.WriteFloat(Support2);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Tank != 0F) {
+        size += 1 + 4;
+      }
+      if (Damage1 != 0F) {
+        size += 1 + 4;
+      }
+      if (Damage2 != 0F) {
+        size += 1 + 4;
+      }
+      if (Support1 != 0F) {
+        size += 1 + 4;
+      }
+      if (Support2 != 0F) {
+        size += 1 + 4;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(RecognitionConfidence other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Tank != 0F) {
+        Tank = other.Tank;
+      }
+      if (other.Damage1 != 0F) {
+        Damage1 = other.Damage1;
+      }
+      if (other.Damage2 != 0F) {
+        Damage2 = other.Damage2;
+      }
+      if (other.Support1 != 0F) {
+        Support1 = other.Support1;
+      }
+      if (other.Support2 != 0F) {
+        Support2 = other.Support2;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 13: {
+            Tank = input.ReadFloat();
+            break;
+          }
+          case 21: {
+            Damage1 = input.ReadFloat();
+            break;
+          }
+          case 29: {
+            Damage2 = input.ReadFloat();
+            break;
+          }
+          case 37: {
+            Support1 = input.ReadFloat();
+            break;
+          }
+          case 45: {
+            Support2 = input.ReadFloat();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class WorkerMessage : pb::IMessage<WorkerMessage> {
     private static readonly pb::MessageParser<WorkerMessage> _parser = new pb::MessageParser<WorkerMessage>(() => new WorkerMessage());
     private pb::UnknownFieldSet _unknownFields;
@@ -1974,7 +2221,7 @@ namespace Owmeta.Model {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Owmeta.Model.OchmodelReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1993,6 +2240,8 @@ namespace Owmeta.Model {
     public WorkerMessage(WorkerMessage other) : this() {
       matchState_ = other.matchState_ != null ? other.matchState_.Clone() : null;
       errorCode_ = other.errorCode_;
+      blueConfidence_ = other.blueConfidence_ != null ? other.blueConfidence_.Clone() : null;
+      redConfidence_ = other.redConfidence_ != null ? other.redConfidence_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2023,6 +2272,28 @@ namespace Owmeta.Model {
       }
     }
 
+    /// <summary>Field number for the "blue_confidence" field.</summary>
+    public const int BlueConfidenceFieldNumber = 3;
+    private global::Owmeta.Model.RecognitionConfidence blueConfidence_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Owmeta.Model.RecognitionConfidence BlueConfidence {
+      get { return blueConfidence_; }
+      set {
+        blueConfidence_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "red_confidence" field.</summary>
+    public const int RedConfidenceFieldNumber = 4;
+    private global::Owmeta.Model.RecognitionConfidence redConfidence_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Owmeta.Model.RecognitionConfidence RedConfidence {
+      get { return redConfidence_; }
+      set {
+        redConfidence_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as WorkerMessage);
@@ -2038,6 +2309,8 @@ namespace Owmeta.Model {
       }
       if (!object.Equals(MatchState, other.MatchState)) return false;
       if (ErrorCode != other.ErrorCode) return false;
+      if (!object.Equals(BlueConfidence, other.BlueConfidence)) return false;
+      if (!object.Equals(RedConfidence, other.RedConfidence)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2046,6 +2319,8 @@ namespace Owmeta.Model {
       int hash = 1;
       if (matchState_ != null) hash ^= MatchState.GetHashCode();
       if (ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) hash ^= ErrorCode.GetHashCode();
+      if (blueConfidence_ != null) hash ^= BlueConfidence.GetHashCode();
+      if (redConfidence_ != null) hash ^= RedConfidence.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2067,6 +2342,14 @@ namespace Owmeta.Model {
         output.WriteRawTag(16);
         output.WriteEnum((int) ErrorCode);
       }
+      if (blueConfidence_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(BlueConfidence);
+      }
+      if (redConfidence_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(RedConfidence);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2080,6 +2363,12 @@ namespace Owmeta.Model {
       }
       if (ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ErrorCode);
+      }
+      if (blueConfidence_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlueConfidence);
+      }
+      if (redConfidence_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(RedConfidence);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -2101,6 +2390,18 @@ namespace Owmeta.Model {
       if (other.ErrorCode != global::Owmeta.Errcode.ErrCode.Unspecified) {
         ErrorCode = other.ErrorCode;
       }
+      if (other.blueConfidence_ != null) {
+        if (blueConfidence_ == null) {
+          BlueConfidence = new global::Owmeta.Model.RecognitionConfidence();
+        }
+        BlueConfidence.MergeFrom(other.BlueConfidence);
+      }
+      if (other.redConfidence_ != null) {
+        if (redConfidence_ == null) {
+          RedConfidence = new global::Owmeta.Model.RecognitionConfidence();
+        }
+        RedConfidence.MergeFrom(other.RedConfidence);
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2121,6 +2422,20 @@ namespace Owmeta.Model {
           }
           case 16: {
             ErrorCode = (global::Owmeta.Errcode.ErrCode) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            if (blueConfidence_ == null) {
+              BlueConfidence = new global::Owmeta.Model.RecognitionConfidence();
+            }
+            input.ReadMessage(BlueConfidence);
+            break;
+          }
+          case 34: {
+            if (redConfidence_ == null) {
+              RedConfidence = new global::Owmeta.Model.RecognitionConfidence();
+            }
+            input.ReadMessage(RedConfidence);
             break;
           }
         }

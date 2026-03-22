@@ -404,18 +404,6 @@ namespace Owmeta
                 {
                     AutoTestDir = args[++i];
                 }
-                else if (args[i] == "--test-token")
-                {
-                    OverrideToken = Environment.GetEnvironmentVariable("OWMETA_TEST_TOKEN") ?? "";
-                    if (string.IsNullOrEmpty(OverrideToken))
-                    {
-                        Logger.Log("--test-token: OWMETA_TEST_TOKEN env var not set");
-                    }
-                    else
-                    {
-                        Logger.Log("Using test token from OWMETA_TEST_TOKEN env var");
-                    }
-                }
                 else if (args[i].StartsWith("--token=", StringComparison.OrdinalIgnoreCase))
                 {
                     OverrideToken = args[i].Substring("--token=".Length);
