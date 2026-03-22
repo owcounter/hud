@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/owcounter/hud/compare/v1.1.0...v1.1.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* eliminate keyboard hook input lag and improve debug tooling ([023a766](https://github.com/owcounter/hud/commit/023a766b5c851c87b47976e25b051bf8c7373e8c))
+* eliminate keyboard hook input lag and improve debug tooling ([11fb417](https://github.com/owcounter/hud/commit/11fb4172848b547c00a00345cedb0b9ed863af9e))
+* preserve newlines in release notes formatting ([eea06b1](https://github.com/owcounter/hud/commit/eea06b1177dc6d8d405f62f22595c90de7c97cbc))
+
 ## [1.1.0](https://github.com/owcounter/hud/compare/v1.0.7...v1.1.0) (2026-03-03)
 
 
