@@ -144,8 +144,8 @@ namespace Owmeta.Display
         private IntPtr _keyboardHookId = IntPtr.Zero;
         private LowLevelKeyboardProc? _keyboardProc;
         private volatile bool _hudWasVisibleBeforeScreenshot;
-        private Visibility _swapVisibilityBeforeScreenshot;
-        private Visibility _compVisibilityBeforeScreenshot;
+        private volatile int _swapVisibilityState; // 0 = Hidden, 1 = Visible (updated on UI thread)
+        private volatile int _compVisibilityState; // 0 = Hidden, 1 = Visible (updated on UI thread)
         private int _screenshotKeyPressed; // 0 = not pressed, 1 = pressed (use Interlocked for thread safety)
 
         // Track hotkey pressed state to prevent flickering from key repeat
@@ -520,20 +520,13 @@ namespace Owmeta.Display
                 var filteredBlue = FilterUnknownHeroes(response.BlueTeamAnalysis);
                 var filteredRed = FilterUnknownHeroes(response.RedTeamAnalysis);
 
-                // Track if we're using cached data due to detection failure
-                bool usingCachedData = false;
-
                 // Only update if we have valid data (at least some recognized heroes)
                 // This preserves previous known data when detection fails
                 if (filteredBlue.Count > 0)
                     _blueTeamAnalysis = filteredBlue;
-                else if (_blueTeamAnalysis != null)
-                    usingCachedData = true;
 
                 if (filteredRed.Count > 0)
                     _redTeamAnalysis = filteredRed;
-                else if (_redTeamAnalysis != null)
-                    usingCachedData = true;
 
                 if (_blueTeamAnalysis != null)
                     BlueTeamPanel.UpdateCompositions(_blueTeamAnalysis);
@@ -684,6 +677,10 @@ namespace Owmeta.Display
             bool anyVisible = SwapLayout.Visibility == Visibility.Visible ||
                               CompositionLayout.Visibility == Visibility.Visible;
             Visibility = anyVisible ? Visibility.Visible : Visibility.Hidden;
+
+            // Sync volatile state for keyboard hook (avoids Dispatcher.Invoke in hook callback)
+            _swapVisibilityState = SwapLayout.Visibility == Visibility.Visible ? 1 : 0;
+            _compVisibilityState = CompositionLayout.Visibility == Visibility.Visible ? 1 : 0;
         }
 
         private async void CaptureScreenshotWithHiddenHud()
@@ -729,21 +726,19 @@ namespace Owmeta.Display
                         // Thread-safe check-and-set: only proceed if we're first to set the flag
                         if (Interlocked.CompareExchange(ref _screenshotKeyPressed, 1, 0) == 0)
                         {
-                            // Capture visibility state NOW (on hook thread) before async dispatch
-                            // to avoid race condition if key is released very quickly
-                            var swapVis = Visibility.Hidden;
-                            var compVis = Visibility.Hidden;
-                            Dispatcher.Invoke(() =>
-                            {
-                                swapVis = SwapLayout.Visibility;
-                                compVis = CompositionLayout.Visibility;
-                            });
-                            _swapVisibilityBeforeScreenshot = swapVis;
-                            _compVisibilityBeforeScreenshot = compVis;
-                            _hudWasVisibleBeforeScreenshot = swapVis == Visibility.Visible || compVis == Visibility.Visible;
+                            // Read cached visibility state (updated on UI thread via volatile fields)
+                            // No blocking calls in hook — Dispatcher.Invoke and Logger.Log (file I/O)
+                            // would block the hook thread and cause game input lag
+                            var swapVis = _swapVisibilityState == 1;
+                            var compVis = _compVisibilityState == 1;
+                            _hudWasVisibleBeforeScreenshot = swapVis || compVis;
 
-                            Logger.Log($"Screenshot key pressed (vkCode={vkCode})");
-                            Dispatcher.BeginInvoke(new Action(() => CaptureScreenshotWithHiddenHud()));
+                            var capturedVkCode = vkCode;
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                Logger.Log($"Screenshot key pressed (vkCode={capturedVkCode})");
+                                CaptureScreenshotWithHiddenHud();
+                            }));
                         }
                     }
                     else if (wParam == (IntPtr)WM_KEYUP)
@@ -751,17 +746,16 @@ namespace Owmeta.Display
                         // Thread-safe reset: only proceed if flag was set
                         if (Interlocked.CompareExchange(ref _screenshotKeyPressed, 0, 1) == 1)
                         {
-                            Logger.Log("Screenshot key released - restoring HUD");
-                            // Capture the saved visibility state for the closure
                             var wasVisible = _hudWasVisibleBeforeScreenshot;
-                            var swapVis = _swapVisibilityBeforeScreenshot;
-                            var compVis = _compVisibilityBeforeScreenshot;
+                            var hadSwap = _swapVisibilityState == 1;
+                            var hadComp = _compVisibilityState == 1;
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
+                                Logger.Log("Screenshot key released - restoring HUD");
                                 if (wasVisible)
                                 {
-                                    SwapLayout.Visibility = swapVis;
-                                    CompositionLayout.Visibility = compVis;
+                                    SwapLayout.Visibility = hadSwap ? Visibility.Visible : Visibility.Hidden;
+                                    CompositionLayout.Visibility = hadComp ? Visibility.Visible : Visibility.Hidden;
                                     UpdateWindowVisibility();
                                 }
                             }));
