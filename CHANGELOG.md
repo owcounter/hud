@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/owcounter/hud/compare/v1.1.1...v1.1.2) (2026-03-25)
+
+
+### Performance Improvements
+
+* replace keyboard hook with Raw Input API for zero-lag hotkey detection ([0b742c0](https://github.com/owcounter/hud/commit/0b742c0f8f3fcb6ea61c00872de4c35e3d6f1f03))
+* replace keyboard hook with Raw Input API for zero-lag hotkeys ([213906d](https://github.com/owcounter/hud/commit/213906d1ef2207fc38caf70eac0f2a40a33b7424))
+
 ## [1.1.1](https://github.com/owcounter/hud/compare/v1.1.0...v1.1.1) (2026-03-22)
 
 
