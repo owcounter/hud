@@ -24,6 +24,9 @@ namespace Owmeta.Display
         private const uint SWP_NOSIZE = 0x0001;
         private const int WM_HOTKEY = 0x0312;
         private const int WM_DISPLAYCHANGE = 0x007E;
+        private const int WM_INPUT = 0x00FF;
+        private const int WM_KEYDOWN = 0x0100;
+        private const int WM_KEYUP = 0x0101;
 
         // Hotkey IDs
         private const int SWAP_HOTKEY_ID = 9000;
@@ -37,10 +40,10 @@ namespace Owmeta.Display
         private const int XBUTTON1 = 0x0001;
         private const int XBUTTON2 = 0x0002;
 
-        // Low-level keyboard hook constants
-        private const int WH_KEYBOARD_LL = 13;
-        private const int WM_KEYDOWN = 0x0100;
-        private const int WM_KEYUP = 0x0101;
+        // Raw Input constants
+        private const uint RIDEV_INPUTSINK = 0x00000100;
+        private const int RID_INPUT = 0x10000003;
+        private const int RIM_TYPEKEYBOARD = 1;
 
         private MatchState? _matchState;
         private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
@@ -73,12 +76,9 @@ namespace Owmeta.Display
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-        // Low-level hooks
+        // Low-level mouse hook
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        [DllImport("user32.dll", SetLastError = true, EntryPoint = "SetWindowsHookEx")]
-        private static extern IntPtr SetWindowsHookExKeyboard(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
 
         [DllImport("user32.dll")]
         private static extern bool UnhookWindowsHookEx(IntPtr hhk);
@@ -89,8 +89,14 @@ namespace Owmeta.Display
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetModuleHandle(string? lpModuleName);
 
+        // Raw Input API
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool RegisterRawInputDevices([MarshalAs(UnmanagedType.LPArray)] RAWINPUTDEVICE[] pRawInputDevices, uint uiNumDevices, uint cbSize);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint GetRawInputData(IntPtr hRawInput, uint uiCommand, IntPtr pData, ref uint pcbSize, uint cbSizeHeader);
+
         private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MSLLHOOKSTRUCT
@@ -103,13 +109,39 @@ namespace Owmeta.Display
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct KBDLLHOOKSTRUCT
+        private struct RAWINPUTDEVICE
         {
-            public uint vkCode;
-            public uint scanCode;
-            public uint flags;
-            public uint time;
-            public IntPtr dwExtraInfo;
+            public ushort usUsagePage;
+            public ushort usUsage;
+            public uint dwFlags;
+            public IntPtr hwndTarget;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RAWINPUTHEADER
+        {
+            public int dwType;
+            public int dwSize;
+            public IntPtr hDevice;
+            public IntPtr wParam;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RAWKEYBOARD
+        {
+            public ushort MakeCode;
+            public ushort Flags;
+            public ushort Reserved;
+            public ushort VKey;
+            public uint Message;
+            public uint ExtraInformation;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RAWINPUT
+        {
+            public RAWINPUTHEADER header;
+            public RAWKEYBOARD keyboard;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -136,21 +168,22 @@ namespace Owmeta.Display
         private bool _teamHotkeyRegistered;
         private int _currentScreenshotKey;
 
-        // Mouse hook
+        // Mouse hook (for side button support — no Raw Input equivalent for XButtons)
         private IntPtr _mouseHookId = IntPtr.Zero;
         private LowLevelMouseProc? _mouseProc;
 
-        // Keyboard hook for screenshot key (detects both press and release without blocking)
-        private IntPtr _keyboardHookId = IntPtr.Zero;
-        private LowLevelKeyboardProc? _keyboardProc;
-        private volatile bool _hudWasVisibleBeforeScreenshot;
-        private volatile int _swapVisibilityState; // 0 = Hidden, 1 = Visible (updated on UI thread)
-        private volatile int _compVisibilityState; // 0 = Hidden, 1 = Visible (updated on UI thread)
-        private int _screenshotKeyPressed; // 0 = not pressed, 1 = pressed (use Interlocked for thread safety)
+        // Raw Input keyboard state (replaces WH_KEYBOARD_LL hook — zero input lag)
+        private bool _rawInputRegistered;
+        private IntPtr _rawInputBuffer = IntPtr.Zero;  // Pre-allocated buffer to avoid per-keystroke allocation
+        private uint _rawInputBufferSize;
+        private bool _hudWasVisibleBeforeScreenshot;
+        private bool _screenshotKeyPressed;
+        private Visibility _swapVisibilityBeforeScreenshot;
+        private Visibility _compVisibilityBeforeScreenshot;
 
         // Track hotkey pressed state to prevent flickering from key repeat
-        private volatile bool _swapKeyHeld;
-        private volatile bool _teamKeyHeld;
+        private bool _swapKeyHeld;
+        private bool _teamKeyHeld;
 
         public OverlayWindow(bool devMode)
         {
@@ -244,8 +277,8 @@ namespace Owmeta.Display
                 Logger.Log($"[DEV] F5/F6 hotkeys registered: F5={f5Result}, F6={f6Result}");
             }
 
-            // Register TAB hotkey for auto-capture if enabled
-            UpdateScreenshotHotkeyRegistration();
+            // Register Raw Input for keyboard (replaces WH_KEYBOARD_LL — no input lag)
+            RegisterRawInput();
 
             // Set up mouse hook if needed
             SetupMouseHookIfNeeded();
@@ -328,7 +361,7 @@ namespace Owmeta.Display
             // Update mouse hook for mouse button bindings
             SetupMouseHookIfNeeded();
 
-            // Update keyboard hook for keyboard bindings
+            // Update tracked keys for Raw Input handler
             UpdateScreenshotHotkeyRegistration();
         }
 
@@ -408,8 +441,8 @@ namespace Owmeta.Display
                 _mouseHookId = IntPtr.Zero;
             }
 
-            // Remove keyboard hook
-            RemoveKeyboardHook();
+            // Unregister Raw Input
+            UnregisterRawInput();
 
             if (_windowHandle != IntPtr.Zero)
             {
@@ -423,35 +456,66 @@ namespace Owmeta.Display
             _source?.RemoveHook(HandleMessages);
         }
 
+        private void RegisterRawInput()
+        {
+            if (_rawInputRegistered || _windowHandle == IntPtr.Zero) return;
+
+            var rid = new RAWINPUTDEVICE[]
+            {
+                new()
+                {
+                    usUsagePage = 0x01,      // Generic Desktop
+                    usUsage = 0x06,          // Keyboard
+                    dwFlags = RIDEV_INPUTSINK, // Receive input even when not in foreground
+                    hwndTarget = _windowHandle
+                }
+            };
+
+            if (RegisterRawInputDevices(rid, (uint)rid.Length, (uint)Marshal.SizeOf<RAWINPUTDEVICE>()))
+            {
+                _rawInputRegistered = true;
+                // Pre-allocate buffer for RAWINPUT struct (avoids per-keystroke allocation)
+                _rawInputBufferSize = (uint)Marshal.SizeOf<RAWINPUT>() + 16; // Extra padding
+                _rawInputBuffer = Marshal.AllocHGlobal((int)_rawInputBufferSize);
+                Logger.Log("Raw Input registered for keyboard (zero-lag hotkey detection)");
+            }
+            else
+            {
+                Logger.Log($"Failed to register Raw Input: {Marshal.GetLastWin32Error()}");
+            }
+        }
+
+        private void UnregisterRawInput()
+        {
+            if (!_rawInputRegistered) return;
+
+            var rid = new RAWINPUTDEVICE[]
+            {
+                new()
+                {
+                    usUsagePage = 0x01,
+                    usUsage = 0x06,
+                    dwFlags = 0x00000001, // RIDEV_REMOVE
+                    hwndTarget = IntPtr.Zero
+                }
+            };
+
+            RegisterRawInputDevices(rid, (uint)rid.Length, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
+            _rawInputRegistered = false;
+
+            if (_rawInputBuffer != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_rawInputBuffer);
+                _rawInputBuffer = IntPtr.Zero;
+            }
+        }
+
         public void UpdateScreenshotHotkeyRegistration()
         {
+            // Raw Input is always registered — just update tracked keys
             if (_windowHandle == IntPtr.Zero) return;
-
             var settings = AppSettings.Instance;
-            bool needScreenshotHook = settings.TabScreenshotEnabled && settings.ScreenshotKey > 0;
-            bool needSwapHook = !KeyHelper.IsMouseButton(settings.SwapSuggestionsKey) && settings.SwapSuggestionsKey > 0;
-            bool needTeamHook = !KeyHelper.IsMouseButton(settings.TeamCompositionKey) && settings.TeamCompositionKey > 0;
-            bool shouldBeEnabled = needScreenshotHook || needSwapHook || needTeamHook;
-
-            if (shouldBeEnabled && _keyboardHookId == IntPtr.Zero)
-            {
-                // Install keyboard hook to detect key press/release without blocking
-                _keyboardProc = KeyboardHookCallback;
-                _keyboardHookId = SetWindowsHookExKeyboard(WH_KEYBOARD_LL, _keyboardProc, GetModuleHandle(null), 0);
-                _currentScreenshotKey = settings.ScreenshotKey;
-                Logger.Log($"Keyboard hook installed for hotkeys");
-            }
-            else if (!shouldBeEnabled && _keyboardHookId != IntPtr.Zero)
-            {
-                RemoveKeyboardHook();
-                Logger.Log("Keyboard hook removed");
-            }
-
-            // Update tracked keys
-            if (shouldBeEnabled)
-            {
-                _currentScreenshotKey = settings.ScreenshotKey;
-            }
+            _currentScreenshotKey = settings.ScreenshotKey;
         }
 
         private void InitializeWindow()
@@ -677,10 +741,6 @@ namespace Owmeta.Display
             bool anyVisible = SwapLayout.Visibility == Visibility.Visible ||
                               CompositionLayout.Visibility == Visibility.Visible;
             Visibility = anyVisible ? Visibility.Visible : Visibility.Hidden;
-
-            // Sync volatile state for keyboard hook (avoids Dispatcher.Invoke in hook callback)
-            _swapVisibilityState = SwapLayout.Visibility == Visibility.Visible ? 1 : 0;
-            _compVisibilityState = CompositionLayout.Visibility == Visibility.Visible ? 1 : 0;
         }
 
         private async void CaptureScreenshotWithHiddenHud()
@@ -701,64 +761,51 @@ namespace Owmeta.Display
             _screenshotService?.CaptureAndProcessScreenshot();
         }
 
-        private void RemoveKeyboardHook()
+        private void HandleRawInput(IntPtr lParam)
         {
-            if (_keyboardHookId != IntPtr.Zero)
-            {
-                UnhookWindowsHookEx(_keyboardHookId);
-                _keyboardHookId = IntPtr.Zero;
-                _keyboardProc = null;
-            }
-        }
+            if (_rawInputBuffer == IntPtr.Zero) return;
 
-        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0)
-            {
-                var hookStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-                int vkCode = (int)hookStruct.vkCode;
+            uint dwSize = _rawInputBufferSize;
+            if (GetRawInputData(lParam, RID_INPUT, _rawInputBuffer, ref dwSize, (uint)Marshal.SizeOf<RAWINPUTHEADER>()) == unchecked((uint)-1))
+                return;
+
+            var raw = Marshal.PtrToStructure<RAWINPUT>(_rawInputBuffer);
+            if (raw.header.dwType != RIM_TYPEKEYBOARD) return;
+
+            int vkCode = raw.keyboard.VKey;
+
+            // Fast path: skip keys we don't care about
+            if (vkCode != _currentScreenshotKey && vkCode != _currentSwapKey && vkCode != _currentTeamKey)
+                return;
+
+            bool isKeyDown = raw.keyboard.Message == WM_KEYDOWN;
+            bool isKeyUp = raw.keyboard.Message == WM_KEYUP;
+            if (!isKeyDown && !isKeyUp) return;
 
                 // Handle screenshot key
                 if (vkCode == _currentScreenshotKey)
                 {
-                    if (wParam == (IntPtr)WM_KEYDOWN)
+                    if (isKeyDown && !_screenshotKeyPressed)
                     {
-                        // Thread-safe check-and-set: only proceed if we're first to set the flag
-                        if (Interlocked.CompareExchange(ref _screenshotKeyPressed, 1, 0) == 0)
-                        {
-                            // Read cached visibility state (updated on UI thread via volatile fields)
-                            // No blocking calls in hook — Dispatcher.Invoke and Logger.Log (file I/O)
-                            // would block the hook thread and cause game input lag
-                            var swapVis = _swapVisibilityState == 1;
-                            var compVis = _compVisibilityState == 1;
-                            _hudWasVisibleBeforeScreenshot = swapVis || compVis;
+                        _screenshotKeyPressed = true;
+                        _swapVisibilityBeforeScreenshot = SwapLayout.Visibility;
+                        _compVisibilityBeforeScreenshot = CompositionLayout.Visibility;
+                        _hudWasVisibleBeforeScreenshot =
+                            _swapVisibilityBeforeScreenshot == Visibility.Visible ||
+                            _compVisibilityBeforeScreenshot == Visibility.Visible;
 
-                            var capturedVkCode = vkCode;
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                Logger.Log($"Screenshot key pressed (vkCode={capturedVkCode})");
-                                CaptureScreenshotWithHiddenHud();
-                            }));
-                        }
+                        Logger.Log($"Screenshot key pressed (vkCode={vkCode})");
+                        CaptureScreenshotWithHiddenHud();
                     }
-                    else if (wParam == (IntPtr)WM_KEYUP)
+                    else if (isKeyUp && _screenshotKeyPressed)
                     {
-                        // Thread-safe reset: only proceed if flag was set
-                        if (Interlocked.CompareExchange(ref _screenshotKeyPressed, 0, 1) == 1)
+                        _screenshotKeyPressed = false;
+                        Logger.Log("Screenshot key released - restoring HUD");
+                        if (_hudWasVisibleBeforeScreenshot)
                         {
-                            var wasVisible = _hudWasVisibleBeforeScreenshot;
-                            var hadSwap = _swapVisibilityState == 1;
-                            var hadComp = _compVisibilityState == 1;
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                Logger.Log("Screenshot key released - restoring HUD");
-                                if (wasVisible)
-                                {
-                                    SwapLayout.Visibility = hadSwap ? Visibility.Visible : Visibility.Hidden;
-                                    CompositionLayout.Visibility = hadComp ? Visibility.Visible : Visibility.Hidden;
-                                    UpdateWindowVisibility();
-                                }
-                            }));
+                            SwapLayout.Visibility = _swapVisibilityBeforeScreenshot;
+                            CompositionLayout.Visibility = _compVisibilityBeforeScreenshot;
+                            UpdateWindowVisibility();
                         }
                     }
                 }
@@ -766,12 +813,12 @@ namespace Owmeta.Display
                 // Handle swap key (F2) - track held state to prevent flicker from key repeat
                 if (vkCode == _currentSwapKey && !KeyHelper.IsMouseButton(_currentSwapKey))
                 {
-                    if (wParam == (IntPtr)WM_KEYDOWN && !_swapKeyHeld)
+                    if (isKeyDown && !_swapKeyHeld)
                     {
                         _swapKeyHeld = true;
-                        Dispatcher.BeginInvoke(new Action(() => ToggleVisibility()));
+                        ToggleVisibility();
                     }
-                    else if (wParam == (IntPtr)WM_KEYUP)
+                    else if (isKeyUp)
                     {
                         _swapKeyHeld = false;
                     }
@@ -780,27 +827,25 @@ namespace Owmeta.Display
                 // Handle team key (F3) - track held state to prevent flicker from key repeat
                 if (vkCode == _currentTeamKey && !KeyHelper.IsMouseButton(_currentTeamKey))
                 {
-                    if (wParam == (IntPtr)WM_KEYDOWN && !_teamKeyHeld)
+                    if (isKeyDown && !_teamKeyHeld)
                     {
                         _teamKeyHeld = true;
-                        Dispatcher.BeginInvoke(new Action(() => ToggleCompositionDashboard()));
+                        ToggleCompositionDashboard();
                     }
-                    else if (wParam == (IntPtr)WM_KEYUP)
+                    else if (isKeyUp)
                     {
                         _teamKeyHeld = false;
                     }
                 }
-            }
-
-            // IMPORTANT: Always pass the key to the next hook so it reaches the game
-            return CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
         }
 
         private IntPtr HandleMessages(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             switch (msg)
             {
-                // F2/F3 hotkeys now handled via keyboard hook to prevent flicker from key repeat
+                case WM_INPUT:
+                    HandleRawInput(lParam);
+                    break;
                 case WM_HOTKEY when wParam.ToInt32() == F5_HOTKEY_ID:
                     Logger.Log("[DEV] F5 pressed - previous screenshot");
                     _screenshotService?.PreviousScreenshot();
