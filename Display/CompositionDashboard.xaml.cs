@@ -31,6 +31,26 @@ namespace Owmeta.Display
 
         private MapName? _currentMap;
 
+        public void Clear()
+        {
+            _currentMap = null;
+            BlueTeamPanel.Clear();
+            RedTeamPanel.Clear();
+            VulnerableTeammates.Clear();
+            DangerousEnemies.Clear();
+            TeamSwapSuggestions.Clear();
+            VulnerableSection.Visibility = Visibility.Collapsed;
+            DangerousSection.Visibility = Visibility.Collapsed;
+            TeamSwapSection.Visibility = Visibility.Collapsed;
+            MatchupText.Text = "NO DATA";
+            MatchupText.Foreground = EvenColor;
+
+            if (MatchupIcon != null)
+            {
+                MatchupIcon.Stroke = EvenColor;
+            }
+        }
+
         private void UpdateMatchupIndicator()
         {
             int blueScore = BlueTeamPanel.LastScore;
