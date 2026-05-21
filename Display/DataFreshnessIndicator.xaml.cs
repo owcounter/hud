@@ -66,6 +66,12 @@ namespace Owmeta.Display
             UpdateDisplay();
         }
 
+        public void Reset()
+        {
+            _lastUpdateTime = DateTime.MinValue;
+            UpdateDisplay();
+        }
+
         private void UpdateDisplay()
         {
             if (_lastUpdateTime == DateTime.MinValue)

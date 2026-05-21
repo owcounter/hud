@@ -578,6 +578,12 @@ namespace Owmeta.Display
         {
             Dispatcher.Invoke(() =>
             {
+                bool knownMapChanged = MatchBoundaryPolicy.IsKnownMapChange(_matchState?.Map, response.MatchState.Map);
+                if (knownMapChanged)
+                {
+                    ResetAnalysisState($"map changed from {_matchState?.Map} to {response.MatchState.Map}");
+                }
+
                 _matchState = response.MatchState;
 
                 // Filter out Unknown/Hidden heroes, keeping only recognized ones
@@ -620,6 +626,11 @@ namespace Owmeta.Display
                 if (_blueTeamAnalysis != null && _redTeamAnalysis != null)
                 {
                     CompositionDashboard.Update(_blueTeamAnalysis, _redTeamAnalysis);
+                }
+
+                if (knownMapChanged && filteredBlue.Count == 0 && filteredRed.Count == 0)
+                {
+                    DataFreshnessIndicator.SetStatus("New match detected - capture again");
                 }
             });
         }
@@ -669,6 +680,21 @@ namespace Owmeta.Display
                 UpdateHotkeyRegistrations();
                 UpdateScreenshotHotkeyRegistration();
             });
+        }
+
+        private void ResetAnalysisState(string reason)
+        {
+            _matchState = null;
+            _blueTeamAnalysis = null;
+            _redTeamAnalysis = null;
+
+            BlueTeamPanel.Clear();
+            RedTeamPanel.Clear();
+            SwapSuggestionsPanel.Clear();
+            CompositionDashboard.Clear();
+            DataFreshnessIndicator.Reset();
+
+            Logger.Log($"HUD analysis cache reset: {reason}");
         }
 
         public void ToggleVisibility()

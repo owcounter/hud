@@ -21,6 +21,16 @@ namespace Owmeta.Display
             SuggestionsControl.ItemsSource = SwapSuggestions;
         }
 
+        public void Clear()
+        {
+            _currentHero = null;
+            _currentMap = null;
+            _blueTeamAnalysis = null;
+            CurrentHeroCard.DataContext = null;
+            CurrentHeroCard.Visibility = Visibility.Collapsed;
+            SwapSuggestions.Clear();
+        }
+
         public void UpdateSuggestions(HeroName playerHero, Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis, MapName? currentMap = null)
         {
             try
@@ -34,6 +44,7 @@ namespace Owmeta.Display
                 // Update current hero
                 _currentHero = CreateHeroViewModel(playerHero, currentHeroAnalysis, true);
                 CurrentHeroCard.DataContext = _currentHero;
+                CurrentHeroCard.Visibility = Visibility.Visible;
 
                 // Update swap suggestions - sorted by score (highest first), filtered by min score, limited to 21
                 SwapSuggestions.Clear();

@@ -88,6 +88,17 @@ namespace Owmeta.Display
             CompactList.ItemsSource = Compositions;
         }
 
+        public void Clear()
+        {
+            LastScore = 0;
+            Compositions.Clear();
+
+            var neutralColor = Color.FromRgb(0x9C, 0xA3, 0xAF);
+            TeamScoreText.Text = "--";
+            TeamScoreText.Foreground = new SolidColorBrush(neutralColor);
+            ScoreBadgeBackground.Color = Color.FromArgb(0x1A, neutralColor.R, neutralColor.G, neutralColor.B);
+        }
+
         public void UpdateCompositions(Dictionary<HeroName, HeroAnalysis> teamData)
         {
             if (teamData == null) return;
