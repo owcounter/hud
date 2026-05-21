@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/owcounter/hud/compare/v1.1.2...v1.1.3) (2026-05-21)
+
+
+### Bug Fixes
+
+* reset HUD cache on map changes ([59cf7ed](https://github.com/owcounter/hud/commit/59cf7ed102c28a0366c0921d34117ce2eaa01d50))
+
 ## [1.1.2](https://github.com/owcounter/hud/compare/v1.1.1...v1.1.2) (2026-03-25)
 
 
