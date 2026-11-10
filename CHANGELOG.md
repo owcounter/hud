@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0](https://github.com/owcounter/hud/compare/v1.1.2...v1.2.0) (2026-11-10)
+
+
+### Features
+
+* recognize scoreboards on the PC ([#17](https://github.com/owcounter/hud/issues/17)) ([93eadbe](https://github.com/owcounter/hud/commit/93eadbe838edf92e6072a1021513279cdefcac2a))
+* recognize screenshots through the API worker pool ([481c20c](https://github.com/owcounter/hud/commit/481c20c4d4d9bd7c2fd0b99b3a495c350b526e26))
+* recognize through the API worker pool and redesign the HUD ([d9e1cbc](https://github.com/owcounter/hud/commit/d9e1cbc10c4e78c103e88686dd2153f0507f80b9))
+* redesign HUD as an in-game scoreboard with composition guidance ([7f30eac](https://github.com/owcounter/hud/commit/7f30eacad0d15cfa35336f5d28a8f0f9d625adcc))
+* replace screenshot recognition and fix overlay latency ([c81aadb](https://github.com/owcounter/hud/commit/c81aadbf64c034b0575df0c4ca1a4d8154219f11))
+* show counters, compositions and threats at a glance ([016015b](https://github.com/owcounter/hud/commit/016015bbcb0baa5dfb3b43dc587645c6a78a7656))
+* show synergies in the swap and team views ([fb6a7e4](https://github.com/owcounter/hud/commit/fb6a7e4e84724249bd6d7cb802d64173af77e827))
+
+
+### Bug Fixes
+
+* plan team swaps once and address review findings ([3c744d6](https://github.com/owcounter/hud/commit/3c744d610d6f029b5233d72934c5aeec992cff8f))
+* reset HUD cache on map changes ([59cf7ed](https://github.com/owcounter/hud/commit/59cf7ed102c28a0366c0921d34117ce2eaa01d50))
+* show your hero as a table row and upload screenshots as JPEG ([5c46604](https://github.com/owcounter/hud/commit/5c4660407661acd873c74d0bc789aabf809bb5bc))
+
 ## [1.1.2](https://github.com/owcounter/hud/compare/v1.1.1...v1.1.2) (2026-03-25)
 
 
