@@ -388,7 +388,7 @@ var tests = new (string Name, Action Run)[]
         var winston = Comp(HeroName.Winston, HeroRole.Tank, 1, CompositionType.Dive);
         winston.Hero.IncompatibleCompositions.Add(CompositionType.Brawl);
         var orisa = Comp(HeroName.Orisa, HeroRole.Tank, 0);
-        sigma.SwapSuggestions.Add(new[] { dva, winston, orisa });
+        sigma.SwapSuggestions.AddRange(new[] { dva, winston, orisa });
         var team = Team(sigma, Comp(HeroName.Junkrat, HeroRole.Damage, 2, CompositionType.Brawl));
         var enemies = Team(Comp(HeroName.Anran, HeroRole.Damage, 1));
 
@@ -429,11 +429,11 @@ var tests = new (string Name, Action Run)[]
         var hanzo = Comp(HeroName.Hanzo, HeroRole.Damage, 4);
         var mei = Comp(HeroName.Mei, HeroRole.Damage, 3);
         mei.HardCounters.Add(new HeroCounter { HeroName = HeroName.Genji });
-        soldier.SwapSuggestions.Add(new[] { hanzo, mei });
+        soldier.SwapSuggestions.AddRange(new[] { hanzo, mei });
         var baptiste = Comp(HeroName.Baptiste, HeroRole.Support, 1);
         var brigitte = Comp(HeroName.Brigitte, HeroRole.Support, 1);
         brigitte.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Tracer });
-        kiriko.SwapSuggestions.Add(new[] { baptiste, brigitte });
+        kiriko.SwapSuggestions.AddRange(new[] { baptiste, brigitte });
         // Lucio could also take Brigitte, but she is already planned for Kiriko.
         lucio.SwapSuggestions.Add(Comp(HeroName.Brigitte, HeroRole.Support, 4));
         var team = Team(soldier, kiriko, lucio);
@@ -599,7 +599,7 @@ static HeroAnalysis Comp(HeroName heroName, HeroRole role, int score, params Com
 {
     var analysis = CreateAnalysis(heroName, score);
     analysis.Hero.Role = role;
-    analysis.Hero.BestCompositions.Add(strong);
+    analysis.Hero!.BestCompositions.AddRange(strong);
     return analysis;
 }
 

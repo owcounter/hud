@@ -92,8 +92,8 @@ namespace Owmeta.Display
                     AnsweredBy = Board.Links(threat.AnsweredBy, HudPalette.Good),
                     FromIcon = answer == null ? null : Board.Portrait(answer.From),
                     FromName = answer == null ? string.Empty : HudFormat.HeroName(answer.From).ToUpperInvariant(),
-                    ToIcon = answer == null ? null : Board.Portrait(answer.To.Hero.Name),
-                    ToName = answer == null ? string.Empty : HudFormat.HeroName(answer.To.Hero.Name).ToUpperInvariant(),
+                    ToIcon = answer == null ? null : Board.Portrait(answer.ToHero),
+                    ToName = answer == null ? string.Empty : HudFormat.HeroName(answer.ToHero).ToUpperInvariant(),
                     ToScore = answer == null ? string.Empty : HudFormat.Score(answer.To.HeroScore),
                     Hint = shared ? "SAME SWAP" : string.Empty,
                     Note = note
@@ -128,8 +128,8 @@ namespace Owmeta.Display
                     CounteredBy = Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, red.ContainsKey, HudPalette.Bad),
                     Synergies = Board.Synergies(analysis.Synergies, h => h != hero && blue.ContainsKey(h)),
                     Fits = Board.Fits(analysis.Hero, target),
-                    ChangeIcon = change == null ? null : Board.Portrait(change.To.Hero.Name),
-                    ChangeName = change == null ? string.Empty : HudFormat.HeroName(change.To.Hero.Name).ToUpperInvariant(),
+                    ChangeIcon = change == null ? null : Board.Portrait(change.ToHero),
+                    ChangeName = change == null ? string.Empty : HudFormat.HeroName(change.ToHero).ToUpperInvariant(),
                     ChangeScore = change == null ? string.Empty : HudFormat.Score(change.To.HeroScore)
                 });
             }

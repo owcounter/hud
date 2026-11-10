@@ -47,7 +47,11 @@ namespace Owmeta.Services
     }
 
     /// <summary>A teammate swapping to another hero, and how much his score would rise.</summary>
-    public sealed record TeamSwap(HeroName From, HeroAnalysis To, int Gain);
+    public sealed record TeamSwap(HeroName From, HeroAnalysis To, int Gain)
+    {
+        /// <summary>The hero to swap to (swaps only come from candidates, which always have a hero).</summary>
+        public HeroName ToHero => To.Hero!.Name;
+    }
 
     /// <summary>A threat and the planned swap that answers it (<see cref="Shared"/>: a swap already planned for an earlier threat).</summary>
     public sealed record ThreatAnswer(EnemyThreat Threat, TeamSwap? Swap, bool Shared);
@@ -254,7 +258,7 @@ namespace Owmeta.Services
             TeamSwap? Pick(int gain, Func<HeroAnalysis, bool> accept, Func<TeamSwap, bool>? preferHard = null) =>
                 Ordered(team)
                     .Where(kvp => !changes.ContainsKey(kvp.Key))
-                    .Select(kvp => BestSwap(team, enemies, kvp.Key, gain, s => !planned.Contains(s.Hero.Name) && accept(s)))
+                    .Select(kvp => BestSwap(team, enemies, kvp.Key, gain, s => !planned.Contains(s.Hero!.Name) && accept(s)))
                     .Where(s => s != null)
                     .Select(s => s!)
                     .OrderByDescending(s => s.Gain)
@@ -264,7 +268,7 @@ namespace Owmeta.Services
             void Plan(TeamSwap swap)
             {
                 changes[swap.From] = swap;
-                planned.Add(swap.To.Hero.Name);
+                planned.Add(swap.ToHero);
             }
 
             foreach (var threat in RankThreats(enemies, team).Take(maxThreats))
