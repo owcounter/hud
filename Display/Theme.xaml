@@ -141,11 +141,25 @@
         <Setter Property="Foreground" Value="{x:Static local:HudPalette.BoardLabel}"/>
     </Style>
 
-    <!-- Small portrait in a counters / countered-by / synergy column -->
+    <!-- Portrait in a counters / countered-by column: green or red ring, small HARD tag under a hard counter -->
     <DataTemplate x:Key="Hud.BoardIcon">
-        <local:HeroAvatar Source="{Binding Icon}" Accent="{Binding Ring}" RingThickness="{Binding RingWidth}"
-                          Dimmed="{Binding Dimmed}" ShowPip="False" CornerRatio="0.08"
-                          Width="50" Height="50" Margin="0,0,10,0"/>
+        <Grid Width="58" Height="76" Margin="0,0,10,0" VerticalAlignment="Center">
+            <local:HeroAvatar Source="{Binding Icon}" Accent="{Binding Ring}" RingThickness="4"
+                              ShowPip="False" CornerRatio="0.08" Width="58" Height="58" VerticalAlignment="Top"/>
+            <Border Background="{Binding Ring}" Visibility="{Binding HardVisibility}" CornerRadius="3"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="6,0,6,1">
+                <TextBlock Text="HARD" Foreground="{Binding HardText}" FontFamily="{StaticResource Hud.DisplayFont}"
+                           FontSize="15" FontWeight="Bold"/>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Dive / poke / brawl word in a "good in" column -->
+    <DataTemplate x:Key="Hud.FitWord">
+        <Border Background="{Binding Background}" CornerRadius="3" Padding="9,0,10,2" Margin="0,0,8,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" TextDecorations="{Binding Decorations}"
+                       Style="{StaticResource Hud.Board}" FontSize="28"/>
+        </Border>
     </DataTemplate>
 
     <Geometry x:Key="Hud.MapIcon">M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z</Geometry>

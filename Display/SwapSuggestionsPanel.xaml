@@ -8,13 +8,12 @@
                 <ResourceDictionary Source="/OWMetaHUD;component/Display/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Columns shared by the header band and every row -->
-            <GridLength x:Key="Col.Portrait">80</GridLength>
-            <GridLength x:Key="Col.Also">330</GridLength>
-            <GridLength x:Key="Col.Score">160</GridLength>
-            <GridLength x:Key="Col.Counters">310</GridLength>
-            <GridLength x:Key="Col.CounteredBy">290</GridLength>
-            <GridLength x:Key="Col.Synergy">240</GridLength>
+            <!-- Columns shared by the list title and every row -->
+            <GridLength x:Key="Col.Portrait">96</GridLength>
+            <GridLength x:Key="Col.Score">150</GridLength>
+            <GridLength x:Key="Col.Counters">340</GridLength>
+            <GridLength x:Key="Col.CounteredBy">340</GridLength>
+            <GridLength x:Key="Col.Fits">390</GridLength>
 
             <DataTemplate DataType="{x:Type local:SwapGroupViewModel}">
                 <Border Height="52" Margin="0,4,0,0" Background="{Binding Background}"
@@ -29,35 +28,26 @@
             </DataTemplate>
 
             <DataTemplate DataType="{x:Type local:SwapRowViewModel}">
-                <Border Height="80" Background="{Binding Background}" BorderBrush="#59000000" BorderThickness="0,0,0,2">
+                <Border Height="88" Background="{Binding Background}" BorderBrush="#59000000" BorderThickness="0,0,0,2">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="{StaticResource Col.Portrait}"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="{StaticResource Col.Also}"/>
                             <ColumnDefinition Width="{StaticResource Col.Score}"/>
                             <ColumnDefinition Width="{StaticResource Col.Counters}"/>
                             <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
-                            <ColumnDefinition Width="{StaticResource Col.Synergy}"/>
+                            <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                         </Grid.ColumnDefinitions>
-                        <local:HeroAvatar Source="{Binding Icon}" Width="78" Height="78" CornerRatio="0" ShowPip="False"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Hud.Board}" FontSize="42" Margin="24,0,12,0"/>
-                        <ItemsControl Grid.Column="2" ItemsSource="{Binding AlsoFits}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
-                                      VerticalAlignment="Center" Margin="20,0">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Style="{StaticResource Hud.Board}"
-                                               FontSize="26" Margin="0,0,18,0"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Grid.Column="3" Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.BoardStat}"/>
-                        <ItemsControl Grid.Column="4" ItemsSource="{Binding Counters}" ItemTemplate="{StaticResource Hud.BoardIcon}"
-                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
-                        <ItemsControl Grid.Column="5" ItemsSource="{Binding CounteredBy}" ItemTemplate="{StaticResource Hud.BoardIcon}"
-                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
-                        <ItemsControl Grid.Column="6" ItemsSource="{Binding Synergies}" ItemTemplate="{StaticResource Hud.BoardIcon}"
-                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <local:HeroAvatar Source="{Binding Icon}" Width="80" Height="80" CornerRatio="0.06" ShowPip="False" Margin="12,0,0,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Hud.Board}" FontSize="44" Margin="28,0,12,0"/>
+                        <TextBlock Grid.Column="2" Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.Board}"
+                                   FontSize="48" HorizontalAlignment="Right" Margin="0,0,28,0"/>
+                        <ItemsControl Grid.Column="3" ItemsSource="{Binding Counters}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                        <ItemsControl Grid.Column="4" ItemsSource="{Binding CounteredBy}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                        <ItemsControl Grid.Column="5" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
             </DataTemplate>
@@ -66,30 +56,82 @@
 
     <StackPanel>
         <local:CompositionHeader x:Name="Header"/>
-        <local:ThreatBar x:Name="Threat"/>
 
-        <!-- Shown instead of the table when the player's hero is not known -->
+        <!-- Shown instead of the swaps when the player's hero is not known -->
         <Border x:Name="NoticeCard" Background="{x:Static local:HudPalette.Strip}" Margin="0,4,0,0" Padding="40,26" Visibility="Collapsed">
             <TextBlock x:Name="NoticeText" Style="{StaticResource Hud.Board}" FontSize="34" Foreground="{x:Static local:HudPalette.TextSecondary}"/>
         </Border>
 
         <StackPanel x:Name="SwapSection" Visibility="Collapsed">
-            <Border Background="{x:Static local:HudPalette.ColumnBand}" Height="52" Margin="0,4,0,0">
+            <!-- Your hero, who counters him, and the best swap with who it counters -->
+            <Border Background="{x:Static local:HudPalette.Strip}" Margin="0,4,0,0" Padding="24,14,24,10">
+                <StackPanel Orientation="Horizontal">
+                    <local:HeroAvatar x:Name="CurrentAvatar" Width="108" Height="108" CornerRatio="0.06" ShowPip="False" RingThickness="4"/>
+                    <StackPanel Margin="28,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="CurrentName" Style="{StaticResource Hud.Board}" FontSize="58"/>
+                            <TextBlock x:Name="CurrentScore" Style="{StaticResource Hud.Board}" FontSize="58" Margin="18,0,24,0"/>
+                            <ItemsControl x:Name="CurrentFits" ItemTemplate="{StaticResource Hud.FitWord}"
+                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="CurrentRelations" Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="24" Foreground="{x:Static local:HudPalette.Bad}"
+                                       Margin="0,0,16,18"/>
+                            <ItemsControl x:Name="CurrentCounteredBy" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid x:Name="SwapArrow" Width="210" Height="80" Margin="60,0,44,0" VerticalAlignment="Center">
+                        <Path Data="M0,0 L170,0 L210,40 L170,80 L0,80 Z" Fill="{x:Static local:HudPalette.Good}"/>
+                        <TextBlock Text="SWAP" Style="{StaticResource Hud.Board}" FontSize="46" Foreground="{x:Static local:HudPalette.OnColor}"
+                                   HorizontalAlignment="Center" Margin="0,0,30,0"/>
+                    </Grid>
+
+                    <StackPanel x:Name="BestPanel" Orientation="Horizontal">
+                        <local:HeroAvatar x:Name="BestAvatar" Width="108" Height="108" CornerRatio="0.06" ShowPip="False" RingThickness="4"
+                                          Accent="{x:Static local:HudPalette.Good}"/>
+                        <StackPanel Margin="28,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="BestName" Style="{StaticResource Hud.Board}" FontSize="58"/>
+                                <TextBlock x:Name="BestScore" Style="{StaticResource Hud.Board}" FontSize="58" Margin="18,0,24,0"
+                                           Foreground="{x:Static local:HudPalette.Good}"/>
+                                <ItemsControl x:Name="BestFits" ItemTemplate="{StaticResource Hud.FitWord}"
+                                              ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel x:Name="BestRelations" Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="24" Foreground="{x:Static local:HudPalette.Good}"
+                                           Margin="0,0,16,18"/>
+                                <ItemsControl x:Name="BestCounters" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                              ItemsPanel="{StaticResource Hud.HorizontalPanel}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock x:Name="NoBetterText" Text="NO BETTER SWAP" Style="{StaticResource Hud.Board}" FontSize="40"
+                               Foreground="{x:Static local:HudPalette.TextSecondary}" Margin="80,0,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+            </Border>
+
+            <!-- The other options; the column labels explain the rows -->
+            <Border Background="{x:Static local:HudPalette.GroupBand}" Height="52" Margin="0,4,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource Col.Portrait}"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="{StaticResource Col.Also}"/>
                         <ColumnDefinition Width="{StaticResource Col.Score}"/>
                         <ColumnDefinition Width="{StaticResource Col.Counters}"/>
                         <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
-                        <ColumnDefinition Width="{StaticResource Col.Synergy}"/>
+                        <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="1" Text="HERO" Style="{StaticResource Hud.ColumnLabel}" Margin="24,0"/>
-                    <TextBlock Grid.Column="3" Text="SCORE" Style="{StaticResource Hud.ColumnLabel}" HorizontalAlignment="Center" Margin="0"/>
-                    <TextBlock Grid.Column="4" Text="COUNTERS" Style="{StaticResource Hud.ColumnLabel}"/>
-                    <TextBlock Grid.Column="5" Text="COUNTERED BY" Style="{StaticResource Hud.ColumnLabel}"/>
-                    <TextBlock Grid.Column="6" Text="SYNERGY" Style="{StaticResource Hud.ColumnLabel}"/>
+                    <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal" Margin="24,0,0,0">
+                        <TextBlock Text="OTHER OPTIONS" Style="{StaticResource Hud.Board}" FontSize="26"/>
+                        <TextBlock x:Name="OptionsHint" Style="{StaticResource Hud.Board}" FontSize="26" Margin="14,0,0,0"
+                                   Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Good}"/>
+                    <TextBlock Grid.Column="4" Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Bad}"/>
+                    <TextBlock Grid.Column="5" Text="GOOD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
                 </Grid>
             </Border>
 
@@ -97,12 +139,12 @@
 
             <Border x:Name="NoSwapsCard" Background="{x:Static local:HudPalette.RowA}" Height="80" Visibility="Collapsed">
                 <TextBlock x:Name="NoSwapsText" Style="{StaticResource Hud.Board}" FontSize="32"
-                           Foreground="{x:Static local:HudPalette.TextSecondary}" Margin="104,0,0,0"/>
+                           Foreground="{x:Static local:HudPalette.TextSecondary}" Margin="124,0,0,0"/>
             </Border>
 
             <Border x:Name="MoreCard" Background="{x:Static local:HudPalette.Strip}" Height="44" Visibility="Collapsed">
                 <TextBlock x:Name="MoreText" Style="{StaticResource Hud.Board}" FontSize="24"
-                           Foreground="{x:Static local:HudPalette.BoardLabel}" Margin="104,0,0,0"/>
+                           Foreground="{x:Static local:HudPalette.BoardLabel}" Margin="124,0,0,0"/>
             </Border>
         </StackPanel>
     </StackPanel>

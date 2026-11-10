@@ -704,7 +704,6 @@ namespace Owmeta.Display
                 }
 
                 UpdateCompositionDashboard();
-                UpdateCurrentHeroPlate();
 
                 // Update hotkey registrations based on current settings
                 UpdateHotkeyRegistrations();
@@ -778,7 +777,6 @@ namespace Owmeta.Display
             SwapContent.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             CompositionDashboard.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             NoDataPanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
-            UpdateCurrentHeroPlate();
             SyncContentHeight();
         }
 
@@ -792,22 +790,6 @@ namespace Owmeta.Display
             if (active == null) return;
             double height = active.ActualHeight > 0 ? active.ActualHeight : active.DesiredSize.Height;
             if (height > 0) ContentHost.Height = height;
-        }
-
-        // Your hero and score sit next to the tabs while the swap view is open.
-        private void UpdateCurrentHeroPlate()
-        {
-            var current = SwapSuggestionsPanel.CurrentHero;
-            bool show = current.HasValue
-                        && SwapLayout.Visibility == Visibility.Visible
-                        && NoDataPanel.Visibility != Visibility.Visible;
-            CurrentHeroPlate.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-            if (!show) return;
-
-            CurrentHeroAvatar.Source = Board.Portrait(current!.Value.Hero);
-            CurrentHeroName.Text = HudFormat.HeroName(current.Value.Hero).ToUpperInvariant();
-            CurrentHeroScore.Text = HudFormat.Score(current.Value.Score);
-            CurrentHeroScore.Foreground = HudPalette.ScoreBrush(current.Value.Score);
         }
 
         private void UpdateHotkeyLabels()
@@ -844,7 +826,6 @@ namespace Owmeta.Display
             MainGrid.Visibility = surfaceVisible ? Visibility.Visible : Visibility.Hidden;
             SetTabState(SwapTab, SwapTabText, swapActive);
             SetTabState(TeamTab, TeamTabText, teamActive);
-            UpdateCurrentHeroPlate();
             SyncContentHeight();
             if (surfaceVisible != _surfaceVisible)
             {

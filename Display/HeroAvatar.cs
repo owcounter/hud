@@ -38,6 +38,17 @@ namespace Owmeta.Display
             nameof(ShowPip), typeof(bool), typeof(HeroAvatar),
             new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty StruckProperty = DependencyProperty.Register(
+            nameof(Struck), typeof(Brush), typeof(HeroAvatar),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>When set, a diagonal slash in this brush crosses the portrait (a hero bad in a composition).</summary>
+        public Brush? Struck
+        {
+            get => (Brush?)GetValue(StruckProperty);
+            set => SetValue(StruckProperty, value);
+        }
+
         /// <summary>Corner radius as a fraction of the smaller side.</summary>
         public double CornerRatio
         {
@@ -138,6 +149,13 @@ namespace Owmeta.Display
             if (Source != null)
             {
                 dc.DrawRoundedRectangle(PortraitBrush(Source, Dimmed), null, rect, radius, radius);
+            }
+
+            var struck = Struck;
+            if (struck != null)
+            {
+                double inset = Math.Min(w, h) * 0.12;
+                dc.DrawLine(new Pen(struck, Math.Max(2, w * 0.09)), new Point(inset, inset), new Point(w - inset, h - inset));
             }
 
             var accent = Accent;

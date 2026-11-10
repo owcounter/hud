@@ -316,26 +316,99 @@ var tests = new (string Name, Action Run)[]
         AssertTrue(CompositionPolicy.CounterTo(CompositionType.Brawl) == CompositionType.Poke);
         AssertTrue(CompositionPolicy.CounterTo(CompositionType.Dive) == CompositionType.Brawl);
     }),
-    ("threat is an enemy countering at least four teammates", () =>
+    ("threats rank by counters on the team minus the team's counters on them", () =>
     {
-        var ours = Team(
-            Comp(HeroName.Zarya, HeroRole.Tank, 0), Comp(HeroName.Tracer, HeroRole.Damage, 0),
-            Comp(HeroName.Sojourn, HeroRole.Damage, 0), Comp(HeroName.Kiriko, HeroRole.Support, 0),
-            Comp(HeroName.Lucio, HeroRole.Support, 0));
-        var juno = Comp(HeroName.Juno, HeroRole.Support, 4);
-        juno.HardCounters.Add(new HeroCounter { HeroName = HeroName.Zarya });
-        juno.HardCounters.Add(new HeroCounter { HeroName = HeroName.Lucio });
-        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Tracer });
-        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Ana });
-        var genji = Comp(HeroName.Genji, HeroRole.Damage, 1);
-        genji.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sojourn });
+        // Real match: Sigma is countered by Reinhardt, Anran and Kiriko; Anran also counters Lifeweaver
+        // but Kiriko counters her; Junkrat, Kiriko and Lifeweaver all counter Reinhardt.
+        var sigma = Comp(HeroName.Sigma, HeroRole.Tank, -3);
+        var junkrat = Comp(HeroName.Junkrat, HeroRole.Damage, 2);
+        var kiriko = Comp(HeroName.Kiriko, HeroRole.Support, 2);
+        var lifeweaver = Comp(HeroName.Lifeweaver, HeroRole.Support, 0);
+        var rein = Comp(HeroName.Reinhardt, HeroRole.Tank, -1);
+        var anran = Comp(HeroName.Anran, HeroRole.Damage, 1);
+        var enemyKiriko = Comp(HeroName.Kiriko, HeroRole.Support, 2);
+        var ana = Comp(HeroName.Ana, HeroRole.Support, 2);
+        rein.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sigma });
+        foreach (var h in new[] { HeroName.Junkrat, HeroName.Kiriko, HeroName.Lifeweaver })
+            rein.SoftCounteredBy.Add(new HeroCounter { HeroName = h });
+        anran.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sigma });
+        anran.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Lifeweaver });
+        anran.SoftCounteredBy.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        // Relations given only from the teammate's side count too.
+        sigma.SoftCounteredBy.Add(new HeroCounter { HeroName = HeroName.Kiriko });
 
-        AssertTrue(CompositionPolicy.FindThreat(Team(juno, genji), ours) == null);
+        var threats = CompositionPolicy.RankThreats(
+            Team(rein, anran, enemyKiriko, ana), Team(sigma, junkrat, kiriko, lifeweaver));
 
-        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Kiriko });
-        var threat = CompositionPolicy.FindThreat(Team(juno, genji), ours);
-        AssertTrue(threat?.Enemy == HeroName.Juno);
-        AssertEqual(4, threat!.Victims.Count);
+        AssertTrue(threats.Select(t => t.Enemy).SequenceEqual(new[] { HeroName.Anran, HeroName.Kiriko, HeroName.Reinhardt }));
+        AssertEqual(1, threats[0].Weight);
+        AssertEqual(2, threats[0].Victims.Count);
+        AssertFalse(threats[1].IsHandled);
+        AssertTrue(threats[2].IsHandled);
+        AssertEqual(-2, threats[2].Weight);
+    }),
+    ("hard counters weigh double in the threat ranking", () =>
+    {
+        var roadhog = Comp(HeroName.Roadhog, HeroRole.Tank, 0);
+        var ana = Comp(HeroName.Ana, HeroRole.Support, 2);
+        ana.HardCounters.Add(new HeroCounter { HeroName = HeroName.Roadhog });
+        var threat = CompositionPolicy.RankThreats(Team(ana), Team(roadhog)).Single();
+        AssertTrue(threat.Victims.Single().IsHard);
+        AssertEqual(2, threat.Weight);
+    }),
+    ("the composition to fit ignores the hero being replaced", () =>
+    {
+        // Sigma (tank, poke) and Lifeweaver make the team poke; without Sigma it is mixed.
+        var team = Team(
+            Comp(HeroName.Sigma, HeroRole.Tank, -3, CompositionType.Poke),
+            Comp(HeroName.Junkrat, HeroRole.Damage, 2, CompositionType.Brawl),
+            Comp(HeroName.Soldier76, HeroRole.Damage, 0),
+            Comp(HeroName.Kiriko, HeroRole.Support, 2, CompositionType.Dive),
+            Comp(HeroName.Lifeweaver, HeroRole.Support, 0, CompositionType.Poke));
+        // Enemy: brawl tank (counts 2) and one dive hero, a lead of 1, so no clear enemy composition.
+        var enemies = Team(
+            Comp(HeroName.Reinhardt, HeroRole.Tank, 0, CompositionType.Brawl),
+            Comp(HeroName.Ana, HeroRole.Support, 0, CompositionType.Dive));
+
+        AssertTrue(CompositionPolicy.FitTarget(team, enemies, null) == CompositionType.Poke);
+        AssertTrue(CompositionPolicy.FitTarget(team, enemies, HeroName.Sigma) == null);
+
+        // A clear enemy composition wins: play the one that beats it.
+        var dive = Team(
+            Comp(HeroName.Winston, HeroRole.Tank, 0, CompositionType.Dive),
+            Comp(HeroName.Genji, HeroRole.Damage, 0, CompositionType.Dive),
+            Comp(HeroName.Tracer, HeroRole.Damage, 0, CompositionType.Dive));
+        AssertTrue(CompositionPolicy.FitTarget(team, dive, HeroName.Sigma) == CompositionType.Brawl);
+    }),
+    ("best swap skips heroes bad in the composition to fit and answers threats", () =>
+    {
+        var sigma = Comp(HeroName.Sigma, HeroRole.Tank, -3, CompositionType.Poke);
+        var dva = Comp(HeroName.Dva, HeroRole.Tank, 4, CompositionType.Dive);
+        dva.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Anran });
+        var winston = Comp(HeroName.Winston, HeroRole.Tank, 1, CompositionType.Dive);
+        winston.Hero.IncompatibleCompositions.Add(CompositionType.Brawl);
+        var orisa = Comp(HeroName.Orisa, HeroRole.Tank, 0);
+        sigma.SwapSuggestions.Add(new[] { dva, winston, orisa });
+        var team = Team(sigma, Comp(HeroName.Junkrat, HeroRole.Damage, 2, CompositionType.Brawl));
+        var enemies = Team(Comp(HeroName.Anran, HeroRole.Damage, 1));
+
+        var best = CompositionPolicy.BestSwap(team, enemies, HeroName.Sigma, 2);
+        AssertTrue(best?.To.Hero.Name == HeroName.Dva);
+        AssertEqual(7, best!.Gain);
+
+        // Against a clear dive enemy the team must play brawl: D.Va and Winston, bad in brawl, are
+        // skipped and neutral Orisa is the best swap left.
+        dva.Hero.IncompatibleCompositions.Add(CompositionType.Brawl);
+        var dive = Team(
+            Comp(HeroName.Genji, HeroRole.Damage, 0, CompositionType.Dive),
+            Comp(HeroName.Tracer, HeroRole.Damage, 0, CompositionType.Dive));
+        AssertTrue(CompositionPolicy.BestSwap(team, dive, HeroName.Sigma, 2)?.To.Hero.Name == HeroName.Orisa);
+        AssertTrue(CompositionPolicy.BestSwap(team, dive, HeroName.Sigma, 4) == null);
+        AssertTrue(CompositionPolicy.BestSwap(team, enemies, HeroName.Sigma, 8) == null);
+
+        dva.Hero.IncompatibleCompositions.Clear();
+        AssertTrue(CompositionPolicy.BestAnswer(team, enemies, HeroName.Anran)?.To.Hero.Name == HeroName.Dva);
+        AssertTrue(CompositionPolicy.BestAnswer(team, enemies, HeroName.Ana) == null);
     }),
     ("grouped swaps put the recommended composition first", () =>
     {

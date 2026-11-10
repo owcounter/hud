@@ -8,20 +8,21 @@ using System.Windows.Media;
 namespace Owmeta.Display
 {
     /// <summary>
-    /// A portrait in a scoreboard column. Hard relationships get a white outline, soft ones are dimmed,
-    /// and the team threat is ringed in enemy red wherever it appears.
+    /// A portrait in a counters or countered-by column. Every relationship has the same size; the ring
+    /// says whether it is good (green) or bad (red) for your team, and a hard counter adds a small tag.
     /// </summary>
     public sealed class BoardIcon
     {
         public required ImageSource Icon { get; init; }
+        public Brush? Ring { get; init; }
         public bool IsHard { get; init; }
-        public bool IsThreat { get; init; }
-        public bool Plain { get; init; }
 
-        public Brush? Ring => IsThreat ? HudPalette.Enemy : IsHard ? HudPalette.HardOutline : null;
-        public double RingWidth => IsThreat ? 4 : 3;
-        public bool Dimmed => !Plain && !IsHard && !IsThreat;
+        public Visibility HardVisibility => IsHard ? Visibility.Visible : Visibility.Collapsed;
+        public Brush HardText => HudPalette.OnColor;
     }
+
+    /// <summary>A composition name in a "good in" column: colored when good, struck in red when bad, filled when it is the one to fit.</summary>
+    public sealed record CompositionWord(string Text, Brush Foreground, Brush Background, TextDecorationCollection? Decorations);
 
     /// <summary>Shared builders for the scoreboard-style views.</summary>
     public static class Board
@@ -31,12 +32,15 @@ namespace Owmeta.Display
 
         public static ImageSource Portrait(HeroName hero) => IconUtils.GetHeroIconAsBitmapSource(hero, IconSize);
 
-        /// <summary>Hard relationships first, then soft ones, limited to heroes accepted by <paramref name="include"/>.</summary>
+        /// <summary>
+        /// Hard relationships first, then soft ones, limited to heroes accepted by <paramref name="include"/>.
+        /// <paramref name="ring"/> is green when the relationship helps your team and red when it hurts it.
+        /// </summary>
         public static List<BoardIcon> Relations(
             IEnumerable<HeroCounter>? hard,
             IEnumerable<HeroCounter>? soft,
             Func<HeroName, bool> include,
-            HeroName? threat,
+            Brush ring,
             int max = MaxIcons)
         {
             var result = new List<BoardIcon>();
@@ -48,7 +52,7 @@ namespace Owmeta.Display
                 {
                     if (result.Count >= max) return;
                     if (!CompositionPolicy.IsKnownHero(c.HeroName) || !include(c.HeroName) || !seen.Add(c.HeroName)) continue;
-                    result.Add(new BoardIcon { Icon = Portrait(c.HeroName), IsHard = isHard, IsThreat = c.HeroName == threat });
+                    result.Add(new BoardIcon { Icon = Portrait(c.HeroName), IsHard = isHard, Ring = ring });
                 }
             }
             Add(hard, true);
@@ -56,14 +60,50 @@ namespace Owmeta.Display
             return result;
         }
 
-        public static List<BoardIcon> Synergies(IEnumerable<HeroSynergy>? synergies, Func<HeroName, bool> include, int max = MaxIcons) =>
-            synergies?.Where(s => CompositionPolicy.IsKnownHero(s.HeroName) && include(s.HeroName))
-                      .Select(s => s.HeroName).Distinct().Take(max)
-                      .Select(h => new BoardIcon { Icon = Portrait(h) })
-                      .ToList() ?? new List<BoardIcon>();
+        public static List<BoardIcon> Links(IEnumerable<CounterLink> links, Brush ring, int max = MaxIcons) =>
+            links.OrderByDescending(l => l.IsHard).Take(max)
+                 .Select(l => new BoardIcon { Icon = Portrait(l.Hero), IsHard = l.IsHard, Ring = ring })
+                 .ToList();
 
-        public static List<BoardIcon> Heroes(IEnumerable<HeroName> heroes, HeroName? threat) =>
-            heroes.Select(h => new BoardIcon { Icon = Portrait(h), Plain = true, IsThreat = h == threat }).ToList();
+        private static readonly TextDecorationCollection Strike = CreateStrike(HudPalette.Bad);
+        private static readonly TextDecorationCollection StrikeOnFill = CreateStrike(HudPalette.OnColor);
+
+        private static TextDecorationCollection CreateStrike(Brush brush)
+        {
+            var strike = new TextDecorationCollection(new[]
+            {
+                new TextDecoration(TextDecorationLocation.Strikethrough, new Pen(brush, 3), 0,
+                    TextDecorationUnit.FontRecommended, TextDecorationUnit.Pixel)
+            });
+            strike.Freeze();
+            return strike;
+        }
+
+        /// <summary>
+        /// Dive, poke and brawl for one hero. Good: the composition color. Bad: struck in red. Neutral: faint.
+        /// The composition to fit (<paramref name="target"/>) is filled: in its color when the hero is good
+        /// in it, in red when he is bad in it, so a hero to avoid stands out.
+        /// </summary>
+        public static List<CompositionWord> Fits(Hero? hero, CompositionType? target)
+        {
+            var words = new List<CompositionWord>();
+            foreach (var comp in CompositionPolicy.Compositions)
+            {
+                var name = CompositionName(comp);
+                bool isTarget = target == comp;
+                words.Add(CompositionPolicy.Fit(hero, comp) switch
+                {
+                    CompositionFit.Strong => isTarget
+                        ? new CompositionWord(name, HudPalette.OnColor, HudPalette.CompositionBrush(comp), null)
+                        : new CompositionWord(name, HudPalette.CompositionBrush(comp), Brushes.Transparent, null),
+                    CompositionFit.Weak => isTarget
+                        ? new CompositionWord(name, HudPalette.OnColor, HudPalette.Bad, StrikeOnFill)
+                        : new CompositionWord(name, HudPalette.Bad, Brushes.Transparent, Strike),
+                    _ => new CompositionWord(name, HudPalette.CompositionFaintBrush(comp), Brushes.Transparent, null)
+                });
+            }
+            return words;
+        }
 
         public static string CompositionName(CompositionType comp) => comp switch
         {

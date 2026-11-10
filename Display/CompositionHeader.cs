@@ -3,21 +3,22 @@ using Owmeta.Services;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace Owmeta.Display
 {
     /// <summary>
     /// Composition table shared by the swap and team views: one row per team (yours in blue on top,
-    /// the enemy in red below) with the tank and his compositions, the other heroes, and how many of
-    /// the team are strong in dive, poke and brawl. The enemy's clear tendency is tinted and the
-    /// composition that beats it is outlined on your side.
+    /// the enemy in red below), one column per composition. Each cell shows the team's heroes in
+    /// scoreboard order (tank, damage, support): ringed in green when good in that composition, faded
+    /// when neutral, slashed in red when bad, then the good / neutral / bad counts.
+    /// The enemy's clear composition is outlined, and on your side the composition to fit is outlined
+    /// in blue, or in green when it is the one that beats the enemy.
     /// </summary>
     public sealed class CompositionHeader : Border
     {
-        private const double RowHeight = 96;
-        private const double CountWidth = 250;
-        private const double ScoreWidth = 170;
+        private const double LabelWidth = 340;
+        private const double RowHeight = 92;
+        private const double PortraitSize = 56;
 
         private static readonly Brush AllyTint = TeamTint(Color.FromRgb(0x3E, 0xA6, 0xFF));
         private static readonly Brush EnemyTint = TeamTint(Color.FromRgb(0xFF, 0x46, 0x55));
@@ -27,179 +28,170 @@ namespace Owmeta.Display
         public CompositionHeader()
         {
             Background = HudPalette.Strip;
-            Padding = new Thickness(0, 8, 0, 12);
+            Padding = new Thickness(0, 4, 0, 8);
             Child = _grid;
             Update(null, null, null);
         }
 
-        /// <summary>Adds a total score column (team view).</summary>
-        public bool ShowScore { get; set; }
-
         public CompositionTendency Tendency { get; private set; } = CompositionTendency.None;
-        public string AllyScoreText { get; private set; } = "--";
-        public string EnemyScoreText { get; private set; } = "--";
+        public CompositionType? FitTarget { get; private set; }
+        public int? AllyTotal { get; private set; }
+        public int? EnemyTotal { get; private set; }
+        public string AllyScoreText => AllyTotal.HasValue ? HudFormat.Score(AllyTotal.Value) : "--";
+        public string EnemyScoreText => EnemyTotal.HasValue ? HudFormat.Score(EnemyTotal.Value) : "--";
 
+        /// <param name="fitTarget">The composition your team should fit, from <see cref="CompositionPolicy.FitTarget"/>.</param>
         public void Update(
             IReadOnlyDictionary<HeroName, HeroAnalysis>? ours,
             IReadOnlyDictionary<HeroName, HeroAnalysis>? theirs,
-            HeroName? threat)
+            CompositionType? fitTarget)
         {
             Tendency = CompositionPolicy.Tendency(theirs);
-            var allySummary = CompositionPolicy.Summarize(ours);
-            var enemySummary = CompositionPolicy.Summarize(theirs);
-            AllyScoreText = TeamScore(ours, allySummary);
-            EnemyScoreText = TeamScore(theirs, enemySummary);
+            FitTarget = fitTarget;
+            var allies = CompositionPolicy.Ordered(ours);
+            var enemies = CompositionPolicy.Ordered(theirs);
+            AllyTotal = allies.Count == 0 ? null : allies.Sum(kvp => kvp.Value.HeroScore);
+            EnemyTotal = enemies.Count == 0 ? null : enemies.Sum(kvp => kvp.Value.HeroScore);
 
             _grid.Children.Clear();
             _grid.RowDefinitions.Clear();
             _grid.ColumnDefinitions.Clear();
-            foreach (var width in new[] { 140.0, 470, -1, CountWidth, CountWidth, CountWidth, ShowScore ? ScoreWidth : 0 })
-                _grid.ColumnDefinitions.Add(new ColumnDefinition { Width = width < 0 ? new GridLength(1, GridUnitType.Star) : new GridLength(width) });
-            _grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) });
+            _grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(LabelWidth) });
+            foreach (var _ in CompositionPolicy.Compositions)
+                _grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            _grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
             _grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight) });
             _grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
             _grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight) });
 
-            Place(Board.Label("TANK"), 0, 1);
-            Place(Board.Label("TEAM"), 0, 2);
+            Place(Legend(), 0, 0);
             for (int i = 0; i < CompositionPolicy.Compositions.Count; i++)
             {
                 var comp = CompositionPolicy.Compositions[i];
-                var label = Board.BoardText(Board.CompositionName(comp), 28, HudPalette.CompositionBrush(comp));
+                var label = Board.BoardText(Board.CompositionName(comp), 34, HudPalette.CompositionBrush(comp));
                 label.HorizontalAlignment = HorizontalAlignment.Center;
-                Place(label, 0, 3 + i);
-            }
-            if (ShowScore)
-            {
-                var score = Board.Label("SCORE");
-                score.HorizontalAlignment = HorizontalAlignment.Center;
-                Place(score, 0, 6);
+                Place(label, 0, 1 + i);
             }
 
-            AddTeamRow(1, "YOU", HudPalette.Ally, AllyTint, allySummary, threat, AllyScoreText, ours,
-                comp => Tendency.Recommended == comp ? CellState.Recommended : CellState.Plain);
-            AddTeamRow(3, "ENEMY", HudPalette.Enemy, EnemyTint, enemySummary, threat, EnemyScoreText, theirs,
-                comp => Tendency.Leading.Contains(comp) ? CellState.Leading : CellState.Plain);
+            AddTeamRow(1, "YOU", HudPalette.Ally, AllyTint, allies, comp =>
+                fitTarget != comp ? CellState.Plain
+                : Tendency.Recommended == comp ? CellState.Recommended
+                : CellState.Team);
+            AddTeamRow(3, "ENEMY", HudPalette.Enemy, EnemyTint, enemies, comp =>
+                Tendency.IsClear && Tendency.Leading.Contains(comp) ? CellState.Leading : CellState.Plain);
         }
 
-        private enum CellState { Plain, Leading, Recommended }
+        private enum CellState { Plain, Leading, Team, Recommended }
+
+        private static FrameworkElement Legend()
+        {
+            var legend = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(24, 0, 0, 0) };
+            foreach (var (text, brush) in new[] { ("GOOD", HudPalette.Good), ("NEUTRAL", HudPalette.PipEmptyStrong), ("BAD", HudPalette.Bad) })
+            {
+                legend.Children.Add(new Border { Width = 16, Height = 16, Background = brush, CornerRadius = new CornerRadius(3), Margin = new Thickness(0, 0, 6, 0) });
+                var label = Board.Label(text, 18);
+                label.Margin = new Thickness(0, 0, 14, 0);
+                legend.Children.Add(label);
+            }
+            return legend;
+        }
 
         private void AddTeamRow(
             int row, string label, SolidColorBrush team, Brush tint,
-            TeamCompositionSummary summary, HeroName? threat, string scoreText,
-            IReadOnlyDictionary<HeroName, HeroAnalysis>? analyses,
+            IReadOnlyList<KeyValuePair<HeroName, HeroAnalysis>> heroes,
             Func<CompositionType, CellState> stateOf)
         {
             var band = new Border { Background = tint, BorderBrush = team, BorderThickness = new Thickness(10, 0, 0, 0) };
-            Grid.SetColumnSpan(band, 7);
+            Grid.SetColumnSpan(band, 4);
             Place(band, row, 0);
 
-            var name = Board.BoardText(label, 32, team);
-            name.HorizontalAlignment = HorizontalAlignment.Center;
-            name.Margin = new Thickness(10, 0, 0, 0);
+            var name = Board.BoardText(label, 40, team);
+            name.Margin = new Thickness(34, 0, 0, 0);
             Place(name, row, 0);
-
-            var tank = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            if (summary.Tank.HasValue)
-            {
-                tank.Children.Add(Board.Avatar(summary.Tank.Value, 80, team, 4));
-                var comps = Board.BoardText(string.Empty, 38);
-                comps.Margin = new Thickness(20, 0, 0, 0);
-                Board.SetCompositions(comps, summary.TankCompositions);
-                tank.Children.Add(comps);
-            }
-            else
-            {
-                tank.Children.Add(Board.BoardText("—", 38, HudPalette.CountZero));
-            }
-            Place(tank, row, 1);
-
-            var mates = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            foreach (var hero in summary.Others)
-            {
-                bool isThreat = hero == threat;
-                var avatar = Board.Avatar(hero, 48, isThreat ? HudPalette.Enemy : null, 4);
-                avatar.Margin = new Thickness(0, 0, 8, 0);
-                mates.Children.Add(avatar);
-            }
-            Place(mates, row, 2);
 
             for (int i = 0; i < CompositionPolicy.Compositions.Count; i++)
             {
                 var comp = CompositionPolicy.Compositions[i];
-                Place(CountCell(comp, summary, stateOf(comp)), row, 3 + i);
-            }
-
-            if (ShowScore)
-            {
-                int? total = analyses == null || summary.HeroCount == 0 ? null : TeamTotal(analyses);
-                var score = Board.BoardText(scoreText, 44, total.HasValue ? HudPalette.ScoreBrush(total.Value) : HudPalette.CountZero);
-                score.HorizontalAlignment = HorizontalAlignment.Center;
-                Place(score, row, 6);
+                Place(Cell(comp, heroes, stateOf(comp)), row, 1 + i);
             }
         }
 
-        private static FrameworkElement CountCell(CompositionType comp, TeamCompositionSummary summary, CellState state)
+        private static FrameworkElement Cell(CompositionType comp, IReadOnlyList<KeyValuePair<HeroName, HeroAnalysis>> heroes, CellState state)
         {
-            var color = HudPalette.CompositionBrush(comp);
-            int count = summary.StrongCounts[comp];
-            bool tankStrong = summary.TankStrong[comp];
-
-            var content = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            var number = Board.BoardText(count.ToString(), 44, count > 0 ? color : HudPalette.CountZero);
-            number.Width = 34;
-            number.TextAlignment = TextAlignment.Right;
-            number.Margin = new Thickness(0, 0, 14, 0);
-            content.Children.Add(number);
-
-            for (int i = 0; i < 5; i++)
+            var portraits = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            int good = 0, neutral = 0, bad = 0;
+            HeroRole? previousRole = null;
+            foreach (var (hero, analysis) in heroes)
             {
-                // The tank's bar is drawn first and in white, so you see at a glance whether he fits.
-                Brush fill = i >= count ? HudPalette.PipEmpty
-                    : i == 0 && tankStrong ? HudPalette.TextPrimary
-                    : color;
-                content.Children.Add(new Border
+                var role = analysis.Hero?.Role;
+                if (previousRole.HasValue && role != previousRole) portraits.Children.Add(new Border { Width = 12 });
+                previousRole = role;
+
+                var fit = CompositionPolicy.Fit(analysis.Hero, comp);
+                var avatar = Board.Avatar(hero, PortraitSize);
+                avatar.Margin = new Thickness(0, 0, 6, 0);
+                switch (fit)
                 {
-                    Width = 17,
-                    Height = 32,
-                    Margin = new Thickness(0, 0, 6, 0),
-                    Background = fill,
-                    RenderTransform = new SkewTransform(-14, 0),
-                    RenderTransformOrigin = new Point(0.5, 0.5)
-                });
+                    case CompositionFit.Strong:
+                        good++;
+                        avatar.Accent = HudPalette.Good;
+                        avatar.RingThickness = 4;
+                        break;
+                    case CompositionFit.Weak:
+                        bad++;
+                        avatar.Accent = HudPalette.Bad;
+                        avatar.RingThickness = 4;
+                        avatar.Struck = HudPalette.Bad;
+                        break;
+                    default:
+                        neutral++;
+                        avatar.Dimmed = true;
+                        break;
+                }
+                portraits.Children.Add(avatar);
             }
 
-            var cell = new Grid { Height = 80, Margin = new Thickness(8, 0, 8, 0) };
-            if (state == CellState.Leading)
+            var counts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            foreach (var (count, brush) in new[] { (good, HudPalette.Good), (neutral, HudPalette.TextSecondary), (bad, HudPalette.Bad) })
             {
-                cell.Children.Add(new Border { Background = HudPalette.CompositionSoftBrush(comp) });
+                var number = Board.BoardText(count.ToString(), 44, count > 0 ? brush : HudPalette.CountZero);
+                number.Width = 34;
+                number.TextAlignment = TextAlignment.Center;
+                number.Margin = new Thickness(4, 0, 4, 0);
+                counts.Children.Add(number);
             }
-            else if (state == CellState.Recommended)
+
+            var content = new DockPanel { Margin = new Thickness(20, 0, 16, 0), LastChildFill = false };
+            DockPanel.SetDock(counts, Dock.Right);
+            content.Children.Add(counts);
+            DockPanel.SetDock(portraits, Dock.Left);
+            content.Children.Add(portraits);
+
+            var cell = new Border
             {
-                cell.Children.Add(new Border
-                {
-                    Background = HudPalette.CompositionSoftBrush(comp),
-                    BorderBrush = color,
-                    BorderThickness = new Thickness(4)
-                });
-                cell.Children.Add(new Path
-                {
-                    Data = Geometry.Parse("M0,20 L12,0 L24,20 Z"),
-                    Fill = color,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 14, 0)
-                });
+                Child = content,
+                BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(4),
+                Background = Brushes.Transparent,
+                Margin = new Thickness(6, 2, 6, 2)
+            };
+            switch (state)
+            {
+                case CellState.Leading:
+                    cell.Background = HudPalette.LeadCell;
+                    cell.BorderBrush = HudPalette.LeadOutline;
+                    break;
+                case CellState.Team:
+                    cell.Background = HudPalette.AllyCell;
+                    cell.BorderBrush = HudPalette.Ally;
+                    break;
+                case CellState.Recommended:
+                    cell.Background = HudPalette.GoodCell;
+                    cell.BorderBrush = HudPalette.Good;
+                    break;
             }
-            cell.Children.Add(content);
             return cell;
         }
-
-        private static int TeamTotal(IReadOnlyDictionary<HeroName, HeroAnalysis> team) =>
-            team.Where(kvp => CompositionPolicy.IsKnownHero(kvp.Key)).Sum(kvp => kvp.Value.HeroScore);
-
-        private static string TeamScore(IReadOnlyDictionary<HeroName, HeroAnalysis>? team, TeamCompositionSummary summary) =>
-            team == null || summary.HeroCount == 0 ? "--" : HudFormat.Score(TeamTotal(team));
 
         private void Place(UIElement element, int row, int column)
         {
@@ -212,8 +204,8 @@ namespace Owmeta.Display
         {
             var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
             brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x4D, team.R, team.G, team.B), 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x10, team.R, team.G, team.B), 0.45));
-            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, team.R, team.G, team.B), 0.7));
+            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x10, team.R, team.G, team.B), 0.12));
+            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, team.R, team.G, team.B), 0.25));
             brush.Freeze();
             return brush;
         }

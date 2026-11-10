@@ -68,15 +68,6 @@
                                     </Border>
                                 </StackPanel>
 
-                                <!-- Your hero and score (F2 only) -->
-                                <Border x:Name="CurrentHeroPlate" Background="{x:Static local:HudPalette.Strip}" HorizontalAlignment="Right"
-                                        VerticalAlignment="Bottom" Padding="6,6,30,6" Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal">
-                                        <local:HeroAvatar x:Name="CurrentHeroAvatar" Width="68" Height="68" CornerRatio="0.06" ShowPip="False"/>
-                                        <TextBlock x:Name="CurrentHeroName" Style="{StaticResource Hud.Board}" FontSize="44" Margin="20,0,18,0"/>
-                                        <TextBlock x:Name="CurrentHeroScore" Style="{StaticResource Hud.Board}" FontSize="44"/>
-                                    </StackPanel>
-                                </Border>
                             </Grid>
 
                             <!-- Both layouts stay laid out (hidden, not collapsed) so toggling is instant;

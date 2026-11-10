@@ -8,39 +8,34 @@ using System.Windows.Media;
 namespace Owmeta.Display
 {
     /// <summary>
-    /// F3: the composition table with team scores, the team threat, both rosters side by side,
-    /// then the swaps that would help the team most.
+    /// F3: the composition table, then the enemies to counter first (ranked by
+    /// <see cref="CompositionPolicy.RankThreats"/>) with the swap that answers each one, then your team:
+    /// who each hero counters and is countered by, the compositions he is good and bad in, and the hero
+    /// to change to when a swap raises his score by at least <see cref="AppSettings.MinScoreF3"/>.
     /// </summary>
     public partial class CompositionDashboard : UserControl
     {
-        // What fits on screen under the rosters.
-        private const int MaxTeamSwaps = 6;
-        private const int MaxSwapsPerTeammate = 2;
+        /// <summary>Enemy rows that fit on screen above your team.</summary>
+        public const int MaxThreats = 3;
 
-        private const int AtRiskScore = -2;
-        private const int DangerousScore = 3;
-
-        public ObservableCollection<RosterRowViewModel> Allies { get; } = new();
-        public ObservableCollection<RosterRowViewModel> Enemies { get; } = new();
-        public ObservableCollection<TeamSwapRowViewModel> TeamSwaps { get; } = new();
+        public ObservableCollection<ThreatRowViewModel> Threats { get; } = new();
+        public ObservableCollection<TeamRowViewModel> Team { get; } = new();
 
         public CompositionDashboard()
         {
             InitializeComponent();
-            AllyList.ItemsSource = Allies;
-            EnemyList.ItemsSource = Enemies;
-            TeamSwapList.ItemsSource = TeamSwaps;
+            ThreatList.ItemsSource = Threats;
+            TeamList.ItemsSource = Team;
             Clear();
         }
 
         public void Clear()
         {
-            Allies.Clear();
-            Enemies.Clear();
-            TeamSwaps.Clear();
+            Threats.Clear();
+            Team.Clear();
             Header.Update(null, null, null);
-            Threat.Update(null);
-            UpdateEmptyState();
+            UpdateTeamTitle();
+            NoThreatsCard.Visibility = Visibility.Collapsed;
         }
 
         public void Update(
@@ -50,30 +45,11 @@ namespace Owmeta.Display
         {
             try
             {
-                var threat = CompositionPolicy.FindThreat(redTeamAnalysis, blueTeamAnalysis);
-                Header.Update(blueTeamAnalysis, redTeamAnalysis, threat?.Enemy);
-                Threat.Update(threat);
-
-                Allies.Clear();
-                int i = 0;
-                foreach (var (hero, analysis) in CompositionPolicy.Ordered(blueTeamAnalysis))
-                {
-                    Allies.Add(RosterRow(hero, analysis, i++ % 2 == 0 ? HudPalette.AllyRowA : HudPalette.AllyRowB,
-                        analysis.HeroScore <= AtRiskScore ? HudPalette.Bad : null,
-                        Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, redTeamAnalysis.ContainsKey, threat?.Enemy)));
-                }
-
-                Enemies.Clear();
-                i = 0;
-                foreach (var (hero, analysis) in CompositionPolicy.Ordered(redTeamAnalysis))
-                {
-                    Enemies.Add(RosterRow(hero, analysis, i++ % 2 == 0 ? HudPalette.EnemyRowA : HudPalette.EnemyRowB,
-                        analysis.HeroScore >= DangerousScore ? HudPalette.Warn : null,
-                        Board.Relations(analysis.HardCounters, analysis.SoftCounters, blueTeamAnalysis.ContainsKey, null)));
-                }
-
-                UpdateTeamSwaps(blueTeamAnalysis, redTeamAnalysis, threat?.Enemy);
-                UpdateEmptyState();
+                var target = CompositionPolicy.FitTarget(blueTeamAnalysis, redTeamAnalysis, null);
+                Header.Update(blueTeamAnalysis, redTeamAnalysis, target);
+                UpdateTeamTitle();
+                UpdateThreats(blueTeamAnalysis, redTeamAnalysis);
+                UpdateTeam(blueTeamAnalysis, redTeamAnalysis, target);
             }
             catch (Exception ex)
             {
@@ -81,77 +57,104 @@ namespace Owmeta.Display
             }
         }
 
-        private static RosterRowViewModel RosterRow(HeroName hero, HeroAnalysis analysis, Brush background, Brush? edge, List<BoardIcon> icons) => new()
+        private void UpdateTeamTitle()
         {
-            Icon = Board.Portrait(hero),
-            Name = HudFormat.HeroName(hero).ToUpperInvariant(),
-            ScoreText = HudFormat.Score(analysis.HeroScore),
-            ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
-            Background = background,
-            EdgeBrush = edge ?? background,
-            Icons = icons
-        };
-
-        private void UpdateEmptyState()
-        {
-            NoTeamSwapsCard.Visibility = TeamSwaps.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            NoTeamSwapsText.Text = $"NO TEAM SWAP GAINS {HudFormat.Score(AppSettings.Instance.MinScoreF3)} OR MORE";
+            AllyScoreText.Text = Header.AllyScoreText;
+            EnemyScoreText.Text = Header.EnemyScoreText;
+            if (Header.AllyTotal.HasValue && Header.EnemyTotal.HasValue)
+            {
+                int diff = Header.AllyTotal.Value - Header.EnemyTotal.Value;
+                BalanceText.Text = diff < 0 ? $"· BEHIND BY {-diff}" : diff > 0 ? $"· AHEAD BY {diff}" : "· EVEN";
+                BalanceText.Foreground = HudPalette.ScoreBrush(diff);
+            }
+            else
+            {
+                BalanceText.Text = string.Empty;
+            }
         }
 
-        private void UpdateTeamSwaps(
-            Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis,
-            Dictionary<HeroName, HeroAnalysis> redTeamAnalysis,
-            HeroName? threat)
+        private void UpdateThreats(
+            Dictionary<HeroName, HeroAnalysis> blue,
+            Dictionary<HeroName, HeroAnalysis> red)
         {
-            TeamSwaps.Clear();
-
-            // For each teammate, the swaps that raise his score, biggest gain first. At most two per
-            // teammate, so one badly placed hero does not fill the list (F2 already lists his swaps).
-            var minGain = AppSettings.Instance.MinScoreF3;
-            var swaps = new List<(HeroName From, HeroAnalysis To, int Gain)>();
-            foreach (var (from, fromAnalysis) in blueTeamAnalysis)
+            Threats.Clear();
+            foreach (var threat in CompositionPolicy.RankThreats(red, blue).Take(MaxThreats))
             {
-                if (!CompositionPolicy.IsKnownHero(from) || fromAnalysis.SwapSuggestions == null) continue;
-                foreach (var suggestion in fromAnalysis.SwapSuggestions)
+                var answer = threat.IsHandled ? null : CompositionPolicy.BestAnswer(blue, red, threat.Enemy);
+                string note = threat.IsHandled ? "ALREADY HANDLED · NO SWAP NEEDED"
+                    : answer == null ? "NO SWAP COUNTERS HIM" : string.Empty;
+                Threats.Add(new ThreatRowViewModel
                 {
-                    var to = suggestion.Hero?.Name ?? HeroName.Unknown;
-                    if (!CompositionPolicy.IsKnownHero(to) || blueTeamAnalysis.ContainsKey(to)) continue;
-                    int gain = suggestion.HeroScore - fromAnalysis.HeroScore;
-                    if (gain > 0 && gain >= minGain) swaps.Add((from, suggestion, gain));
-                }
-            }
-
-            int index = 0;
-            var shown = swaps.OrderByDescending(s => s.Gain)
-                .GroupBy(s => s.From).SelectMany(g => g.Take(MaxSwapsPerTeammate))
-                .OrderByDescending(s => s.Gain)
-                .Take(MaxTeamSwaps);
-            foreach (var (from, to, gain) in shown)
-            {
-                bool best = index == 0;
-                var toHero = to.Hero.Name;
-                TeamSwaps.Add(new TeamSwapRowViewModel
-                {
-                    FromIcon = Board.Portrait(from),
-                    FromName = HudFormat.HeroName(from),
-                    FromBrush = best ? HudPalette.TextPrimary : HudPalette.TextSecondary,
-                    ToIcon = Board.Portrait(toHero),
-                    ToName = HudFormat.HeroName(toHero).ToUpperInvariant(),
-                    GainText = HudFormat.Score(gain),
-                    GainBrush = best ? HudPalette.TextPrimary : HudPalette.Good,
-                    Background = best ? HudPalette.RowBest : index % 2 == 0 ? HudPalette.RowA : HudPalette.RowB,
-                    Counters = Board.Relations(to.HardCounters, to.SoftCounters, redTeamAnalysis.ContainsKey, threat),
-                    CounteredBy = Board.Relations(to.HardCounteredBy, to.SoftCounteredBy, redTeamAnalysis.ContainsKey, threat),
-                    StrongIn = CompositionPolicy.StrongCompositions(to.Hero)
-                        .Select(c => new CompositionWord(Board.CompositionName(c), best ? HudPalette.TextPrimary : HudPalette.CompositionBrush(c), true))
-                        .ToList()
+                    Icon = Board.Portrait(threat.Enemy),
+                    Name = HudFormat.HeroName(threat.Enemy).ToUpperInvariant(),
+                    Background = threat.IsHandled ? HudPalette.RowHandled : HudPalette.RowThreat,
+                    EdgeBrush = threat.IsHandled ? HudPalette.RowHandled : HudPalette.Enemy,
+                    Victims = Board.Links(threat.Victims, HudPalette.Bad),
+                    AnsweredBy = Board.Links(threat.AnsweredBy, HudPalette.Good),
+                    FromIcon = answer == null ? null : Board.Portrait(answer.From),
+                    FromName = answer == null ? string.Empty : HudFormat.HeroName(answer.From).ToUpperInvariant(),
+                    ToIcon = answer == null ? null : Board.Portrait(answer.To.Hero.Name),
+                    ToName = answer == null ? string.Empty : HudFormat.HeroName(answer.To.Hero.Name).ToUpperInvariant(),
+                    ToScore = answer == null ? string.Empty : HudFormat.Score(answer.To.HeroScore),
+                    Note = note
                 });
-                index++;
+            }
+            NoThreatsCard.Visibility = Threats.Count == 0 && blue.Count > 0 && red.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void UpdateTeam(
+            Dictionary<HeroName, HeroAnalysis> blue,
+            Dictionary<HeroName, HeroAnalysis> red,
+            CompositionType? target)
+        {
+            Team.Clear();
+            int minGain = AppSettings.Instance.MinScoreF3;
+            int i = 0;
+            foreach (var (hero, analysis) in CompositionPolicy.Ordered(blue))
+            {
+                var change = CompositionPolicy.BestSwap(blue, red, hero, minGain);
+                // A change is urgent for a hero who is losing his matchups, optional otherwise.
+                bool urgent = change != null && analysis.HeroScore < 0;
+                var background = urgent ? HudPalette.RowChange : i++ % 2 == 0 ? HudPalette.RowA : HudPalette.RowB;
+                Team.Add(new TeamRowViewModel
+                {
+                    Icon = Board.Portrait(hero),
+                    Name = HudFormat.HeroName(hero).ToUpperInvariant(),
+                    ScoreText = HudFormat.Score(analysis.HeroScore),
+                    ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
+                    Background = background,
+                    EdgeBrush = change == null ? background : urgent ? HudPalette.Bad : HudPalette.Warn,
+                    Counters = Board.Relations(analysis.HardCounters, analysis.SoftCounters, red.ContainsKey, HudPalette.Good),
+                    CounteredBy = Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, red.ContainsKey, HudPalette.Bad),
+                    Fits = Board.Fits(analysis.Hero, target),
+                    ChangeIcon = change == null ? null : Board.Portrait(change.To.Hero.Name),
+                    ChangeName = change == null ? string.Empty : HudFormat.HeroName(change.To.Hero.Name).ToUpperInvariant(),
+                    ChangeScore = change == null ? string.Empty : HudFormat.Score(change.To.HeroScore)
+                });
             }
         }
     }
 
-    public sealed class RosterRowViewModel
+    public sealed class ThreatRowViewModel
+    {
+        public required ImageSource Icon { get; init; }
+        public required string Name { get; init; }
+        public required Brush Background { get; init; }
+        public required Brush EdgeBrush { get; init; }
+        public required List<BoardIcon> Victims { get; init; }
+        public required List<BoardIcon> AnsweredBy { get; init; }
+        public ImageSource? FromIcon { get; init; }
+        public required string FromName { get; init; }
+        public ImageSource? ToIcon { get; init; }
+        public required string ToName { get; init; }
+        public required string ToScore { get; init; }
+        public required string Note { get; init; }
+
+        public Visibility AnswerVisibility => ToIcon != null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility NoteVisibility => string.IsNullOrEmpty(Note) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    public sealed class TeamRowViewModel
     {
         public required ImageSource Icon { get; init; }
         public required string Name { get; init; }
@@ -159,21 +162,13 @@ namespace Owmeta.Display
         public required Brush ScoreBrush { get; init; }
         public required Brush Background { get; init; }
         public required Brush EdgeBrush { get; init; }
-        public required List<BoardIcon> Icons { get; init; }
-    }
-
-    public sealed class TeamSwapRowViewModel
-    {
-        public required ImageSource FromIcon { get; init; }
-        public required string FromName { get; init; }
-        public required Brush FromBrush { get; init; }
-        public required ImageSource ToIcon { get; init; }
-        public required string ToName { get; init; }
-        public required string GainText { get; init; }
-        public required Brush GainBrush { get; init; }
-        public required Brush Background { get; init; }
         public required List<BoardIcon> Counters { get; init; }
         public required List<BoardIcon> CounteredBy { get; init; }
-        public required List<CompositionWord> StrongIn { get; init; }
+        public required List<CompositionWord> Fits { get; init; }
+        public ImageSource? ChangeIcon { get; init; }
+        public required string ChangeName { get; init; }
+        public required string ChangeScore { get; init; }
+
+        public Visibility ChangeVisibility => ChangeIcon != null ? Visibility.Visible : Visibility.Collapsed;
     }
 }

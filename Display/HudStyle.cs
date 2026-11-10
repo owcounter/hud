@@ -60,6 +60,7 @@ namespace Owmeta.Display
         public static readonly SolidColorBrush ThreatBand = Create(0xE6, 0x78, 0x12, 0x20);
         public static readonly SolidColorBrush ThreatText = Create(0xFF, 0xFF, 0xD6, 0xDA);
         public static readonly SolidColorBrush PipEmpty = Create(0x1A, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush PipEmptyStrong = Create(0xFF, 0x4A, 0x54, 0x68);
         public static readonly SolidColorBrush CountZero = Create(0xFF, 0x4B, 0x54, 0x68);
         public static readonly SolidColorBrush BoardLabel = Create(0xFF, 0x8F, 0x9A, 0xB0);
         public static readonly SolidColorBrush HardOutline = Create(0xFF, 0xFF, 0xFF, 0xFF);
@@ -76,6 +77,34 @@ namespace Owmeta.Display
         public static readonly SolidColorBrush BrawlSoft = Create(0x26, 0xFB, 0x92, 0x3C);
         public static readonly SolidColorBrush Poke = Create(0xFF, 0xC0, 0x84, 0xFC);
         public static readonly SolidColorBrush PokeSoft = Create(0x26, 0xC0, 0x84, 0xFC);
+
+        // Faint composition names, for a hero neutral in that composition
+        public static readonly SolidColorBrush DiveFaint = Create(0x47, 0x38, 0xBD, 0xF8);
+        public static readonly SolidColorBrush BrawlFaint = Create(0x47, 0xFB, 0x92, 0x3C);
+        public static readonly SolidColorBrush PokeFaint = Create(0x47, 0xC0, 0x84, 0xFC);
+
+        // Dark text on a filled color tag
+        public static readonly SolidColorBrush OnColor = Create(0xFF, 0x0B, 0x0F, 0x18);
+
+        // Composition header cells: the team composition to fit, and a clear enemy composition
+        public static readonly SolidColorBrush AllyCell = Create(0x2E, 0x3E, 0xA6, 0xFF);
+        public static readonly SolidColorBrush GoodCell = Create(0x2E, 0x3D, 0xDC, 0x97);
+        public static readonly SolidColorBrush LeadCell = Create(0x1C, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush LeadOutline = Create(0x80, 0xFF, 0xFF, 0xFF);
+
+        // Rows of the swap and team views
+        public static readonly SolidColorBrush RowTop = Create(0xF0, 0x15, 0x3A, 0x34);
+        public static readonly SolidColorBrush RowChange = Create(0xF0, 0x3E, 0x18, 0x26);
+        public static readonly SolidColorBrush RowThreat = Create(0xF0, 0x4A, 0x16, 0x24);
+        public static readonly SolidColorBrush RowHandled = Create(0xF0, 0x26, 0x1A, 0x28);
+
+        public static SolidColorBrush CompositionFaintBrush(CompositionType comp) => comp switch
+        {
+            CompositionType.Dive => DiveFaint,
+            CompositionType.Brawl => BrawlFaint,
+            CompositionType.Poke => PokeFaint,
+            _ => CountZero
+        };
 
         // Opaque composition tints for bands drawn straight over the game
         public static readonly SolidColorBrush DiveBand = Mix(GroupBand, Dive, 0.24);

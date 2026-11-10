@@ -68,7 +68,7 @@ internal static class RecognitionTests
                 var header=(Owmeta.Display.CompositionHeader)dashboard.FindName("Header");
                 if(header.AllyScoreText!="--" || header.EnemyScoreText!="--") throw new Exception("Empty team was presented as a zero score");
                 if(header.Tendency.IsClear || header.Tendency.Recommended!=null) throw new Exception("Empty teams produced a composition conclusion");
-                if(dashboard.Allies.Count!=0 || dashboard.Enemies.Count!=0 || dashboard.TeamSwaps.Count!=0) throw new Exception("Empty teams produced rows");
+                if(dashboard.Threats.Count!=0 || dashboard.Team.Count!=0) throw new Exception("Empty teams produced rows");
                 var swaps=new Owmeta.Display.SwapSuggestionsPanel(); swaps.Clear("notice");
                 if(swaps.CurrentHero!=null || swaps.Rows.Count!=0) throw new Exception("Cleared swap panel kept a hero");
                 var ally=new Owmeta.Model.HeroAnalysis{ Hero=new Owmeta.Model.Hero{ Name=Owmeta.Model.HeroName.Ana }, HeroScore=2 };
