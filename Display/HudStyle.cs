@@ -94,6 +94,7 @@ namespace Owmeta.Display
 
         // Rows of the swap and team views
         public static readonly SolidColorBrush RowTop = Create(0xF0, 0x15, 0x3A, 0x34);
+        public static readonly SolidColorBrush RowYou = Create(0xF2, 0x0A, 0x0E, 0x18);
         public static readonly SolidColorBrush RowChange = Create(0xF0, 0x3E, 0x18, 0x26);
         public static readonly SolidColorBrush RowThreat = Create(0xF0, 0x4A, 0x16, 0x24);
         public static readonly SolidColorBrush RowHandled = Create(0xF0, 0x26, 0x1A, 0x28);

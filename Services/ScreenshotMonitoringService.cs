@@ -324,7 +324,9 @@ namespace Owmeta.Services
                         HudDiagnostics.Write($"capture-copy elapsedMs={Stopwatch.GetElapsedTime(copyStarted).TotalMilliseconds:F2} size={bounds.Width}x{bounds.Height}");
                         using var ms = new MemoryStream();
                         var encodeStarted = Stopwatch.GetTimestamp();
-                        bitmap.Save(ms, ImageFormat.Png);
+                        // JPEG keeps the upload under the API's body limit (a 1440p PNG can exceed it);
+                        // the recognizer reads JPEG as well as PNG.
+                        bitmap.Save(ms, JpegEncoder, JpegQuality);
                         HudDiagnostics.Write($"capture-encode elapsedMs={Stopwatch.GetElapsedTime(encodeStarted).TotalMilliseconds:F2} bytes={ms.Length}");
                         return Convert.ToBase64String(ms.ToArray());
                     });
@@ -551,6 +553,13 @@ namespace Owmeta.Services
                 }
             }, null);
         }
+
+        private static readonly ImageCodecInfo JpegEncoder =
+            ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
+        private static readonly EncoderParameters JpegQuality = new(1)
+        {
+            Param = { [0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 92L) }
+        };
 
         /// <summary>A short, actionable status line for a failed analysis.</summary>
         public static string DescribeError(Exception ex) => ex switch

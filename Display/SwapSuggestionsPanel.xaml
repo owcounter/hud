@@ -28,7 +28,7 @@
             </DataTemplate>
 
             <DataTemplate DataType="{x:Type local:SwapRowViewModel}">
-                <Border Height="88" Background="{Binding Background}" BorderBrush="#59000000" BorderThickness="0,0,0,2">
+                <Border Height="88" Background="{Binding Background}" BorderBrush="{Binding EdgeBrush}" BorderThickness="8,0,0,2">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="{StaticResource Col.Portrait}"/>
@@ -38,8 +38,17 @@
                             <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
                             <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                         </Grid.ColumnDefinitions>
-                        <local:HeroAvatar Source="{Binding Icon}" Width="80" Height="80" CornerRatio="0.06" ShowPip="False" Margin="12,0,0,0"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Hud.Board}" FontSize="44" Margin="28,0,12,0"/>
+                        <local:HeroAvatar Source="{Binding Icon}" Width="80" Height="80" CornerRatio="0.06" ShowPip="False" Margin="4,0,0,0"
+                                          Accent="{Binding EdgeAccent}" RingThickness="3"/>
+                        <Grid Grid.Column="1" Margin="28,0,12,0" HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource Hud.Board}" FontSize="44"/>
+                            <TextBlock Grid.Column="1" Text="YOU" Visibility="{Binding YouVisibility}" Style="{StaticResource Hud.Board}" FontSize="24"
+                                       Foreground="{x:Static local:HudPalette.Ally}" Margin="16,8,0,0"/>
+                        </Grid>
                         <TextBlock Grid.Column="2" Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.Board}"
                                    FontSize="48" HorizontalAlignment="Right" Margin="0,0,28,0"/>
                         <ItemsControl Grid.Column="3" ItemsSource="{Binding Counters}" ItemTemplate="{StaticResource Hud.BoardIcon}"
@@ -63,73 +72,7 @@
         </Border>
 
         <StackPanel x:Name="SwapSection" Visibility="Collapsed">
-            <!-- Your hero, who counters him, and the best swap with who it counters.
-                 Each side gets half the free width; a long name trims, its score and compositions stay. -->
-            <Border Background="{x:Static local:HudPalette.Strip}" Margin="0,4,0,0" Padding="24,14,24,10">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <local:HeroAvatar x:Name="CurrentAvatar" Width="108" Height="108" CornerRatio="0.06" ShowPip="False" RingThickness="4"/>
-                    <StackPanel Grid.Column="1" Margin="28,0,0,0" VerticalAlignment="Center">
-                        <Grid HorizontalAlignment="Left">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="CurrentName" Style="{StaticResource Hud.Board}" FontSize="58"/>
-                            <TextBlock x:Name="CurrentScore" Grid.Column="1" Style="{StaticResource Hud.Board}" FontSize="58" Margin="18,0,24,0"/>
-                            <ItemsControl x:Name="CurrentFits" Grid.Column="2" ItemTemplate="{StaticResource Hud.FitWord}"
-                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
-                        </Grid>
-                        <StackPanel x:Name="CurrentRelations" Orientation="Horizontal" Margin="0,6,0,0">
-                            <TextBlock Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="24" Foreground="{x:Static local:HudPalette.Bad}"
-                                       Margin="0,0,16,18"/>
-                            <ItemsControl x:Name="CurrentCounteredBy" ItemTemplate="{StaticResource Hud.BoardIcon}"
-                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}"/>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <Grid x:Name="SwapArrow" Grid.Column="2" Width="210" Height="80" Margin="40,0,36,0" VerticalAlignment="Center">
-                        <Path Data="M0,0 L170,0 L210,40 L170,80 L0,80 Z" Fill="{x:Static local:HudPalette.Good}"/>
-                        <TextBlock Text="SWAP" Style="{StaticResource Hud.Board}" FontSize="46" Foreground="{x:Static local:HudPalette.OnColor}"
-                                   HorizontalAlignment="Center" Margin="0,0,30,0"/>
-                    </Grid>
-
-                    <local:HeroAvatar x:Name="BestAvatar" Grid.Column="3" Width="108" Height="108" CornerRatio="0.06" ShowPip="False" RingThickness="4"
-                                      Accent="{x:Static local:HudPalette.Good}"/>
-                    <StackPanel x:Name="BestPanel" Grid.Column="4" Margin="28,0,0,0" VerticalAlignment="Center">
-                        <Grid HorizontalAlignment="Left">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="BestName" Style="{StaticResource Hud.Board}" FontSize="58"/>
-                            <TextBlock x:Name="BestScore" Grid.Column="1" Style="{StaticResource Hud.Board}" FontSize="58" Margin="18,0,24,0"
-                                       Foreground="{x:Static local:HudPalette.Good}"/>
-                            <ItemsControl x:Name="BestFits" Grid.Column="2" ItemTemplate="{StaticResource Hud.FitWord}"
-                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
-                        </Grid>
-                        <StackPanel x:Name="BestRelations" Orientation="Horizontal" Margin="0,6,0,0">
-                            <TextBlock Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="24" Foreground="{x:Static local:HudPalette.Good}"
-                                       Margin="0,0,16,18"/>
-                            <ItemsControl x:Name="BestCounters" ItemTemplate="{StaticResource Hud.BoardIcon}"
-                                          ItemsPanel="{StaticResource Hud.HorizontalPanel}"/>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <TextBlock x:Name="NoBetterText" Grid.Column="2" Grid.ColumnSpan="3" Text="NO BETTER SWAP" Style="{StaticResource Hud.Board}" FontSize="40"
-                               Foreground="{x:Static local:HudPalette.TextSecondary}" Margin="40,0,0,0" Visibility="Collapsed"/>
-                </Grid>
-            </Border>
-
-            <!-- The other options; the column labels explain the rows -->
+            <!-- Column labels, shared by your hero and the swap suggestions -->
             <Border Background="{x:Static local:HudPalette.GroupBand}" Height="52" Margin="0,4,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -140,15 +83,18 @@
                         <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
                         <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal" Margin="24,0,0,0">
-                        <TextBlock Text="OTHER OPTIONS" Style="{StaticResource Hud.Board}" FontSize="26"/>
-                        <TextBlock x:Name="OptionsHint" Style="{StaticResource Hud.Board}" FontSize="26" Margin="14,0,0,0"
-                                   Foreground="{x:Static local:HudPalette.BoardLabel}"/>
-                    </StackPanel>
+                    <TextBlock Grid.ColumnSpan="3" Text="YOUR HERO" Style="{StaticResource Hud.Board}" FontSize="26" Margin="24,0,0,0"/>
                     <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Good}"/>
                     <TextBlock Grid.Column="4" Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Bad}"/>
                     <TextBlock Grid.Column="5" Text="GOOD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
                 </Grid>
+            </Border>
+
+            <!-- Your hero: the same columns as the swaps, so each one compares directly -->
+            <ContentControl x:Name="CurrentRow" Focusable="False"/>
+
+            <Border Background="{x:Static local:HudPalette.GroupBand}" Height="48">
+                <TextBlock Text="SWAP SUGGESTIONS" Style="{StaticResource Hud.Board}" FontSize="26" Margin="24,0,0,0"/>
             </Border>
 
             <ItemsControl x:Name="SuggestionsControl"/>
