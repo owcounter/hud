@@ -37,9 +37,33 @@ namespace Owmeta.Display
         public static readonly SolidColorBrush Neutral = Create(0xFF, 0x8A, 0x94, 0xA6);
         public static readonly SolidColorBrush NeutralSoft = Create(0x1F, 0xFF, 0xFF, 0xFF);
 
-        // Teams
-        public static readonly SolidColorBrush Ally = Create(0xFF, 0x4C, 0xC3, 0xFF);
-        public static readonly SolidColorBrush Enemy = Create(0xFF, 0xFF, 0x4F, 0x64);
+        // Teams (Overwatch's own ally blue and enemy red)
+        public static readonly SolidColorBrush Ally = Create(0xFF, 0x3E, 0xA6, 0xFF);
+        public static readonly SolidColorBrush Enemy = Create(0xFF, 0xFF, 0x46, 0x55);
+
+        // Scoreboard surfaces, modelled on the in-game Tab scoreboard
+        public static readonly SolidColorBrush TabActive = Create(0xFF, 0xF3, 0xF4, 0xF6);
+        public static readonly SolidColorBrush TabActiveText = Create(0xFF, 0x1B, 0x23, 0x35);
+        public static readonly SolidColorBrush TabIdle = Create(0xD9, 0x14, 0x1C, 0x2E);
+        public static readonly SolidColorBrush TabIdleText = Create(0xFF, 0x9A, 0xA6, 0xBD);
+        public static readonly SolidColorBrush ColumnBand = Create(0xF0, 0xE6, 0xE9, 0xF0);
+        public static readonly SolidColorBrush ColumnText = Create(0xFF, 0x1B, 0x23, 0x35);
+        public static readonly SolidColorBrush Strip = Create(0xF0, 0x0E, 0x14, 0x22);
+        public static readonly SolidColorBrush GroupBand = Create(0xF0, 0x08, 0x0C, 0x16);
+        public static readonly SolidColorBrush RowA = Create(0xE6, 0x16, 0x23, 0x3E);
+        public static readonly SolidColorBrush RowB = Create(0xE6, 0x1A, 0x29, 0x48);
+        public static readonly SolidColorBrush RowBest = Create(0xF0, 0x1F, 0x96, 0xD6);
+        public static readonly SolidColorBrush AllyRowA = Create(0xEB, 0x16, 0x30, 0x56);
+        public static readonly SolidColorBrush AllyRowB = Create(0xEB, 0x1A, 0x38, 0x62);
+        public static readonly SolidColorBrush EnemyRowA = Create(0xEB, 0x46, 0x16, 0x22);
+        public static readonly SolidColorBrush EnemyRowB = Create(0xEB, 0x52, 0x1A, 0x28);
+        public static readonly SolidColorBrush ThreatBand = Create(0xE6, 0x78, 0x12, 0x20);
+        public static readonly SolidColorBrush ThreatText = Create(0xFF, 0xFF, 0xD6, 0xDA);
+        public static readonly SolidColorBrush PipEmpty = Create(0x1A, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush CountZero = Create(0xFF, 0x4B, 0x54, 0x68);
+        public static readonly SolidColorBrush BoardLabel = Create(0xFF, 0x8F, 0x9A, 0xB0);
+        public static readonly SolidColorBrush HardOutline = Create(0xFF, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush BestNeutralText = Create(0xB3, 0xFF, 0xFF, 0xFF);
 
         // Accent used for the "best pick" highlight
         public static readonly SolidColorBrush Accent = Create(0xFF, 0xFF, 0xB8, 0x3D);
@@ -53,11 +77,47 @@ namespace Owmeta.Display
         public static readonly SolidColorBrush Poke = Create(0xFF, 0xC0, 0x84, 0xFC);
         public static readonly SolidColorBrush PokeSoft = Create(0x26, 0xC0, 0x84, 0xFC);
 
+        // Opaque composition tints for bands drawn straight over the game
+        public static readonly SolidColorBrush DiveBand = Mix(GroupBand, Dive, 0.24);
+        public static readonly SolidColorBrush BrawlBand = Mix(GroupBand, Brawl, 0.24);
+        public static readonly SolidColorBrush PokeBand = Mix(GroupBand, Poke, 0.24);
+
+        public static SolidColorBrush CompositionBandBrush(CompositionType comp) => comp switch
+        {
+            CompositionType.Dive => DiveBand,
+            CompositionType.Brawl => BrawlBand,
+            CompositionType.Poke => PokeBand,
+            _ => GroupBand
+        };
+
+        public static SolidColorBrush CompositionBrush(CompositionType comp) => comp switch
+        {
+            CompositionType.Dive => Dive,
+            CompositionType.Brawl => Brawl,
+            CompositionType.Poke => Poke,
+            _ => TextSecondary
+        };
+
+        public static SolidColorBrush CompositionSoftBrush(CompositionType comp) => comp switch
+        {
+            CompositionType.Dive => DiveSoft,
+            CompositionType.Brawl => BrawlSoft,
+            CompositionType.Poke => PokeSoft,
+            _ => NeutralSoft
+        };
+
         public static SolidColorBrush ScoreBrush(int score) =>
             score > 0 ? Good : score < 0 ? Bad : Neutral;
 
         public static SolidColorBrush ScoreSoftBrush(int score) =>
             score > 0 ? GoodSoft : score < 0 ? BadSoft : NeutralSoft;
+
+        private static SolidColorBrush Mix(SolidColorBrush background, SolidColorBrush tint, double amount)
+        {
+            Color a = background.Color, b = tint.Color;
+            byte Lerp(byte x, byte y) => (byte)Math.Round(x + (y - x) * amount);
+            return Create(a.A, Lerp(a.R, b.R), Lerp(a.G, b.G), Lerp(a.B, b.B));
+        }
 
         private static SolidColorBrush Create(byte a, byte r, byte g, byte b)
         {

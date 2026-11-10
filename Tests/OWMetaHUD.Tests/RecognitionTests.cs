@@ -64,13 +64,17 @@ internal static class RecognitionTests
         Exception? uiError=null;
         var uiThread=new Thread(()=> {
             try {
-                var panel=new Owmeta.Display.TeamCompositionPanel();
-                panel.UpdateCompositions(new());
-                var score=(System.Windows.Controls.TextBlock)panel.FindName("TeamScoreText");
-                if(score.Text!="--" || panel.Compositions.Count!=0) throw new Exception("Empty team was presented as a zero score");
                 var dashboard=new Owmeta.Display.CompositionDashboard(); dashboard.Update(new(),new());
-                var matchup=(System.Windows.Controls.TextBlock)dashboard.FindName("MatchupText");
-                if(matchup.Text!="INSUFFICIENT DATA") throw new Exception("Empty teams produced a matchup conclusion");
+                var header=(Owmeta.Display.CompositionHeader)dashboard.FindName("Header");
+                if(header.AllyScoreText!="--" || header.EnemyScoreText!="--") throw new Exception("Empty team was presented as a zero score");
+                if(header.Tendency.IsClear || header.Tendency.Recommended!=null) throw new Exception("Empty teams produced a composition conclusion");
+                if(dashboard.Allies.Count!=0 || dashboard.Enemies.Count!=0 || dashboard.TeamSwaps.Count!=0) throw new Exception("Empty teams produced rows");
+                var swaps=new Owmeta.Display.SwapSuggestionsPanel(); swaps.Clear("notice");
+                if(swaps.CurrentHero!=null || swaps.Rows.Count!=0) throw new Exception("Cleared swap panel kept a hero");
+                var ally=new Owmeta.Model.HeroAnalysis{ Hero=new Owmeta.Model.Hero{ Name=Owmeta.Model.HeroName.Ana }, HeroScore=2 };
+                swaps.UpdateSuggestions(Owmeta.Model.HeroName.Unknown,new Dictionary<Owmeta.Model.HeroName,Owmeta.Model.HeroAnalysis>{ [Owmeta.Model.HeroName.Ana]=ally },null,"notice");
+                var swapHeader=(Owmeta.Display.CompositionHeader)swaps.FindName("Header");
+                if(swaps.CurrentHero!=null || swapHeader.AllyScoreText!="+2") throw new Exception("Unknown player hero dropped the team composition");
             } catch(Exception e) { uiError=e; }
         });
         uiThread.SetApartmentState(ApartmentState.STA); uiThread.Start(); uiThread.Join();

@@ -8,206 +8,146 @@
                 <ResourceDictionary Source="/OWMetaHUD;component/Display/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <ItemsPanelTemplate x:Key="ThreeColumns">
-                <UniformGrid Columns="3"/>
-            </ItemsPanelTemplate>
+            <!-- Roster columns -->
+            <GridLength x:Key="Ros.Portrait">72</GridLength>
+            <GridLength x:Key="Ros.Score">120</GridLength>
+            <GridLength x:Key="Ros.Icons">330</GridLength>
 
-            <!-- Hero header shared by the at-risk and dangerous cards -->
-            <DataTemplate x:Key="HeroHeader">
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding HeroName}" Style="{StaticResource Hud.HeroName}" FontSize="24"/>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.Text}"
-                                   FontSize="20" FontWeight="Bold" Margin="0,0,10,0"/>
-                        <ItemsControl ItemsSource="{Binding Compositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
-                                      ItemTemplate="{StaticResource Hud.CompositionTag}"/>
-                    </StackPanel>
-                </StackPanel>
+            <!-- Team swap columns -->
+            <GridLength x:Key="Sw.Pair">190</GridLength>
+            <GridLength x:Key="Sw.Gain">140</GridLength>
+            <GridLength x:Key="Sw.Counters">310</GridLength>
+            <GridLength x:Key="Sw.CounteredBy">290</GridLength>
+            <GridLength x:Key="Sw.Strong">300</GridLength>
+
+            <DataTemplate DataType="{x:Type local:RosterRowViewModel}">
+                <Border Height="72" Background="{Binding Background}" BorderBrush="{Binding EdgeBrush}" BorderThickness="6,0,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource Ros.Portrait}"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Score}"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Icons}"/>
+                        </Grid.ColumnDefinitions>
+                        <local:HeroAvatar Source="{Binding Icon}" Width="72" Height="72" CornerRatio="0" ShowPip="False"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Hud.Board}" FontSize="36" Margin="20,0,8,0"/>
+                        <TextBlock Grid.Column="2" Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.BoardStat}"/>
+                        <ItemsControl Grid.Column="3" ItemsSource="{Binding Icons}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:TeamSwapRowViewModel}">
+                <Border Height="76" Background="{Binding Background}" BorderBrush="#59000000" BorderThickness="0,0,0,2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource Sw.Pair}"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{StaticResource Sw.Gain}"/>
+                            <ColumnDefinition Width="{StaticResource Sw.Counters}"/>
+                            <ColumnDefinition Width="{StaticResource Sw.CounteredBy}"/>
+                            <ColumnDefinition Width="{StaticResource Sw.Strong}"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <local:HeroAvatar Source="{Binding FromIcon}" Width="60" Height="60" CornerRatio="0" ShowPip="False" Dimmed="True"/>
+                            <Path Data="M0,0 L16,12 L0,24 Z" Fill="{x:Static local:HudPalette.TextSecondary}" VerticalAlignment="Center" Margin="14,0"/>
+                            <local:HeroAvatar Source="{Binding ToIcon}" Width="76" Height="76" CornerRatio="0" ShowPip="False"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,8,0">
+                            <TextBlock Text="{Binding ToName}" Style="{StaticResource Hud.Board}" FontSize="38"/>
+                            <TextBlock Text="{Binding FromName}" Style="{StaticResource Hud.Board}" FontSize="26"
+                                       Foreground="{Binding FromBrush}" FontStyle="Normal" Margin="14,6,0,0"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding GainText}" Foreground="{Binding GainBrush}" Style="{StaticResource Hud.BoardStat}"/>
+                        <ItemsControl Grid.Column="3" ItemsSource="{Binding Counters}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ItemsControl Grid.Column="4" ItemsSource="{Binding CounteredBy}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ItemsControl Grid.Column="5" ItemsSource="{Binding StrongIn}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
+                                      VerticalAlignment="Center" Margin="20,0,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Style="{StaticResource Hud.Board}"
+                                               FontSize="26" Margin="0,0,18,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
             </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <StackPanel>
+        <local:CompositionHeader x:Name="Header" ShowScore="True"/>
+        <local:ThreatBar x:Name="Threat"/>
 
-        <!-- ============ TEAMS + MATCHUP ============ -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
+        <!-- Both rosters side by side, like the in-game scoreboard -->
+        <Grid Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="12"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <local:TeamCompositionPanel x:Name="BlueTeamPanel" IsBlueTeam="True" Grid.Column="0"/>
-
-            <Border Grid.Column="1" Style="{StaticResource Hud.Panel}" Margin="16,0" Padding="12,16">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="MATCHUP" Style="{StaticResource Hud.RowLabel}" HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="MatchupDiffText" Text="--" Style="{StaticResource Hud.Score}" FontSize="56"
-                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
-                    <Border x:Name="MatchupBadge" Style="{StaticResource Hud.Pill}" HorizontalAlignment="Center" Margin="0,4,0,0">
-                        <TextBlock x:Name="MatchupText" Text="NO DATA" Style="{StaticResource Hud.Text}" FontSize="17" FontWeight="Bold"/>
-                    </Border>
-                </StackPanel>
-            </Border>
-
-            <local:TeamCompositionPanel x:Name="RedTeamPanel" IsBlueTeam="False" Grid.Column="2"/>
-        </Grid>
-
-        <!-- ============ AT RISK / DANGEROUS ============ -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Border Style="{StaticResource Hud.Panel}" Padding="20,16,20,8">
-                <StackPanel x:Name="VulnerableSection">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Bad}" Margin="0,0,10,0"/>
-                        <TextBlock Text="TEAMMATES AT RISK" Style="{StaticResource Hud.SectionLabel}" Foreground="{x:Static local:HudPalette.Bad}"/>
-                        <TextBlock Text="countered by the enemy team" Style="{StaticResource Hud.Caption}" Margin="10,1,0,0"/>
-                    </StackPanel>
-                    <ItemsControl x:Name="VulnerableList" ItemsPanel="{StaticResource ThreeColumns}" Margin="-5,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource Hud.Card}" Margin="5,0,5,8" Padding="14,12">
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                            <local:HeroAvatar Source="{Binding HeroIcon}" IsHard="{Binding IsHardCountered}"
-                                                              Accent="{x:Static local:HudPalette.Bad}"
-                                                              Width="54" Height="54" Margin="0,0,14,0"/>
-                                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource HeroHeader}"/>
-                                        </StackPanel>
-                                        <local:AvatarRow Label="COUNTERED BY" Items="{Binding CounteredBy}" Accent="{x:Static local:HudPalette.Bad}"
-                                                         AvatarSize="36" LabelWidth="108"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock x:Name="NoVulnerableText" Text="Nobody on your team is badly countered."
-                               Style="{StaticResource Hud.Caption}" Margin="0,0,0,10" Visibility="Collapsed"/>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Column="2" Style="{StaticResource Hud.Panel}" Padding="20,16,20,8">
-                <StackPanel x:Name="DangerousSection">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Warn}" Margin="0,0,10,0"/>
-                        <TextBlock Text="DANGEROUS ENEMIES" Style="{StaticResource Hud.SectionLabel}" Foreground="{x:Static local:HudPalette.Warn}"/>
-                        <TextBlock Text="strong into your team" Style="{StaticResource Hud.Caption}" Margin="10,1,0,0"/>
-                    </StackPanel>
-                    <ItemsControl x:Name="DangerousList" ItemsPanel="{StaticResource ThreeColumns}" Margin="-5,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource Hud.Card}" Margin="5,0,5,8" Padding="14,12">
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                            <local:HeroAvatar Source="{Binding HeroIcon}" IsHard="{Binding IsHighThreat}"
-                                                              Accent="{x:Static local:HudPalette.Warn}"
-                                                              Width="54" Height="54" Margin="0,0,14,0"/>
-                                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource HeroHeader}"/>
-                                        </StackPanel>
-                                        <local:AvatarRow Label="COUNTERS" Items="{Binding Counters}" Accent="{x:Static local:HudPalette.Bad}"
-                                                         AvatarSize="36" LabelWidth="108" Margin="0,0,0,6"/>
-                                        <local:AvatarRow Label="COUNTERED BY" Items="{Binding CounteredBy}" Accent="{x:Static local:HudPalette.Good}"
-                                                         AvatarSize="36" LabelWidth="108"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock x:Name="NoDangerousText" Text="No enemy is hard countering your team."
-                               Style="{StaticResource Hud.Caption}" Margin="0,0,0,10" Visibility="Collapsed"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- ============ TEAM SWAPS ============ -->
-        <Border Grid.Row="2" Style="{StaticResource Hud.Panel}" Padding="20,16,20,8">
-            <StackPanel x:Name="TeamSwapSection">
-                <Grid Margin="0,0,0,12">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="TEAM SWAPS" Style="{StaticResource Hud.SectionLabel}" FontSize="22" Foreground="{x:Static local:HudPalette.TextPrimary}"/>
-                        <TextBlock x:Name="TeamSwapSummaryText" Style="{StaticResource Hud.Caption}" Margin="16,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <local:HeroAvatar Width="22" Height="22" Accent="{x:Static local:HudPalette.TextSecondary}" IsHard="True" RingThickness="1.5" Margin="0,0,8,0"/>
-                        <TextBlock Text="thick ring + dot = hard counter" Style="{StaticResource Hud.Caption}" FontSize="16"/>
-                    </StackPanel>
-                </Grid>
-
-                <ItemsControl x:Name="TeamSwapList" Margin="-5,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="7"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Style="{StaticResource Hud.Card}" Margin="5,0,5,10" Padding="14,10">
-                                <StackPanel>
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <local:HeroAvatar Source="{Binding ToHeroIcon}" Width="56" Height="56" Margin="0,0,12,0"/>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding ToHeroName}" Style="{StaticResource Hud.HeroName}" FontSize="23"/>
-                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                                <local:HeroAvatar Source="{Binding FromHeroIcon}" Width="22" Height="22" Dimmed="True" Margin="0,0,6,0"/>
-                                                <TextBlock Style="{StaticResource Hud.Caption}" FontSize="15" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="for"/>
-                                                    <Run Text="{Binding FromHeroName, Mode=OneWay}"/>
-                                                </TextBlock>
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2" VerticalAlignment="Top" Margin="6,-2,0,0">
-                                            <TextBlock Text="{Binding ScoreDiff, StringFormat='+{0}'}" Foreground="{Binding ScoreDiffBrush}"
-                                                       Style="{StaticResource Hud.Score}" FontSize="32" HorizontalAlignment="Right"/>
-                                            <TextBlock Text="GAIN" Style="{StaticResource Hud.RowLabel}" FontSize="13" HorizontalAlignment="Right" Margin="0,-4,0,0"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <WrapPanel MinHeight="34">
-                                        <ItemsControl ItemsSource="{Binding ToCompositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
-                                                      ItemTemplate="{StaticResource Hud.CompositionTag}" Margin="0,0,0,6"/>
-                                        <ItemsControl ItemsSource="{Binding ToIncompatibleCompositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
-                                                      ItemTemplate="{StaticResource Hud.IncompatibleTag}" Margin="0,0,0,6"/>
-                                        <Border Style="{StaticResource Hud.Pill}" Padding="7,3" Margin="0,0,0,6"
-                                                Background="{Binding ToMapBackground}" Visibility="{Binding ToMapVisibility}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource Hud.MapIcon}" Fill="{Binding ToMapBrush}" Width="14" Height="14"
-                                                      Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{Binding ToMapText}" Foreground="{Binding ToMapBrush}"
-                                                           Style="{StaticResource Hud.Text}" FontSize="15" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </WrapPanel>
-
-                                    <Rectangle Height="1" Fill="{x:Static local:HudPalette.Divider}" Margin="0,0,0,8"/>
-                                    <local:AvatarRow Label="COUNTERS" Items="{Binding Counters}" Accent="{x:Static local:HudPalette.Good}"
-                                                     AvatarSize="30" LabelWidth="108" Margin="0,0,0,5"/>
-                                    <local:AvatarRow Label="COUNTERED BY" Items="{Binding CounteredBy}" Accent="{x:Static local:HudPalette.Bad}"
-                                                     AvatarSize="30" LabelWidth="108" Margin="0,0,0,5"/>
-                                    <local:AvatarRow Label="SYNERGY" Items="{Binding Synergies}" Accent="{x:Static local:HudPalette.Info}"
-                                                     AvatarSize="30" LabelWidth="108" Margin="0,0,0,5"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <TextBlock x:Name="NoTeamSwapsText" Style="{StaticResource Hud.Caption}" FontSize="20" Margin="0,0,0,10" Visibility="Collapsed"/>
+            <StackPanel>
+                <Border Background="{x:Static local:HudPalette.ColumnBand}" BorderBrush="{x:Static local:HudPalette.Ally}" BorderThickness="8,0,0,0" Height="48">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource Ros.Portrait}"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Score}"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Icons}"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="YOUR TEAM" Style="{StaticResource Hud.ColumnLabel}"/>
+                        <TextBlock Grid.Column="2" Text="SCORE" Style="{StaticResource Hud.ColumnLabel}" HorizontalAlignment="Center" Margin="0"/>
+                        <TextBlock Grid.Column="3" Text="COUNTERED BY" Style="{StaticResource Hud.ColumnLabel}"/>
+                    </Grid>
+                </Border>
+                <ItemsControl x:Name="AllyList"/>
             </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <Border Background="{x:Static local:HudPalette.ColumnBand}" BorderBrush="{x:Static local:HudPalette.Enemy}" BorderThickness="8,0,0,0" Height="48">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource Ros.Portrait}"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Score}"/>
+                            <ColumnDefinition Width="{StaticResource Ros.Icons}"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="ENEMY" Style="{StaticResource Hud.ColumnLabel}"/>
+                        <TextBlock Grid.Column="2" Text="SCORE" Style="{StaticResource Hud.ColumnLabel}" HorizontalAlignment="Center" Margin="0"/>
+                        <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.ColumnLabel}"/>
+                    </Grid>
+                </Border>
+                <ItemsControl x:Name="EnemyList"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Which teammate should swap to what -->
+        <Border Background="{x:Static local:HudPalette.ColumnBand}" Height="48" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{StaticResource Sw.Pair}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{StaticResource Sw.Gain}"/>
+                    <ColumnDefinition Width="{StaticResource Sw.Counters}"/>
+                    <ColumnDefinition Width="{StaticResource Sw.CounteredBy}"/>
+                    <ColumnDefinition Width="{StaticResource Sw.Strong}"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="1" Text="TEAM SWAPS" Style="{StaticResource Hud.ColumnLabel}"/>
+                <TextBlock Grid.Column="2" Text="GAIN" Style="{StaticResource Hud.ColumnLabel}" HorizontalAlignment="Center" Margin="0"/>
+                <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.ColumnLabel}"/>
+                <TextBlock Grid.Column="4" Text="COUNTERED BY" Style="{StaticResource Hud.ColumnLabel}"/>
+                <TextBlock Grid.Column="5" Text="STRONG IN" Style="{StaticResource Hud.ColumnLabel}"/>
+            </Grid>
         </Border>
-    </Grid>
+        <ItemsControl x:Name="TeamSwapList"/>
+        <Border x:Name="NoTeamSwapsCard" Background="{x:Static local:HudPalette.RowA}" Height="76" Visibility="Collapsed">
+            <TextBlock x:Name="NoTeamSwapsText" Style="{StaticResource Hud.Board}" FontSize="32"
+                       Foreground="{x:Static local:HudPalette.TextSecondary}" Margin="210,0,0,0"/>
+        </Border>
+    </StackPanel>
 </UserControl>

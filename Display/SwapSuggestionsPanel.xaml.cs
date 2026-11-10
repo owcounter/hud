@@ -8,89 +8,111 @@ using System.Windows.Media.Imaging;
 
 namespace Owmeta.Display
 {
+    /// <summary>
+    /// F2: the composition table, the team threat, then the heroes you could swap to, ranked by score.
+    /// With <see cref="AppSettings.GroupSwapsByComposition"/> the rows are grouped by the composition
+    /// each hero is strong in, and the group that beats the enemy's clear tendency comes first.
+    /// </summary>
     public partial class SwapSuggestionsPanel : UserControl
     {
-        private const int IconSize = 128;
+        /// <summary>Rows that fit on screen under the composition table.</summary>
+        public const int MaxSwaps = 10;
 
-        public ObservableCollection<HeroSuggestionViewModel> SwapSuggestions { get; } = new();
-        private HeroSuggestionViewModel? _currentHero;
-        private MapName? _currentMap;
-        private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
+        public ObservableCollection<object> Rows { get; } = new();
+
+        /// <summary>The player's hero and score, shown next to the view tabs.</summary>
+        public (HeroName Hero, int Score)? CurrentHero { get; private set; }
 
         public SwapSuggestionsPanel()
         {
             InitializeComponent();
-            SuggestionsControl.ItemsSource = SwapSuggestions;
+            SuggestionsControl.ItemsSource = Rows;
         }
 
         public void Clear() => Clear(null);
 
         /// <summary>
-        /// Clears the panel. When <paramref name="notice"/> is set it is shown in place of the hero card.
+        /// Clears the panel. When <paramref name="notice"/> is set it is shown in place of the table.
         /// </summary>
         public void Clear(string? notice)
         {
-            _currentHero = null;
-            _currentMap = null;
-            _blueTeamAnalysis = null;
-            CurrentHeroCard.DataContext = null;
-            CurrentHeroCard.Visibility = Visibility.Collapsed;
+            CurrentHero = null;
+            Rows.Clear();
+            Header.Update(null, null, null);
+            Threat.Update(null);
             SwapSection.Visibility = Visibility.Collapsed;
-            SwapSuggestions.Clear();
-
             NoticeText.Text = notice ?? string.Empty;
             NoticeCard.Visibility = string.IsNullOrEmpty(notice) ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        public void UpdateSuggestions(HeroName playerHero, Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis, MapName? currentMap = null)
+        /// <summary>
+        /// Shows both teams and the swaps for <paramref name="playerHero"/>. When that hero is not on the team,
+        /// the composition table stays and <paramref name="missingHeroNotice"/> replaces the swap table.
+        /// </summary>
+        public void UpdateSuggestions(
+            HeroName playerHero,
+            IReadOnlyDictionary<HeroName, HeroAnalysis> ourTeam,
+            IReadOnlyDictionary<HeroName, HeroAnalysis>? enemyTeam,
+            string? missingHeroNotice = null)
         {
             try
             {
-                _currentMap = currentMap;
-                _blueTeamAnalysis = blueTeamAnalysis;
+                var threat = CompositionPolicy.FindThreat(enemyTeam, ourTeam);
+                Header.Update(ourTeam, enemyTeam, threat?.Enemy);
+                Threat.Update(threat);
+                Rows.Clear();
 
-                if (!blueTeamAnalysis.TryGetValue(playerHero, out var currentHeroAnalysis))
+                if (!CompositionPolicy.IsKnownHero(playerHero) || !ourTeam.TryGetValue(playerHero, out var current))
+                {
+                    CurrentHero = null;
+                    SwapSection.Visibility = Visibility.Collapsed;
+                    NoticeText.Text = missingHeroNotice ?? string.Empty;
+                    NoticeCard.Visibility = missingHeroNotice == null ? Visibility.Collapsed : Visibility.Visible;
                     return;
+                }
 
-                // Update current hero
-                _currentHero = CreateHeroViewModel(playerHero, currentHeroAnalysis, true, currentHeroAnalysis.HeroScore);
-                CurrentHeroCard.DataContext = _currentHero;
-                CurrentHeroCard.Visibility = Visibility.Visible;
+                CurrentHero = (playerHero, current.HeroScore);
                 NoticeCard.Visibility = Visibility.Collapsed;
                 SwapSection.Visibility = Visibility.Visible;
 
-                // Update swap suggestions - sorted by score (highest first), filtered by min score, limited to 21
-                SwapSuggestions.Clear();
                 var minScore = AppSettings.Instance.MinScoreF2;
-                if (currentHeroAnalysis.SwapSuggestions != null)
+                var suggestions = current.SwapSuggestions?.ToList() ?? new List<HeroAnalysis>();
+                var selection = SwapSuggestionPolicy.SelectSuggestions(suggestions, minScore, MaxSwaps);
+                int eligible = suggestions.Count(s => s.HeroScore >= minScore);
+                bool grouped = AppSettings.Instance.GroupSwapsByComposition;
+
+                Logger.Log(
+                    $"F2 swap suggestions for {playerHero}: total={selection.TotalCount}, eligible={eligible}, shown={selection.ShownCount}, minScore={minScore}, grouped={grouped}, recommended={Header.Tendency.Recommended}");
+
+                var best = selection.Suggestions.FirstOrDefault();
+                if (best != null && best.HeroScore <= current.HeroScore) best = null;
+
+                bool IsEnemy(HeroName hero) => enemyTeam == null || enemyTeam.Count == 0 || enemyTeam.ContainsKey(hero);
+                bool IsAlly(HeroName hero) => ourTeam.ContainsKey(hero) && hero != playerHero;
+
+                int index = 0;
+                void AddRow(HeroAnalysis swap, CompositionType? group) =>
+                    Rows.Add(CreateRow(swap, group, swap == best, index++, threat?.Enemy, IsEnemy, IsAlly));
+
+                if (grouped)
                 {
-                    var selection = SwapSuggestionPolicy.SelectSuggestions(
-                        currentHeroAnalysis.SwapSuggestions,
-                        minScore);
-
-                    Logger.Log(
-                        $"F2 swap suggestions for {playerHero}: total={selection.TotalCount}, shown={selection.ShownCount}, minScore={minScore}");
-
-                    foreach (var suggestion in selection.Suggestions)
+                    foreach (var group in CompositionPolicy.Group(selection.Suggestions, Header.Tendency.Recommended))
                     {
-                        var vm = CreateHeroViewModel(suggestion.Hero.Name, suggestion, false, currentHeroAnalysis.HeroScore);
-                        vm.IsBest = SwapSuggestions.Count == 0 && suggestion.HeroScore > currentHeroAnalysis.HeroScore;
-                        SwapSuggestions.Add(vm);
+                        Rows.Add(new SwapGroupViewModel(group.Composition, group.IsRecommended));
+                        foreach (var swap in group.Heroes) AddRow(swap, group.Composition);
                     }
-
-                    SwapSummaryText.Text = selection.TotalCount > selection.ShownCount
-                        ? $"top {selection.ShownCount} of {selection.TotalCount} · min score {HudFormat.Score(minScore)}"
-                        : $"ranked by score for this match";
                 }
                 else
                 {
-                    Logger.Log($"F2 swap suggestions for {playerHero}: no suggestions in response");
-                    SwapSummaryText.Text = string.Empty;
+                    foreach (var swap in selection.Suggestions) AddRow(swap, null);
                 }
 
-                bool hasSwaps = SwapSuggestions.Count > 0;
-                NoSwapsText.Visibility = hasSwaps ? Visibility.Collapsed : Visibility.Visible;
-                NoSwapsText.Text = $"No swap scores {HudFormat.Score(minScore)} or better. {_currentHero.HeroName} is a solid pick here.";
+                NoSwapsCard.Visibility = selection.ShownCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+                NoSwapsText.Text = $"NO SWAP SCORES {HudFormat.Score(minScore)} OR MORE";
+
+                int hidden = eligible - selection.ShownCount;
+                MoreCard.Visibility = hidden > 0 ? Visibility.Visible : Visibility.Collapsed;
+                MoreText.Text = $"+{hidden} MORE";
             }
             catch (Exception ex)
             {
@@ -98,156 +120,76 @@ namespace Owmeta.Display
             }
         }
 
-        private HeroSuggestionViewModel CreateHeroViewModel(HeroName heroName, HeroAnalysis analysis, bool isCurrent, int currentScore)
+        private static SwapRowViewModel CreateRow(
+            HeroAnalysis swap,
+            CompositionType? group,
+            bool isBest,
+            int index,
+            HeroName? threat,
+            Func<HeroName, bool> isEnemy,
+            Func<HeroName, bool> isAlly)
         {
-            var compositions = HudFormat.CreateCompositionInfos(analysis.Hero?.BestCompositions);
-            var incompatibleCompositions = HudFormat.CreateCompositionInfos(analysis.Hero?.IncompatibleCompositions);
-
-            var mapStrengthInfo = GetMapStrengthInfo(analysis.Hero, _currentMap);
-            var synergies = ConvertToSynergyInfoList(analysis.Synergies);
-            var counters = ConvertToCounterInfoList(analysis.HardCounters, analysis.SoftCounters, true);
-            var counteredBy = ConvertToCounterInfoList(analysis.HardCounteredBy, analysis.SoftCounteredBy, false);
-
-            int delta = analysis.HeroScore - currentScore;
-            bool isStrong = mapStrengthInfo?.IsStrong ?? false;
-
-            return new HeroSuggestionViewModel
+            var hero = swap.Hero?.Name ?? HeroName.Unknown;
+            var alsoFits = new List<CompositionWord>();
+            if (group.HasValue && group.Value != CompositionType.Unspecified)
             {
-                HeroName = HudFormat.HeroName(heroName),
-                HeroIcon = IconUtils.GetHeroIconAsBitmapSource(heroName, IconSize),
-                IsCurrent = isCurrent,
-                ScoreValue = analysis.HeroScore,
-                ScoreText = HudFormat.Score(analysis.HeroScore),
-                ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
-                ScoreBackgroundBrush = HudPalette.ScoreSoftBrush(analysis.HeroScore),
-                DeltaText = delta == 0 ? "same as current" : $"{HudFormat.Score(delta)} vs current",
-                DeltaBrush = delta > 0 ? HudPalette.Good : delta < 0 ? HudPalette.Bad : HudPalette.TextMuted,
-                Compositions = compositions,
-                IncompatibleCompositions = incompatibleCompositions,
-                Counters = counters,
-                CounteredBy = counteredBy,
-                Synergies = synergies,
-                HasCounters = counters.Count > 0,
-                HasCounteredBy = counteredBy.Count > 0,
-                HasSynergies = synergies.Count > 0,
-                MapStrengthVisibility = mapStrengthInfo.HasValue ? Visibility.Visible : Visibility.Collapsed,
-                MapStrengthBrush = mapStrengthInfo.HasValue ? (isStrong ? HudPalette.Good : HudPalette.Bad) : HudPalette.TextPrimary,
-                MapStrengthBackground = mapStrengthInfo.HasValue ? (isStrong ? HudPalette.GoodSoft : HudPalette.BadSoft) : HudPalette.NeutralSoft,
-                MapStrengthText = mapStrengthInfo.HasValue
-                    ? (isStrong ? "Strong" : "Weak") + (_currentMap.HasValue ? $" on {HudFormat.MapName(_currentMap.Value)}" : " map")
-                    : string.Empty,
-                MapStrengthShortText = mapStrengthInfo.HasValue ? (isStrong ? "Strong map" : "Weak map") : string.Empty
+                foreach (var comp in CompositionPolicy.Compositions.Where(c => c != group.Value))
+                {
+                    var fit = CompositionPolicy.Fit(swap.Hero, comp);
+                    // On the blue best-pick band, composition colors would vanish: use white instead.
+                    if (fit == CompositionFit.Strong)
+                        alsoFits.Insert(alsoFits.Count(w => w.Strong), new CompositionWord(Board.CompositionName(comp),
+                            isBest ? HudPalette.TextPrimary : HudPalette.CompositionBrush(comp), true));
+                    else if (fit == CompositionFit.Neutral)
+                        alsoFits.Add(new CompositionWord(Board.CompositionName(comp),
+                            isBest ? HudPalette.BestNeutralText : HudPalette.BoardLabel, false));
+                }
+            }
+
+            return new SwapRowViewModel
+            {
+                Icon = Board.Portrait(hero),
+                Name = HudFormat.HeroName(hero).ToUpperInvariant(),
+                ScoreText = HudFormat.Score(swap.HeroScore),
+                ScoreBrush = isBest ? HudPalette.TextPrimary : HudPalette.ScoreBrush(swap.HeroScore),
+                Background = isBest ? HudPalette.RowBest : index % 2 == 0 ? HudPalette.RowA : HudPalette.RowB,
+                AlsoFits = alsoFits,
+                Counters = Board.Relations(swap.HardCounters, swap.SoftCounters, isEnemy, threat),
+                CounteredBy = Board.Relations(swap.HardCounteredBy, swap.SoftCounteredBy, isEnemy, threat),
+                Synergies = Board.Synergies(swap.Synergies, isAlly)
             };
-        }
-
-        private List<SynergyInfo> ConvertToSynergyInfoList(IEnumerable<HeroSynergy>? synergies)
-        {
-            var result = new List<SynergyInfo>();
-            if (synergies == null) return result;
-
-            foreach (var synergy in synergies.Take(3))
-            {
-                if (_blueTeamAnalysis != null && _blueTeamAnalysis.ContainsKey(synergy.HeroName))
-                {
-                    result.Add(new SynergyInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(synergy.HeroName, IconSize),
-                        Name = HudFormat.HeroName(synergy.HeroName),
-                        Comment = string.IsNullOrEmpty(synergy.Comment) ? "Good synergy" : synergy.Comment
-                    });
-                }
-            }
-
-            return result;
-        }
-
-        private static List<CounterInfo> ConvertToCounterInfoList(
-            IEnumerable<HeroCounter>? hardCounters,
-            IEnumerable<HeroCounter>? softCounters,
-            bool isCountering)
-        {
-            var result = new List<CounterInfo>();
-
-            if (hardCounters != null)
-            {
-                foreach (var counter in hardCounters.Take(3))
-                {
-                    result.Add(new CounterInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(counter.HeroName, IconSize),
-                        Name = HudFormat.HeroName(counter.HeroName),
-                        IsHard = true,
-                        Comment = string.IsNullOrEmpty(counter.Comment)
-                            ? (isCountering ? "Hard counter" : "Hard countered by")
-                            : counter.Comment
-                    });
-                }
-            }
-
-            if (softCounters != null && result.Count < 4)
-            {
-                foreach (var counter in softCounters.Take(4 - result.Count))
-                {
-                    result.Add(new CounterInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(counter.HeroName, IconSize),
-                        Name = HudFormat.HeroName(counter.HeroName),
-                        IsHard = false,
-                        Comment = string.IsNullOrEmpty(counter.Comment)
-                            ? (isCountering ? "Soft counter" : "Soft countered by")
-                            : counter.Comment
-                    });
-                }
-            }
-
-            return result;
-        }
-
-        private static (bool IsStrong, bool IsWeak)? GetMapStrengthInfo(Hero? hero, MapName? currentMap)
-        {
-            if (hero == null || currentMap == null)
-                return null;
-
-            bool isStrong = hero.StrongMaps?.Contains(currentMap.Value) ?? false;
-            bool isWeak = hero.WeakMaps?.Contains(currentMap.Value) ?? false;
-
-            if (!isStrong && !isWeak)
-                return null;
-
-            return (isStrong, isWeak);
         }
     }
 
-    public class HeroSuggestionViewModel
+    public sealed record CompositionWord(string Text, Brush Brush, bool Strong);
+
+    public sealed class SwapGroupViewModel
     {
-        public required string HeroName { get; set; }
-        public required BitmapSource HeroIcon { get; set; }
-        public bool IsCurrent { get; set; }
-        public bool IsBest { get; set; }
-        public Visibility BestVisibility => IsBest ? Visibility.Visible : Visibility.Collapsed;
-        public int ScoreValue { get; set; }
-        public required string ScoreText { get; set; }
-        public required SolidColorBrush ScoreBrush { get; set; }
-        public required SolidColorBrush ScoreBackgroundBrush { get; set; }
-        public required string DeltaText { get; set; }
-        public required SolidColorBrush DeltaBrush { get; set; }
-        public required List<CompositionInfo> Compositions { get; set; }
-        public required List<CompositionInfo> IncompatibleCompositions { get; set; }
-        public required List<CounterInfo> Counters { get; set; }
-        public required List<CounterInfo> CounteredBy { get; set; }
-        public required List<SynergyInfo> Synergies { get; set; }
-        public bool HasCounters { get; set; }
-        public bool HasCounteredBy { get; set; }
-        public bool HasSynergies { get; set; }
-        public bool HasIncompatibleCompositions => IncompatibleCompositions?.Count > 0;
-        public Visibility NoCountersVisibility => HasCounters ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility NoCounteredByVisibility => HasCounteredBy ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility NoSynergiesVisibility => HasSynergies ? Visibility.Collapsed : Visibility.Visible;
-        public required Visibility MapStrengthVisibility { get; set; }
-        public required SolidColorBrush MapStrengthBrush { get; set; }
-        public required SolidColorBrush MapStrengthBackground { get; set; }
-        public required string MapStrengthText { get; set; }
-        public required string MapStrengthShortText { get; set; }
+        public SwapGroupViewModel(CompositionType composition, bool isRecommended)
+        {
+            Name = Board.CompositionName(composition);
+            Color = HudPalette.CompositionBrush(composition);
+            Background = isRecommended ? HudPalette.CompositionBandBrush(composition) : HudPalette.GroupBand;
+            MarkerVisibility = isRecommended ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public string Name { get; }
+        public Brush Color { get; }
+        public Brush Background { get; }
+        public Visibility MarkerVisibility { get; }
+    }
+
+    public sealed class SwapRowViewModel
+    {
+        public required ImageSource Icon { get; init; }
+        public required string Name { get; init; }
+        public required string ScoreText { get; init; }
+        public required Brush ScoreBrush { get; init; }
+        public required Brush Background { get; init; }
+        public required List<CompositionWord> AlsoFits { get; init; }
+        public required List<BoardIcon> Counters { get; init; }
+        public required List<BoardIcon> CounteredBy { get; init; }
+        public required List<BoardIcon> Synergies { get; init; }
     }
 
     public class CompositionInfo

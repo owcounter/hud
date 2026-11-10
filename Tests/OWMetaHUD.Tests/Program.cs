@@ -261,6 +261,114 @@ var tests = new (string Name, Action Run)[]
         AssertTrue(result.Hero == null);
         AssertFalse(result.UsedPreviousHero);
     }),
+    ("composition summary counts strong heroes and finds the tank", () =>
+    {
+        var team = Team(
+            Comp(HeroName.Zarya, HeroRole.Tank, 0, CompositionType.Brawl, CompositionType.Dive),
+            Comp(HeroName.Tracer, HeroRole.Damage, 0, CompositionType.Dive),
+            Comp(HeroName.Sojourn, HeroRole.Damage, 0, CompositionType.Poke),
+            Comp(HeroName.Unknown, HeroRole.Support, 0, CompositionType.Poke));
+
+        var summary = CompositionPolicy.Summarize(team);
+
+        AssertTrue(summary.Tank == HeroName.Zarya);
+        AssertEqual(3, summary.HeroCount);
+        AssertEqual(2, summary.StrongCounts[CompositionType.Dive]);
+        AssertEqual(1, summary.StrongCounts[CompositionType.Poke]);
+        AssertEqual(1, summary.StrongCounts[CompositionType.Brawl]);
+        AssertTrue(summary.TankStrong[CompositionType.Brawl]);
+        AssertFalse(summary.TankStrong[CompositionType.Poke]);
+    }),
+    ("enemy tendency counts the tank twice and recommends the counter composition", () =>
+    {
+        var tendency = CompositionPolicy.Tendency(Team(
+            Comp(HeroName.Doomfist, HeroRole.Tank, 0, CompositionType.Dive),
+            Comp(HeroName.Genji, HeroRole.Damage, 0, CompositionType.Dive),
+            Comp(HeroName.Soldier76, HeroRole.Damage, 0, CompositionType.Poke),
+            Comp(HeroName.Zenyatta, HeroRole.Support, 0, CompositionType.Poke),
+            Comp(HeroName.Juno, HeroRole.Support, 0, CompositionType.Dive)));
+
+        AssertTrue(tendency.IsClear);
+        AssertTrue(tendency.Leading.SequenceEqual(new[] { CompositionType.Dive }));
+        AssertTrue(tendency.Recommended == CompositionType.Brawl);
+    }),
+    ("enemy tendency is not clear when two compositions are close", () =>
+    {
+        var tendency = CompositionPolicy.Tendency(Team(
+            Comp(HeroName.Doomfist, HeroRole.Tank, 0, CompositionType.Dive),
+            Comp(HeroName.Genji, HeroRole.Damage, 0, CompositionType.Dive),
+            Comp(HeroName.Soldier76, HeroRole.Damage, 0, CompositionType.Poke),
+            Comp(HeroName.Zenyatta, HeroRole.Support, 0, CompositionType.Poke),
+            Comp(HeroName.Juno, HeroRole.Support, 0, CompositionType.Poke)));
+
+        AssertFalse(tendency.IsClear);
+        AssertTrue(tendency.Recommended == null);
+        AssertEqual(2, tendency.Leading.Count);
+    }),
+    ("enemy tendency is empty without heroes or compositions", () =>
+    {
+        AssertTrue(CompositionPolicy.Tendency(Team()) == CompositionTendency.None);
+        AssertTrue(CompositionPolicy.Tendency(Team(Comp(HeroName.Genji, HeroRole.Damage, 0))) == CompositionTendency.None);
+    }),
+    ("counter compositions follow dive, poke, brawl", () =>
+    {
+        AssertTrue(CompositionPolicy.CounterTo(CompositionType.Poke) == CompositionType.Dive);
+        AssertTrue(CompositionPolicy.CounterTo(CompositionType.Brawl) == CompositionType.Poke);
+        AssertTrue(CompositionPolicy.CounterTo(CompositionType.Dive) == CompositionType.Brawl);
+    }),
+    ("threat is an enemy countering at least four teammates", () =>
+    {
+        var ours = Team(
+            Comp(HeroName.Zarya, HeroRole.Tank, 0), Comp(HeroName.Tracer, HeroRole.Damage, 0),
+            Comp(HeroName.Sojourn, HeroRole.Damage, 0), Comp(HeroName.Kiriko, HeroRole.Support, 0),
+            Comp(HeroName.Lucio, HeroRole.Support, 0));
+        var juno = Comp(HeroName.Juno, HeroRole.Support, 4);
+        juno.HardCounters.Add(new HeroCounter { HeroName = HeroName.Zarya });
+        juno.HardCounters.Add(new HeroCounter { HeroName = HeroName.Lucio });
+        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Tracer });
+        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Ana });
+        var genji = Comp(HeroName.Genji, HeroRole.Damage, 1);
+        genji.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sojourn });
+
+        AssertTrue(CompositionPolicy.FindThreat(Team(juno, genji), ours) == null);
+
+        juno.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        var threat = CompositionPolicy.FindThreat(Team(juno, genji), ours);
+        AssertTrue(threat?.Enemy == HeroName.Juno);
+        AssertEqual(4, threat!.Victims.Count);
+    }),
+    ("grouped swaps put the recommended composition first", () =>
+    {
+        var swaps = new[]
+        {
+            Comp(HeroName.Winston, HeroRole.Tank, 6, CompositionType.Dive),
+            Comp(HeroName.Sigma, HeroRole.Tank, 4, CompositionType.Poke),
+            Comp(HeroName.Hazard, HeroRole.Tank, 2, CompositionType.Dive, CompositionType.Brawl),
+            Comp(HeroName.Mauga, HeroRole.Tank, 1),
+            Comp(HeroName.Reinhardt, HeroRole.Tank, 0, CompositionType.Brawl),
+        };
+
+        var grouped = CompositionPolicy.Group(swaps, CompositionType.Brawl);
+        AssertTrue(grouped.Select(g => g.Composition).SequenceEqual(new[]
+            { CompositionType.Brawl, CompositionType.Dive, CompositionType.Poke, CompositionType.Unspecified }));
+        AssertTrue(grouped[0].IsRecommended);
+        AssertHeroOrder(grouped[0].Heroes, HeroName.Hazard, HeroName.Reinhardt);
+
+        var unclear = CompositionPolicy.Group(swaps, null);
+        AssertTrue(unclear.Select(g => g.Composition).SequenceEqual(new[]
+            { CompositionType.Dive, CompositionType.Poke, CompositionType.Brawl, CompositionType.Unspecified }));
+        AssertFalse(unclear.Any(g => g.IsRecommended));
+        AssertHeroOrder(unclear[0].Heroes, HeroName.Winston, HeroName.Hazard);
+    }),
+    ("composition fit reads strong, weak and neutral", () =>
+    {
+        var hero = new Hero { Name = HeroName.Winston };
+        hero.BestCompositions.Add(CompositionType.Dive);
+        hero.IncompatibleCompositions.Add(CompositionType.Brawl);
+        AssertTrue(CompositionPolicy.Fit(hero, CompositionType.Dive) == CompositionFit.Strong);
+        AssertTrue(CompositionPolicy.Fit(hero, CompositionType.Brawl) == CompositionFit.Weak);
+        AssertTrue(CompositionPolicy.Fit(hero, CompositionType.Poke) == CompositionFit.Neutral);
+    }),
 };
 
 foreach (var test in tests)
@@ -332,4 +440,17 @@ static HeroAnalysis CreateAnalysis(HeroName heroName, int score)
 static Dictionary<HeroName, HeroAnalysis> CreateTeam(params HeroName[] heroes)
 {
     return heroes.ToDictionary(hero => hero, hero => CreateAnalysis(hero, 0));
+}
+
+static HeroAnalysis Comp(HeroName heroName, HeroRole role, int score, params CompositionType[] strong)
+{
+    var analysis = CreateAnalysis(heroName, score);
+    analysis.Hero.Role = role;
+    analysis.Hero.BestCompositions.Add(strong);
+    return analysis;
+}
+
+static Dictionary<HeroName, HeroAnalysis> Team(params HeroAnalysis[] heroes)
+{
+    return heroes.ToDictionary(analysis => analysis.Hero.Name);
 }

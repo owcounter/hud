@@ -30,6 +30,28 @@ namespace Owmeta.Display
             nameof(RingThickness), typeof(double), typeof(HeroAvatar),
             new FrameworkPropertyMetadata(2.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty CornerRatioProperty = DependencyProperty.Register(
+            nameof(CornerRatio), typeof(double), typeof(HeroAvatar),
+            new FrameworkPropertyMetadata(0.24, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public static readonly DependencyProperty ShowPipProperty = DependencyProperty.Register(
+            nameof(ShowPip), typeof(bool), typeof(HeroAvatar),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>Corner radius as a fraction of the smaller side.</summary>
+        public double CornerRatio
+        {
+            get => (double)GetValue(CornerRatioProperty);
+            set => SetValue(CornerRatioProperty, value);
+        }
+
+        /// <summary>Whether a hard relationship also gets the corner pip.</summary>
+        public bool ShowPip
+        {
+            get => (bool)GetValue(ShowPipProperty);
+            set => SetValue(ShowPipProperty, value);
+        }
+
         public ImageSource? Source
         {
             get => (ImageSource?)GetValue(SourceProperty);
@@ -107,7 +129,7 @@ namespace Owmeta.Display
             if (w <= 0 || h <= 0) return;
 
             var rect = new Rect(0, 0, w, h);
-            double radius = Math.Min(w, h) * 0.24;
+            double radius = Math.Min(w, h) * CornerRatio;
 
             dc.DrawRoundedRectangle(HudPalette.AvatarBackground, null, rect, radius, radius);
 
@@ -128,7 +150,7 @@ namespace Owmeta.Display
             var ringBrush = IsHard ? accent : WithOpacity(accent, 0.75);
             dc.DrawRoundedRectangle(null, new Pen(ringBrush, thickness), ringRect, ringRadius, ringRadius);
 
-            if (IsHard)
+            if (IsHard && ShowPip)
             {
                 double pip = Math.Max(5, w * 0.13);
                 var center = new Point(w - pip * 0.55, pip * 0.55);

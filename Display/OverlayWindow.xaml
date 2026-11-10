@@ -18,13 +18,17 @@
 
             <local:ScaleConverter x:Key="ScaleConverter"/>
 
-            <Style x:Key="HeaderTab" TargetType="Border">
-                <Setter Property="CornerRadius" Value="8"/>
-                <Setter Property="Padding" Value="10,6,16,6"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="Background" Value="Transparent"/>
+            <!-- Slanted tab, like the in-game scoreboard. The content is skewed back upright. -->
+            <Style x:Key="BoardTab" TargetType="Border">
+                <Setter Property="Padding" Value="48,6,48,4"/>
+                <Setter Property="Margin" Value="20,0,0,0"/>
+                <Setter Property="Background" Value="{x:Static local:HudPalette.TabIdle}"/>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <SkewTransform AngleX="-14"/>
+                    </Setter.Value>
+                </Setter>
             </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -38,122 +42,87 @@
                  Stretch="Uniform">
             <!-- Fixed reference size container - 2K resolution -->
             <Grid Width="2560" Height="1440" Background="Transparent">
-                <Grid x:Name="MainGrid" Margin="32,24,32,20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- ============ HEADER BAR (shared by F2 and F3) ============ -->
-                    <Border x:Name="HeaderBar" Style="{StaticResource Hud.Panel}" Padding="20,10,12,10" Margin="0,0,0,16">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Brand -->
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,32,0">
-                                <Border Width="6" Height="26" CornerRadius="3" Background="{x:Static local:HudPalette.Accent}" Margin="0,0,12,0"/>
-                                <TextBlock Text="OWMETA" Style="{StaticResource Hud.Text}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="HUD" Style="{StaticResource Hud.Text}" FontSize="26" FontWeight="Light"
-                                           Foreground="{x:Static local:HudPalette.TextMuted}" Margin="8,0,0,0"/>
-                            </StackPanel>
-
-                            <!-- View tabs -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border x:Name="SwapTab" Style="{StaticResource HeaderTab}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Style="{StaticResource Hud.KeyCap}" Margin="0,0,10,0">
-                                            <TextBlock x:Name="SwapKeyText" Text="F2" Style="{StaticResource Hud.Text}" FontSize="16" FontWeight="SemiBold"/>
-                                        </Border>
-                                        <TextBlock x:Name="SwapTabText" Text="SWAPS" Style="{StaticResource Hud.SectionLabel}" FontSize="20"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border x:Name="TeamTab" Style="{StaticResource HeaderTab}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Style="{StaticResource Hud.KeyCap}" Margin="0,0,10,0">
-                                            <TextBlock x:Name="TeamKeyText" Text="F3" Style="{StaticResource Hud.Text}" FontSize="16" FontWeight="SemiBold"/>
-                                        </Border>
-                                        <TextBlock x:Name="TeamTabText" Text="TEAM" Style="{StaticResource Hud.SectionLabel}" FontSize="20"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-
-                            <!-- Map -->
-                            <StackPanel x:Name="MapInfo" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center"
-                                        Margin="0,0,20,0" Visibility="Collapsed">
-                                <Path Data="{StaticResource Hud.MapIcon}" Fill="{x:Static local:HudPalette.TextMuted}"
-                                      Width="18" Height="18" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="MapNameText" Style="{StaticResource Hud.Text}" FontSize="20" FontWeight="SemiBold"
-                                           Foreground="{x:Static local:HudPalette.TextSecondary}"/>
-                            </StackPanel>
-
-                            <!-- Data freshness -->
-                            <local:DataFreshnessIndicator x:Name="DataFreshnessIndicator" Grid.Column="4" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-
-                    <!-- Content never overflows the screen: in extreme cases (every list full,
-                         long comments) it scales down uniformly instead of being cut off. -->
-                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
-                    <Grid Width="2496">
-                        <!-- F2 Layout - Swap Suggestions -->
-                        <Grid x:Name="SwapLayout" Visibility="Hidden">
-                            <StackPanel x:Name="SwapContent">
-                                <Grid Margin="0,0,0,16">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="16"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <local:TeamCompositionPanel x:Name="BlueTeamPanel" Grid.Column="0" IsBlueTeam="True" IsCompact="True"/>
-                                    <local:TeamCompositionPanel x:Name="RedTeamPanel" Grid.Column="2" IsBlueTeam="False" IsCompact="True"/>
-                                </Grid>
-                                <local:SwapSuggestionsPanel x:Name="SwapSuggestionsPanel"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- F3 Layout - Composition Dashboard -->
-                        <Grid x:Name="CompositionLayout" Visibility="Hidden">
-                            <local:CompositionDashboard x:Name="CompositionDashboard" VerticalAlignment="Top"/>
-                        </Grid>
-
-                        <!-- Shown in either layout until the first analysis arrives -->
-                        <Border x:Name="NoDataPanel" Style="{StaticResource Hud.Panel}" Padding="48,40,48,36"
-                                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" Width="980">
-                            <StackPanel>
-                                <TextBlock Text="WAITING FOR MATCH DATA" Style="{StaticResource Hud.SectionLabel}" FontSize="20"
-                                           Foreground="{x:Static local:HudPalette.Accent}" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="NoDataTitle" Text="Open the scoreboard to analyze this match"
-                                           Style="{StaticResource Hud.Text}" FontSize="40" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,14"/>
-                                <TextBlock x:Name="NoDataBody" Style="{StaticResource Hud.Body}" FontSize="21" Margin="0,0,0,28"
-                                           Text="OWMETA reads both teams from the scoreboard, then scores your hero and suggests swaps."/>
-
-                                <Rectangle Height="1" Fill="{x:Static local:HudPalette.Divider}" Margin="0,0,0,22"/>
-
-                                <StackPanel Orientation="Horizontal">
-                                    <StackPanel x:Name="CaptureHint" Orientation="Horizontal" Margin="0,0,36,0">
-                                        <Border Style="{StaticResource Hud.KeyCap}" Margin="0,0,10,0">
-                                            <TextBlock x:Name="CaptureKeyText" Text="Tab" Style="{StaticResource Hud.Text}" FontSize="18" FontWeight="SemiBold"/>
-                                        </Border>
-                                        <TextBlock Text="analyze" Style="{StaticResource Hud.Caption}" FontSize="19"/>
-                                    </StackPanel>
-                                    <Border Style="{StaticResource Hud.KeyCap}" Margin="0,0,10,0">
-                                        <TextBlock x:Name="HintSwapKeyText" Text="F2" Style="{StaticResource Hud.Text}" FontSize="18" FontWeight="SemiBold"/>
+                <Grid x:Name="MainGrid" Margin="32,40,32,24">
+                    <!-- Content never overflows the screen: in extreme cases (every list full)
+                         it scales down uniformly instead of being cut off. -->
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
+                        <StackPanel Width="2160">
+                            <!-- ============ TABS (shared by F2 and F3) ============ -->
+                            <Grid Height="88">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <Border x:Name="SwapTab" Style="{StaticResource BoardTab}">
+                                        <StackPanel Orientation="Horizontal" RenderTransformOrigin="0.5,0.5">
+                                            <StackPanel.RenderTransform><SkewTransform AngleX="14"/></StackPanel.RenderTransform>
+                                            <TextBlock x:Name="SwapTabText" Text="SWAPS" Style="{StaticResource Hud.Board}" FontSize="46"/>
+                                            <TextBlock x:Name="SwapKeyText" Text="F2" Style="{StaticResource Hud.Board}" FontSize="24" Margin="16,6,0,0" Opacity="0.6"
+                                                       Foreground="{Binding Foreground, ElementName=SwapTabText}"/>
+                                        </StackPanel>
                                     </Border>
-                                    <TextBlock Text="swap suggestions" Style="{StaticResource Hud.Caption}" FontSize="19" Margin="0,0,36,0"/>
-                                    <Border Style="{StaticResource Hud.KeyCap}" Margin="0,0,10,0">
-                                        <TextBlock x:Name="HintTeamKeyText" Text="F3" Style="{StaticResource Hud.Text}" FontSize="18" FontWeight="SemiBold"/>
+                                    <Border x:Name="TeamTab" Style="{StaticResource BoardTab}" Margin="12,0,0,0">
+                                        <StackPanel Orientation="Horizontal" RenderTransformOrigin="0.5,0.5">
+                                            <StackPanel.RenderTransform><SkewTransform AngleX="14"/></StackPanel.RenderTransform>
+                                            <TextBlock x:Name="TeamTabText" Text="TEAM" Style="{StaticResource Hud.Board}" FontSize="46"/>
+                                            <TextBlock x:Name="TeamKeyText" Text="F3" Style="{StaticResource Hud.Board}" FontSize="24" Margin="16,6,0,0" Opacity="0.6"
+                                                       Foreground="{Binding Foreground, ElementName=TeamTabText}"/>
+                                        </StackPanel>
                                     </Border>
-                                    <TextBlock Text="team overview" Style="{StaticResource Hud.Caption}" FontSize="19"/>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+
+                                <!-- Your hero and score (F2 only) -->
+                                <Border x:Name="CurrentHeroPlate" Background="{x:Static local:HudPalette.Strip}" HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom" Padding="6,6,30,6" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal">
+                                        <local:HeroAvatar x:Name="CurrentHeroAvatar" Width="68" Height="68" CornerRatio="0.06" ShowPip="False"/>
+                                        <TextBlock x:Name="CurrentHeroName" Style="{StaticResource Hud.Board}" FontSize="44" Margin="20,0,18,0"/>
+                                        <TextBlock x:Name="CurrentHeroScore" Style="{StaticResource Hud.Board}" FontSize="44"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Both layouts stay laid out (hidden, not collapsed) so toggling is instant;
+                                 the host takes the active one's height so the footer stays attached. -->
+                            <Grid x:Name="ContentHost" Margin="0,4,0,0" VerticalAlignment="Top">
+                                <!-- F2 Layout - Swap Suggestions -->
+                                <Grid x:Name="SwapLayout" Visibility="Hidden">
+                                    <StackPanel x:Name="SwapContent" VerticalAlignment="Top">
+                                        <local:SwapSuggestionsPanel x:Name="SwapSuggestionsPanel"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- F3 Layout - Composition Dashboard -->
+                                <Grid x:Name="CompositionLayout" Visibility="Hidden">
+                                    <local:CompositionDashboard x:Name="CompositionDashboard" VerticalAlignment="Top"/>
+                                </Grid>
+
+                                <!-- Shown in either layout until the first analysis arrives -->
+                                <Border x:Name="NoDataPanel" Background="{x:Static local:HudPalette.Strip}" Padding="56,44,56,40" VerticalAlignment="Top">
+                                    <StackPanel>
+                                        <TextBlock x:Name="NoDataTitle" Text="Open the scoreboard to analyze this match"
+                                                   Style="{StaticResource Hud.Board}" FontSize="48" Margin="0,0,0,28"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <StackPanel x:Name="CaptureHint" Orientation="Horizontal" Margin="0,0,48,0">
+                                                <TextBlock x:Name="CaptureKeyText" Text="Tab" Style="{StaticResource Hud.Board}" FontSize="30" Margin="0,0,12,0"/>
+                                                <TextBlock Text="ANALYZE" Style="{StaticResource Hud.Board}" FontSize="30" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                                            </StackPanel>
+                                            <TextBlock x:Name="HintSwapKeyText" Text="F2" Style="{StaticResource Hud.Board}" FontSize="30" Margin="0,0,12,0"/>
+                                            <TextBlock Text="SWAPS" Style="{StaticResource Hud.Board}" FontSize="30" Foreground="{x:Static local:HudPalette.BoardLabel}" Margin="0,0,48,0"/>
+                                            <TextBlock x:Name="HintTeamKeyText" Text="F3" Style="{StaticResource Hud.Board}" FontSize="30" Margin="0,0,12,0"/>
+                                            <TextBlock Text="TEAM" Style="{StaticResource Hud.Board}" FontSize="30" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- ============ FOOTER: map and data age ============ -->
+                            <Border Background="{x:Static local:HudPalette.Strip}" Height="56" Margin="0,4,0,0" Padding="24,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock x:Name="MapNameText" Style="{StaticResource Hud.Board}" FontSize="26"
+                                               Foreground="{x:Static local:HudPalette.TextSecondary}" Visibility="{Binding Visibility, ElementName=MapInfo}"/>
+                                    <Border x:Name="MapInfo" Width="28" Visibility="Collapsed"/>
+                                    <local:DataFreshnessIndicator x:Name="DataFreshnessIndicator" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </Viewbox>
                 </Grid>
             </Grid>

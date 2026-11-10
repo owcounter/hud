@@ -6,20 +6,20 @@
         <ResourceDictionary Source="/OWMetaHUD;component/Display/Theme.xaml"/>
     </UserControl.Resources>
 
-    <Border x:Name="StatusPill" Style="{StaticResource Hud.Pill}" Background="{x:Static local:HudPalette.Card}" Padding="14,6,16,7">
+    <Border x:Name="StatusPill" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal">
             <!-- Status dot -->
             <Ellipse x:Name="StatusDot"
-                     Width="10" Height="10"
+                     Width="12" Height="12"
                      Fill="{x:Static local:HudPalette.Good}"
-                     Margin="0,1,10,0"
+                     Margin="0,2,12,0"
                      VerticalAlignment="Center"/>
 
             <!-- Status text -->
             <TextBlock x:Name="StatusText"
                        Text="Updated just now"
-                       Style="{StaticResource Hud.Text}"
-                       FontSize="18"
+                       Style="{StaticResource Hud.Board}"
+                       FontSize="26"
                        Foreground="{x:Static local:HudPalette.TextSecondary}"/>
         </StackPanel>
     </Border>

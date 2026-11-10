@@ -50,6 +50,7 @@ namespace Owmeta.Display
         private MatchState? _matchState;
         private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
         private Dictionary<HeroName, HeroAnalysis>? _redTeamAnalysis;
+        private HeroName? _displayedPlayerHero;
         private readonly MatchBoundaryTracker _matchBoundaryTracker = new();
         private Dictionary<HeroName, HeroAnalysis>? _playerAnalyses;
 
@@ -200,6 +201,9 @@ namespace Owmeta.Display
             _devMode = devMode;
 
             InitializeComponent();
+            SwapContent.SizeChanged += (_, _) => SyncContentHeight();
+            CompositionDashboard.SizeChanged += (_, _) => SyncContentHeight();
+            NoDataPanel.SizeChanged += (_, _) => SyncContentHeight();
             InitializeWindow();
             UpdateHotkeyLabels();
             UpdateDataState();
@@ -589,15 +593,6 @@ namespace Owmeta.Display
                 _blueTeamAnalysis = filteredBlue;
                 _redTeamAnalysis = filteredRed;
 
-                if (filteredBlue.Count == 0) BlueTeamPanel.Clear();
-                if (filteredRed.Count == 0) RedTeamPanel.Clear();
-
-                if (_blueTeamAnalysis.Count > 0)
-                    BlueTeamPanel.UpdateCompositions(_blueTeamAnalysis);
-
-                if (_redTeamAnalysis.Count > 0)
-                    RedTeamPanel.UpdateCompositions(_redTeamAnalysis);
-
                 Logger.Log(
                     $"HUD response: map={response.MatchState.Map}, player={response.MatchState.PlayerHero}, blueRecognized={filteredBlue.Count}, redRecognized={filteredRed.Count}, persistedRed={response.PersistedRedTeamSlots.Count}, knownMapChanged={knownMapChanged}");
 
@@ -624,11 +619,14 @@ namespace Owmeta.Display
                             Logger.Log($"F2 using previous selected hero {selectedHero.Hero.Value}: {selectedHero.Reason}");
                         }
 
-                        SwapSuggestionsPanel.UpdateSuggestions(selectedHero.Hero.Value, _playerAnalyses, _matchState.Map);
+                        _displayedPlayerHero = selectedHero.Hero.Value;
+                        SwapSuggestionsPanel.UpdateSuggestions(selectedHero.Hero.Value, _playerAnalyses, _redTeamAnalysis);
                     }
                     else
                     {
-                        SwapSuggestionsPanel.Clear("Couldn't identify your hero yet. Open the scoreboard again to rescan.");
+                        _displayedPlayerHero = null;
+                        SwapSuggestionsPanel.UpdateSuggestions(HeroName.Unknown, _playerAnalyses, _redTeamAnalysis,
+                            "HERO NOT IDENTIFIED · OPEN THE SCOREBOARD AGAIN");
                         Logger.Log($"F2 cleared: {selectedHero.Reason}");
                     }
 
@@ -699,12 +697,14 @@ namespace Owmeta.Display
         {
             Dispatcher.Invoke(() =>
             {
-                if (_matchState?.PlayerHero != null && _playerAnalyses != null)
+                // Settings changes (grouping, min score) rebuild the view for the hero already shown.
+                if (_displayedPlayerHero.HasValue && _playerAnalyses != null)
                 {
-                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _playerAnalyses, _matchState.Map);
+                    SwapSuggestionsPanel.UpdateSuggestions(_displayedPlayerHero.Value, _playerAnalyses, _redTeamAnalysis);
                 }
 
                 UpdateCompositionDashboard();
+                UpdateCurrentHeroPlate();
 
                 // Update hotkey registrations based on current settings
                 UpdateHotkeyRegistrations();
@@ -752,9 +752,8 @@ namespace Owmeta.Display
             _blueTeamAnalysis = null;
             _redTeamAnalysis = null;
             _playerAnalyses = null;
+            _displayedPlayerHero = null;
 
-            BlueTeamPanel.Clear();
-            RedTeamPanel.Clear();
             SwapSuggestionsPanel.Clear();
             CompositionDashboard.Clear();
             DataFreshnessIndicator.Reset();
@@ -779,6 +778,36 @@ namespace Owmeta.Display
             SwapContent.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             CompositionDashboard.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             NoDataPanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
+            UpdateCurrentHeroPlate();
+            SyncContentHeight();
+        }
+
+        private void SyncContentHeight()
+        {
+            FrameworkElement? active =
+                NoDataPanel.Visibility == Visibility.Visible ? NoDataPanel
+                : SwapLayout.Visibility == Visibility.Visible ? SwapContent
+                : CompositionLayout.Visibility == Visibility.Visible ? CompositionDashboard
+                : null;
+            if (active == null) return;
+            double height = active.ActualHeight > 0 ? active.ActualHeight : active.DesiredSize.Height;
+            if (height > 0) ContentHost.Height = height;
+        }
+
+        // Your hero and score sit next to the tabs while the swap view is open.
+        private void UpdateCurrentHeroPlate()
+        {
+            var current = SwapSuggestionsPanel.CurrentHero;
+            bool show = current.HasValue
+                        && SwapLayout.Visibility == Visibility.Visible
+                        && NoDataPanel.Visibility != Visibility.Visible;
+            CurrentHeroPlate.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            if (!show) return;
+
+            CurrentHeroAvatar.Source = Board.Portrait(current!.Value.Hero);
+            CurrentHeroName.Text = HudFormat.HeroName(current.Value.Hero).ToUpperInvariant();
+            CurrentHeroScore.Text = HudFormat.Score(current.Value.Score);
+            CurrentHeroScore.Foreground = HudPalette.ScoreBrush(current.Value.Score);
         }
 
         private void UpdateHotkeyLabels()
@@ -815,6 +844,8 @@ namespace Owmeta.Display
             MainGrid.Visibility = surfaceVisible ? Visibility.Visible : Visibility.Hidden;
             SetTabState(SwapTab, SwapTabText, swapActive);
             SetTabState(TeamTab, TeamTabText, teamActive);
+            UpdateCurrentHeroPlate();
+            SyncContentHeight();
             if (surfaceVisible != _surfaceVisible)
             {
                 _surfaceVisible = surfaceVisible;
@@ -839,9 +870,8 @@ namespace Owmeta.Display
 
         private static void SetTabState(System.Windows.Controls.Border tab, System.Windows.Controls.TextBlock label, bool active)
         {
-            tab.Background = active ? HudPalette.Card : System.Windows.Media.Brushes.Transparent;
-            tab.BorderBrush = active ? HudPalette.PanelBorder : System.Windows.Media.Brushes.Transparent;
-            label.Foreground = active ? HudPalette.TextPrimary : HudPalette.TextMuted;
+            tab.Background = active ? HudPalette.TabActive : HudPalette.TabIdle;
+            label.Foreground = active ? HudPalette.TabActiveText : HudPalette.TabIdleText;
         }
 
         public void ToggleVisibility()
