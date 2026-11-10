@@ -2,6 +2,9 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- Windows x64 only: keeps ONNX Runtime from shipping its native builds for every platform. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
     <RootNamespace>Owmeta</RootNamespace>
     <AssemblyName>OWMetaHUD</AssemblyName>
     <Product>OwmetaHUD</Product>
@@ -23,14 +26,27 @@
   <ItemGroup>
     <Compile Remove="Tests\**\*.cs" />
     <Compile Remove="tools\**\*.cs" />
+    <Compile Remove="Vision\**" />
+    <None Remove="Vision\**" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Model\"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.28.3"/>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1"/>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     <PackageReference Include="System.Drawing.Common" Version="8.0.10"/>
+    <!-- Scoreboard recognition. Referenced here too so their native libraries (build assets) reach the HUD output. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4"/>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11"/>
+    <PackageReference Include="Tesseract" Version="5.2.0"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Vision\Owmeta.Vision.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The recognition model pack ships next to the executable; its checksums are verified at load. -->
+    <None Include="model-pack\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

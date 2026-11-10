@@ -4,7 +4,7 @@ OWMETA HUD is a lightweight, non-intrusive heads-up display application that pro
 
 ## Features
 
-- 🎯 Hero recommendations based on scoreboard screenshots
+- 🎯 Hero recommendations based on scoreboard screenshots, recognized on your PC (screenshots never leave it)
 - 📊 Team composition analysis
 - 🔄 Updates when you take a new scoreboard screenshot
 - 🎮 Non-intrusive HUD that doesn't interfere with gameplay
@@ -15,8 +15,9 @@ OWMETA HUD is a lightweight, non-intrusive heads-up display application that pro
 
 ## System Requirements
 
-- Windows 10/11 (64-bit)
-- .NET Core 8.0 or later
+- Windows 10/11 (64-bit, x64)
+- [Microsoft Visual C++ Redistributable 2015-2022 (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe), used by on-device recognition (usually already installed)
+- .NET 8.0 Desktop Runtime (only for the framework-dependent download)
 - Active internet connection
 - Overwatch 2 (Battle.net or Steam version)
 - Game must run in Windowed Fullscreen mode

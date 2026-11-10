@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "kind": "neural",
+  "size": 48,
+  "dimension": 96,
+  "references": 3392,
+  "threshold": 0.795,
+  "margin": 0.3,
+  "min_gray_std": 8,
+  "score_meaning": "cosine similarity, not correctness probability",
+  "checksums": {
+    "encoder.onnx": "60760b219f8632b1a37f7d86126580965e8ca6f804f3f94d232c6c0cc09be63b",
+    "gallery.bin": "950b92f4ef515b3f39879753b936b9f0bb1b1e73cb05b779ee2c19af6c6657d0"
+  },
+  "training_sha256": "164c01107ddee7c3411460acb819adb1e060bddb8e0be88ba9082f2b2855d7c3"
+}

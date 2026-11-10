@@ -1,19 +1,58 @@
 using System.IO;
 using Owmeta.Model;
 using Owmeta.Services;
+using Owmeta.Vision.Protocol;
 
 internal static class RecognitionTests
 {
+    /// <summary>Recognizes a real scoreboard screenshot with the bundled model pack.</summary>
+    public static async Task RunLive(string screenshot)
+    {
+        var bytes=await ScreenshotMonitoringService.ReadOriginalScreenshot(screenshot);
+        var capture=new CaptureJournal(bytes);
+        using var recognizer=new LocalRecognizer();
+        var timer=System.Diagnostics.Stopwatch.StartNew();
+        await recognizer.Recognize(bytes,capture);
+        long loadMs=timer.ElapsedMilliseconds;
+        timer.Restart();
+        var result=await recognizer.Recognize(bytes,new CaptureJournal(bytes));
+        if(result.Raw.Slots.Length!=10 || result.State.BlueTeam==null || result.State.RedTeam==null) throw new Exception("Invalid local recognition result");
+        static string Team(TeamComposition t) => $"{t.Tank} {t.Damage1} {t.Damage2} {t.Support1} {t.Support2}";
+        Console.WriteLine($"PASS live local recognition: first call {loadMs} ms (includes loading), next {timer.ElapsedMilliseconds} ms; {result.Raw.Slots.Count(s=>s.Hero>2)}/10 recognized, player={result.State.PlayerHero}, map={result.State.Map}");
+        Console.WriteLine($"  blue: {Team(result.State.BlueTeam)}");
+        Console.WriteLine($"  red:  {Team(result.State.RedTeam)}");
+    }
+
     public static void Run()
     {
-        // Server error bodies map to what the player can do about them.
-        if(ServerErrors.From("{\"message\":\"ERR_SEND_TO_WORKER: ERR_INVALID_SCREENSHOT\"}")!=ServerError.NotAScoreboard
-            || ServerErrors.From("{\"message\":\"ERR_NO_AVAILABLE_WORKERS\"}")!=ServerError.NoWorker
-            || ServerErrors.From("{\"message\":\"ERR_WORKER_TIMEOUT\"}")!=ServerError.WorkerFailed
-            || ServerErrors.From("{\"message\":\"ERR_DB_INTERNAL\"}")!=ServerError.Unknown)
-            throw new Exception("Server error body mapped to the wrong cause");
-        if(ScreenshotMonitoringService.DescribeError(new ApiException("x",ServerError.NotAScoreboard))!="Scoreboard not found · open it and try again"
-            || ScreenshotMonitoringService.DescribeError(new ApiException("x",ServerError.NoWorker))!="Analyzer offline · try again later"
+        var deadSlots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,1,2,"unreadable-artwork")).ToArray();
+        var panel=new SlotObservation(9,.95f,.5f,9,28,"accepted");
+        var dead=new RecognitionResult {Valid=true,Slots=deadSlots,PlayerHero=9,SelectedRow=0,
+            PlayerEvidence=new(9,0,"panel-portrait+name+selected-row",75,panel)};
+        var resolved=LocalRecognizer.ToMatchState(dead);
+        if((int)resolved.BlueTeam.Tank!=9 || (int)resolved.PlayerHero!=9 || dead.Slots[0].Hero!=1)
+            throw new Exception("Independent current panel evidence was lost or raw portrait was overwritten");
+        foreach(var badPanel in new[]{dead with {SelectedRow=1},dead with {PlayerHero=30},
+            dead with {PlayerEvidence=dead.PlayerEvidence with {Portrait=panel with {Similarity=float.NaN}}}}) {
+            try {LocalRecognizer.ToMatchState(badPanel);throw new Exception("Invalid panel evidence accepted");}catch(ApiException){}
+        }
+        var slots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,31,30,"ambiguous-identity")).ToArray();
+        slots[0]=new(31,.99f,.4f,31,30,"accepted"); slots[5]=new(2,.99f,.4f,2,1,"explicitly-hidden");
+        var raw=new RecognitionResult { Valid=true,Slots=slots,PlayerHero=31,Map=23 };
+        var state=LocalRecognizer.ToMatchState(raw);
+        if(state.BlueTeam.Tank!=HeroName.Sigma || state.BlueTeam.Damage1!=HeroName.Unknown || state.RedTeam.Tank!=HeroName.Hidden)
+            throw new Exception("Raw UNKNOWN/HIDDEN meanings were not preserved");
+        if(raw.Slots[1].Hero!=1) throw new Exception("Raw observation was mutated");
+        foreach(var bad in new[]{raw with {Valid=false},raw with {Slots=[]},raw with {Slots=null!}}) {
+            try {LocalRecognizer.ToMatchState(bad);throw new Exception("Invalid recognition result accepted");}catch(ApiException){}
+        }
+        slots[0]=slots[0] with {Similarity=0};
+        try {LocalRecognizer.ToMatchState(raw);throw new Exception("Missing confidence accepted as a known hero");}catch(ApiException){}
+        slots[0]=slots[0] with {Similarity=float.NaN};
+        try {LocalRecognizer.ToMatchState(raw);throw new Exception("NaN accepted");}catch(ApiException){}
+        if(ScreenshotMonitoringService.DescribeError(new RecognitionRejectedException("x",raw))!="Scoreboard not found · open it and try again"
+            || ScreenshotMonitoringService.DescribeError(new RecognitionUnavailableException("x",new IOException()))!="Recognition unavailable · restart or reinstall the HUD"
+            || ScreenshotMonitoringService.DescribeError(new RecognitionUnavailableException("x",new TypeInitializationException("Tesseract",new DllNotFoundException("onnxruntime"))))!="Recognition unavailable · install the Visual C++ x64 runtime"
             || ScreenshotMonitoringService.DescribeError(new UnauthorizedException("x"))!="Session expired · log in again"
             || ScreenshotMonitoringService.DescribeError(new System.Net.Http.HttpRequestException("x"))!="Server unreachable · try again")
             throw new Exception("Analysis error shown with the wrong message");
@@ -47,6 +86,6 @@ internal static class RecognitionTests
         });
         uiThread.SetApartmentState(ApartmentState.STA); uiThread.Start(); uiThread.Join();
         if(uiError!=null) throw new Exception("WPF empty-state regression",uiError);
-        Console.WriteLine("PASS: server error messages, source-byte preservation, non-overwriting journal, WPF empty states");
+        Console.WriteLine("PASS: recognition result to match state, UNKNOWN/HIDDEN, invalid results, error messages, source-byte preservation, non-overwriting journal, WPF empty states");
     }
 }
