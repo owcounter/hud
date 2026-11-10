@@ -602,7 +602,7 @@ namespace Owmeta.Display
 
                     response.Capture?.Write("displayed.json", new {
                         map = (int)response.MatchState.Map,
-                        observedPlayer = response.RawRecognition?.PlayerHero,
+                        observedPlayer = response.RecognizedMatchState == null ? (int?)null : (int)response.RecognizedMatchState.PlayerHero,
                         displayedPlayer = selectedHero.Hero.HasValue ? (int?)selectedHero.Hero.Value : null,
                         UsedPreviousHero = response.PersistedPlayerHero, selectedHero.Reason,
                         blueHeroes = _blueTeamAnalysis.Keys.Select(h => (int)h).ToArray(),
@@ -644,7 +644,7 @@ namespace Owmeta.Display
                         DataFreshnessIndicator.MarkUpdated("capture recording failed - check log");
                     else if (response.PersistedPlayerHero)
                         DataFreshnessIndicator.MarkUpdated("previous player hero");
-                    else if (response.RawRecognition?.Slots.Any(s => s.Hero == 1) == true)
+                    else if (HasUnreadablePortrait(response.RecognizedMatchState))
                         DataFreshnessIndicator.MarkUpdated("some portraits unreadable");
                     else if (hasPersistedSlots)
                         DataFreshnessIndicator.SetPartialUpdate(persistedSlotCount);
@@ -663,6 +663,11 @@ namespace Owmeta.Display
                 }
             });
         }
+
+        // The worker reports a portrait it could not identify as UNKNOWN in the raw observation.
+        private static bool HasUnreadablePortrait(MatchState? recognized) =>
+            recognized != null && new[] { recognized.BlueTeam, recognized.RedTeam }.Any(team => team != null &&
+                new[] { team.Tank, team.Damage1, team.Damage2, team.Support1, team.Support2 }.Contains(HeroName.Unknown));
 
         private static Dictionary<HeroName, HeroAnalysis> FilterUnknownHeroes(
             Dictionary<HeroName, HeroAnalysis>? data)

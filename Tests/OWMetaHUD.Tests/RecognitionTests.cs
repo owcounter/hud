@@ -1,54 +1,22 @@
 using System.IO;
 using Owmeta.Model;
 using Owmeta.Services;
-using Owmeta.Vision.Protocol;
 
 internal static class RecognitionTests
 {
-    public static async Task RunLive(string screenshot)
-    {
-        var bytes=await ScreenshotMonitoringService.ReadOriginalScreenshot(screenshot);
-        var capture=new CaptureJournal(bytes);
-        using var client=new RecognitionClient();
-        var result=await client.Recognize(bytes,capture);
-        capture.Write("client-state.json",new { result.State.BlueTeam,result.State.RedTeam,result.State.PlayerHero,result.State.Map });
-        if(capture.Warning!=null) throw new Exception(capture.Warning);
-        if(result.Raw.Slots.Length!=10 || result.State.BlueTeam==null || result.State.RedTeam==null) throw new Exception("Invalid live HUD recognition result");
-        Console.WriteLine($"PASS live HUD preparation/client/worker/journal: {result.Raw.Slots.Count(s=>s.Hero>2)}/10 recognized, player={result.State.PlayerHero}, map={result.State.Map}; evidence={capture.DirectoryPath}");
-    }
-
     public static void Run()
     {
-        var deadSlots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,1,2,"unreadable-artwork")).ToArray();
-        var panel=new SlotObservation(9,.95f,.5f,9,28,"accepted");
-        var dead=new RecognitionResult {Valid=true,Slots=deadSlots,PlayerHero=9,SelectedRow=0,
-            PlayerEvidence=new(9,0,"panel-portrait+name+selected-row",75,panel)};
-        var resolved=RecognitionClient.ToMatchState(dead);
-        if((int)resolved.BlueTeam.Tank!=9 || (int)resolved.PlayerHero!=9 || dead.Slots[0].Hero!=1)
-            throw new Exception("Independent current panel evidence was lost or raw portrait was overwritten");
-        foreach(var badPanel in new[]{dead with {SelectedRow=1},dead with {PlayerHero=30},
-            dead with {PlayerEvidence=dead.PlayerEvidence with {Portrait=panel with {Similarity=float.NaN}}}}) {
-            try {RecognitionClient.ToMatchState(badPanel);throw new Exception("Invalid panel evidence accepted");}catch(ApiException){}
-        }
-        var slots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,31,30,"ambiguous-identity")).ToArray();
-        slots[0]=new(31,.99f,.4f,31,30,"accepted"); slots[5]=new(2,.99f,.4f,2,1,"explicitly-hidden");
-        var raw=new RecognitionResult { Valid=true,Slots=slots,PlayerHero=31,Map=23 };
-        var state=RecognitionClient.ToMatchState(raw);
-        if(state.BlueTeam.Tank!=HeroName.Sigma || state.BlueTeam.Damage1!=HeroName.Unknown || state.RedTeam.Tank!=HeroName.Hidden)
-            throw new Exception("Raw UNKNOWN/HIDDEN meanings were not preserved");
-        if(raw.Slots[1].Hero!=1) throw new Exception("Raw observation was mutated");
-        var envelope=raw with {CaptureId=Guid.NewGuid().ToString("N"),PackId=new string('a',64),WorkerBuildId=Guid.NewGuid().ToString("N")};
-        RecognitionClient.ValidateEnvelope(envelope,envelope.CaptureId);
-        foreach(var invalidEnvelope in new[]{envelope with {PackId=null!},envelope with {PackId=new string('z',64)},envelope with {WorkerBuildId=""}}) {
-            try {RecognitionClient.ValidateEnvelope(invalidEnvelope,envelope.CaptureId);throw new Exception("Invalid provenance accepted");}catch(ApiException){}
-        }
-        foreach(var bad in new[]{raw with {Valid=false},raw with {Slots=[]},raw with {Slots=null!}}) {
-            try {RecognitionClient.ToMatchState(bad);throw new Exception("Invalid worker result accepted");}catch(ApiException){}
-        }
-        slots[0]=slots[0] with {Similarity=0};
-        try {RecognitionClient.ToMatchState(raw);throw new Exception("Missing confidence accepted as a known hero");}catch(ApiException){}
-        slots[0]=slots[0] with {Similarity=float.NaN};
-        try {RecognitionClient.ToMatchState(raw);throw new Exception("NaN accepted");}catch(ApiException){}
+        // Server error bodies map to what the player can do about them.
+        if(ServerErrors.From("{\"message\":\"ERR_SEND_TO_WORKER: ERR_INVALID_SCREENSHOT\"}")!=ServerError.NotAScoreboard
+            || ServerErrors.From("{\"message\":\"ERR_NO_AVAILABLE_WORKERS\"}")!=ServerError.NoWorker
+            || ServerErrors.From("{\"message\":\"ERR_WORKER_TIMEOUT\"}")!=ServerError.WorkerFailed
+            || ServerErrors.From("{\"message\":\"ERR_DB_INTERNAL\"}")!=ServerError.Unknown)
+            throw new Exception("Server error body mapped to the wrong cause");
+        if(ScreenshotMonitoringService.DescribeError(new ApiException("x",ServerError.NotAScoreboard))!="Scoreboard not found · open it and try again"
+            || ScreenshotMonitoringService.DescribeError(new ApiException("x",ServerError.NoWorker))!="Analyzer offline · try again later"
+            || ScreenshotMonitoringService.DescribeError(new UnauthorizedException("x"))!="Session expired · log in again"
+            || ScreenshotMonitoringService.DescribeError(new System.Net.Http.HttpRequestException("x"))!="Server unreachable · try again")
+            throw new Exception("Analysis error shown with the wrong message");
         var captureDir=Environment.GetEnvironmentVariable("OWMETA_CAPTURE_DIR");
         Environment.SetEnvironmentVariable("OWMETA_CAPTURE_DIR",null);
         var disabled=new CaptureJournal([255,216,0,1]); disabled.Write("test.json",new { rawUnknown=1 });
@@ -79,6 +47,6 @@ internal static class RecognitionTests
         });
         uiThread.SetApartmentState(ApartmentState.STA); uiThread.Start(); uiThread.Join();
         if(uiError!=null) throw new Exception("WPF empty-state regression",uiError);
-        Console.WriteLine("PASS: recognition contract, UNKNOWN/HIDDEN, invalid responses, source-byte preservation, non-overwriting journal");
+        Console.WriteLine("PASS: server error messages, source-byte preservation, non-overwriting journal, WPF empty states");
     }
 }

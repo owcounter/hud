@@ -32,7 +32,5 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1"/>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     <PackageReference Include="System.Drawing.Common" Version="8.0.10"/>
-    <!-- Vision/*.cs (synced from the OWMETA worker sources) prepares frames with ImageSharp. -->
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11"/>
   </ItemGroup>
 </Project>

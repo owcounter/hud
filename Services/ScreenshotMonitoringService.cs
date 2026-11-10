@@ -555,8 +555,10 @@ namespace Owmeta.Services
         /// <summary>A short, actionable status line for a failed analysis.</summary>
         public static string DescribeError(Exception ex) => ex switch
         {
-            RecognitionRejectedException => "Scoreboard not found · open it and try again",
             UnauthorizedException => "Session expired · log in again",
+            ApiException { ServerError: ServerError.NotAScoreboard } => "Scoreboard not found · open it and try again",
+            ApiException { ServerError: ServerError.NoWorker } => "Analyzer offline · try again later",
+            ApiException { ServerError: ServerError.WorkerFailed } => "Analyzer busy · try again",
             HttpRequestException or TaskCanceledException => "Server unreachable · try again",
             ApiException => "Analysis failed · try again",
             _ => "Error capturing screenshot"
@@ -565,7 +567,7 @@ namespace Owmeta.Services
         public static async Task<byte[]> ReadOriginalScreenshot(string path)
         {
             using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (file.Length is <= 0 or > Owmeta.Vision.Preparation.FramePreparer.MaximumImageBytes)
+            if (file.Length is <= 0 or > ApiService.MaximumScreenshotBytes)
                 throw new InvalidDataException("Screenshot file size is unsupported");
             var bytes = new byte[(int)file.Length];
             await file.ReadExactlyAsync(bytes);

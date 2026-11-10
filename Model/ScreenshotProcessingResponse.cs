@@ -14,7 +14,6 @@ namespace Owmeta.Model
         public bool RecognitionFailed { get; set; }
         public MatchState? RecognizedMatchState { get; set; }
         public HeroAnalysis? PlayerAnalysis { get; set; }
-        [JsonIgnore] public Owmeta.Vision.Protocol.RecognitionResult? RawRecognition { get; set; }
         [JsonIgnore] public Owmeta.Services.CaptureJournal? Capture { get; set; }
     }
 

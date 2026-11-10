@@ -10,7 +10,9 @@ namespace Owmeta.Services
     public class ApiService : IDisposable
     {
         private readonly HttpClient httpClient;
-        private readonly RecognitionClient recognitionClient = new();
+        /// <summary>Largest screenshot the HUD uploads (a 4K PNG is well below it).</summary>
+        public const int MaximumScreenshotBytes = 24 * 1024 * 1024;
+
         private readonly KeycloakAuth keycloakAuth;
         private readonly string tokenFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "owmeta_oauth_token.json");
         private string? accessToken;
@@ -305,30 +307,18 @@ namespace Owmeta.Services
 
         private async Task<ScreenshotProcessingResponse?> SendScreenshotRequest(string screenshotBase64, bool retryOnUnauthorized)
         {
-            if (screenshotBase64.Length > Owmeta.Vision.Preparation.FramePreparer.MaximumImageBytes * 4 / 3 + 4)
+            if (screenshotBase64.Length > MaximumScreenshotBytes * 4 / 3 + 4)
                 throw new ApiException("Screenshot is too large");
-            var bytes = Convert.FromBase64String(screenshotBase64);
-            var capture = new CaptureJournal(bytes);
+            var capture = new CaptureJournal(Convert.FromBase64String(screenshotBase64));
             try
             {
-                MatchState? observedState = null;
-                Owmeta.Vision.Protocol.RecognitionResult raw;
-                bool recognitionFailed = false;
-                try {
-                    var recognition = await recognitionClient.Recognize(bytes, capture);
-                    observedState = recognition.State;
-                    raw = recognition.Raw;
-                } catch (RecognitionRejectedException rejected) when (_lastMatchState != null) {
-                    raw = rejected.Raw;
-                    recognitionFailed = true;
-                }
-                var result = await SendRecognizedState(observedState, _lastMatchState, recognitionFailed, retryOnUnauthorized);
-                result.RawRecognition = raw;
+                var result = await PostScreenshot(screenshotBase64, retryOnUnauthorized);
                 result.Capture = capture;
                 capture.Write("analysis-result.json", new { matchState = SerializeMatchState(result.MatchState),
+                    recognizedMatchState = SerializeMatchState(result.RecognizedMatchState),
                     blueTeamAnalysis=result.BlueTeamAnalysis, redTeamAnalysis=result.RedTeamAnalysis,
                     result.PersistedBlueTeamSlots, result.PersistedRedTeamSlots, result.PersistedPlayerHero,
-                    result.RecognitionFailed, result.PlayerAnalysis, result.RecognizedMatchState });
+                    result.RecognitionFailed, result.PlayerAnalysis });
                 return result;
             }
             catch (Exception ex)
@@ -338,21 +328,31 @@ namespace Owmeta.Services
             }
         }
 
-        private async Task<ScreenshotProcessingResponse> SendRecognizedState(MatchState? state, MatchState? previous, bool recognitionFailed, bool retryOnUnauthorized)
+        /// <summary>
+        /// Uploads the screenshot to the API. Recognition always runs on the server's worker pool:
+        /// the API hands the image to a recognition worker, merges the result with the previous state
+        /// (server-owned history) and returns the analysis. The HUD never contacts a worker itself.
+        /// </summary>
+        private async Task<ScreenshotProcessingResponse> PostScreenshot(string screenshotBase64, bool retryOnUnauthorized)
         {
-            var input = new { match_state = SerializeMatchState(state), previous_match_state = SerializeMatchState(previous), recognition_failed = recognitionFailed };
+            var input = new
+            {
+                screenshot_base64 = screenshotBase64,
+                use_websocket = false,
+                previous_match_state = SerializeMatchState(_lastMatchState)
+            };
             var serializedInput = JsonConvert.SerializeObject(input);
             using var content = new StringContent(serializedInput, System.Text.Encoding.UTF8, "application/json");
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            using var response = await httpClient.PostAsync("/process-match-state-authenticated", content);
+            using var response = await httpClient.PostAsync("/process-screenshot", content);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonResponse = await response.Content.ReadAsStringAsync();
                 var result = ServerRecognitionContract.ReadResponse(jsonResponse);
                 _lastMatchState = result.MatchState;
-                Logger.Log($"Response persisted slots: blue={result.PersistedBlueTeamSlots.Count}, red={result.PersistedRedTeamSlots.Count}");
+                Logger.Log($"Response persisted slots: blue={result.PersistedBlueTeamSlots.Count}, red={result.PersistedRedTeamSlots.Count}, recognitionFailed={result.RecognitionFailed}");
                 return result;
             }
 
@@ -370,7 +370,7 @@ namespace Owmeta.Services
                     if (refreshed)
                     {
                         Logger.Log("Token refreshed successfully - retrying request");
-                        return await SendRecognizedState(state, previous, recognitionFailed, retryOnUnauthorized: false);
+                        return await PostScreenshot(screenshotBase64, retryOnUnauthorized: false);
                     }
                 }
 
@@ -380,7 +380,7 @@ namespace Owmeta.Services
                 throw new UnauthorizedException("Session expired - please login again");
             }
 
-            throw new ApiException($"API request failed: {response.StatusCode}");
+            throw new ApiException($"API request failed: {response.StatusCode}", ServerErrors.From(errorContent));
         }
 
         private void DeleteTokenFile()
@@ -430,13 +430,39 @@ namespace Owmeta.Services
             StopTokenRefreshTimer();
             tokenRefreshSemaphore.Dispose();
             httpClient.Dispose();
-            recognitionClient.Dispose();
         }
+    }
+
+    /// <summary>What went wrong on the server side of an analysis, read from the API error body.</summary>
+    public enum ServerError
+    {
+        Unknown,
+        /// <summary>The worker could not read a scoreboard in the image.</summary>
+        NotAScoreboard,
+        /// <summary>No recognition worker is connected to the API.</summary>
+        NoWorker,
+        /// <summary>A worker is connected but did not answer in time.</summary>
+        WorkerFailed
+    }
+
+    public static class ServerErrors
+    {
+        public static ServerError From(string body) =>
+            body.Contains("ERR_INVALID_SCREENSHOT", StringComparison.Ordinal) || body.Contains("ERR_HERO_EXTRACTION_FAILED", StringComparison.Ordinal) ? ServerError.NotAScoreboard
+            : body.Contains("ERR_NO_AVAILABLE_WORKERS", StringComparison.Ordinal) ? ServerError.NoWorker
+            : body.Contains("ERR_WORKER_TIMEOUT", StringComparison.Ordinal) || body.Contains("ERR_SEND_TO_WORKER", StringComparison.Ordinal)
+              || body.Contains("ERR_WORKER_PROCESSING_FAILED", StringComparison.Ordinal) ? ServerError.WorkerFailed
+            : ServerError.Unknown;
     }
 
     public class ApiException : Exception
     {
-        public ApiException(string message) : base(message) { }
+        public ApiException(string message, ServerError serverError = ServerError.Unknown) : base(message)
+        {
+            ServerError = serverError;
+        }
+
+        public ServerError ServerError { get; }
     }
 
     public class UnauthorizedException : Exception

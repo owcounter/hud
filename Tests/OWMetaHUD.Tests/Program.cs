@@ -37,12 +37,6 @@ if (args.Length == 1 && args[0] == "--placement")
     return 0;
 }
 
-if (args.Length == 2 && args[0] == "--live")
-{
-    await RecognitionTests.RunLive(args[1]);
-    return 0;
-}
-
 RecognitionTests.Run();
 ServerHistoryTests.Run();
 OverlayPlacementTests.Run();
