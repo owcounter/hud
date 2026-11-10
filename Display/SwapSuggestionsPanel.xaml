@@ -11,8 +11,9 @@
             <!-- Columns shared by the list title and every row -->
             <GridLength x:Key="Col.Portrait">96</GridLength>
             <GridLength x:Key="Col.Score">150</GridLength>
-            <GridLength x:Key="Col.Counters">340</GridLength>
-            <GridLength x:Key="Col.CounteredBy">340</GridLength>
+            <GridLength x:Key="Col.Counters">300</GridLength>
+            <GridLength x:Key="Col.CounteredBy">300</GridLength>
+            <GridLength x:Key="Col.Synergy">250</GridLength>
             <GridLength x:Key="Col.Fits">390</GridLength>
 
             <DataTemplate DataType="{x:Type local:SwapGroupViewModel}">
@@ -36,6 +37,7 @@
                             <ColumnDefinition Width="{StaticResource Col.Score}"/>
                             <ColumnDefinition Width="{StaticResource Col.Counters}"/>
                             <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
+                            <ColumnDefinition Width="{StaticResource Col.Synergy}"/>
                             <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                         </Grid.ColumnDefinitions>
                         <local:HeroAvatar Source="{Binding Icon}" Width="80" Height="80" CornerRatio="0.06" ShowPip="False" Margin="4,0,0,0"
@@ -55,7 +57,9 @@
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                         <ItemsControl Grid.Column="4" ItemsSource="{Binding CounteredBy}" ItemTemplate="{StaticResource Hud.BoardIcon}"
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
-                        <ItemsControl Grid.Column="5" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
+                        <ItemsControl Grid.Column="5" ItemsSource="{Binding Synergies}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                        <ItemsControl Grid.Column="6" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
@@ -81,12 +85,14 @@
                         <ColumnDefinition Width="{StaticResource Col.Score}"/>
                         <ColumnDefinition Width="{StaticResource Col.Counters}"/>
                         <ColumnDefinition Width="{StaticResource Col.CounteredBy}"/>
+                        <ColumnDefinition Width="{StaticResource Col.Synergy}"/>
                         <ColumnDefinition Width="{StaticResource Col.Fits}"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.ColumnSpan="3" Text="YOUR HERO" Style="{StaticResource Hud.Board}" FontSize="26" Margin="24,0,0,0"/>
                     <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Good}"/>
                     <TextBlock Grid.Column="4" Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Bad}"/>
-                    <TextBlock Grid.Column="5" Text="GOOD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                    <TextBlock Grid.Column="5" Text="SYNERGY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Ally}"/>
+                    <TextBlock Grid.Column="6" Text="GOOD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
                 </Grid>
             </Border>
 

@@ -17,9 +17,10 @@
             <!-- Your team columns -->
             <GridLength x:Key="Tm.Portrait">96</GridLength>
             <GridLength x:Key="Tm.Score">130</GridLength>
-            <GridLength x:Key="Tm.Counters">300</GridLength>
-            <GridLength x:Key="Tm.CounteredBy">300</GridLength>
-            <GridLength x:Key="Tm.Fits">390</GridLength>
+            <GridLength x:Key="Tm.Counters">260</GridLength>
+            <GridLength x:Key="Tm.CounteredBy">260</GridLength>
+            <GridLength x:Key="Tm.Synergy">240</GridLength>
+            <GridLength x:Key="Tm.Fits">370</GridLength>
             <GridLength x:Key="Tm.Change">430</GridLength>
 
             <DataTemplate DataType="{x:Type local:ThreatRowViewModel}">
@@ -66,6 +67,7 @@
                             <ColumnDefinition Width="{StaticResource Tm.Score}"/>
                             <ColumnDefinition Width="{StaticResource Tm.Counters}"/>
                             <ColumnDefinition Width="{StaticResource Tm.CounteredBy}"/>
+                            <ColumnDefinition Width="{StaticResource Tm.Synergy}"/>
                             <ColumnDefinition Width="{StaticResource Tm.Fits}"/>
                             <ColumnDefinition Width="{StaticResource Tm.Change}"/>
                         </Grid.ColumnDefinitions>
@@ -77,10 +79,12 @@
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                         <ItemsControl Grid.Column="4" ItemsSource="{Binding CounteredBy}" ItemTemplate="{StaticResource Hud.BoardIcon}"
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
-                        <ItemsControl Grid.Column="5" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
+                        <ItemsControl Grid.Column="5" ItemsSource="{Binding Synergies}" ItemTemplate="{StaticResource Hud.BoardIcon}"
+                                      ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
+                        <ItemsControl Grid.Column="6" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                         <!-- A long name trims; the arrow, portrait and score always stay visible -->
-                        <Grid Grid.Column="6" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="{Binding ChangeVisibility}">
+                        <Grid Grid.Column="7" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="{Binding ChangeVisibility}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -134,6 +138,7 @@
                     <ColumnDefinition Width="{StaticResource Tm.Score}"/>
                     <ColumnDefinition Width="{StaticResource Tm.Counters}"/>
                     <ColumnDefinition Width="{StaticResource Tm.CounteredBy}"/>
+                    <ColumnDefinition Width="{StaticResource Tm.Synergy}"/>
                     <ColumnDefinition Width="{StaticResource Tm.Fits}"/>
                     <ColumnDefinition Width="{StaticResource Tm.Change}"/>
                 </Grid.ColumnDefinitions>
@@ -146,8 +151,9 @@
                 </StackPanel>
                 <TextBlock Grid.Column="3" Text="COUNTERS" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Good}"/>
                 <TextBlock Grid.Column="4" Text="COUNTERED BY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Bad}"/>
-                <TextBlock Grid.Column="5" Text="GOOD · BAD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
-                <TextBlock Grid.Column="6" Text="CHANGE TO" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                <TextBlock Grid.Column="5" Text="SYNERGY" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.Ally}"/>
+                <TextBlock Grid.Column="6" Text="GOOD · BAD IN" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
+                <TextBlock Grid.Column="7" Text="CHANGE TO" Style="{StaticResource Hud.Board}" FontSize="26" Foreground="{x:Static local:HudPalette.BoardLabel}"/>
             </Grid>
         </Border>
         <ItemsControl x:Name="TeamList"/>

@@ -63,6 +63,15 @@ namespace Owmeta.Display
             return Links(links, ring, max);
         }
 
+        /// <summary>Teammates this hero has a synergy with, ringed in ally blue, "+N" past <paramref name="max"/>.</summary>
+        public static List<BoardIcon> Synergies(IEnumerable<HeroSynergy>? synergies, Func<HeroName, bool> include, int max = MaxIcons) =>
+            Links((synergies ?? Enumerable.Empty<HeroSynergy>())
+                    .Select(s => s.HeroName)
+                    .Where(h => CompositionPolicy.IsKnownHero(h) && include(h))
+                    .Distinct()
+                    .Select(h => new CounterLink(h, false)),
+                HudPalette.Ally, max);
+
         /// <summary>Hard links first. Past <paramref name="max"/> portraits, the last slot shows "+N" for the rest.</summary>
         public static List<BoardIcon> Links(IEnumerable<CounterLink> links, Brush ring, int max = MaxIcons)
         {

@@ -126,6 +126,7 @@ namespace Owmeta.Display
                     EdgeBrush = change == null ? background : urgent ? HudPalette.Bad : HudPalette.Warn,
                     Counters = Board.Relations(analysis.HardCounters, analysis.SoftCounters, red.ContainsKey, HudPalette.Good),
                     CounteredBy = Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, red.ContainsKey, HudPalette.Bad),
+                    Synergies = Board.Synergies(analysis.Synergies, h => h != hero && blue.ContainsKey(h)),
                     Fits = Board.Fits(analysis.Hero, target),
                     ChangeIcon = change == null ? null : Board.Portrait(change.To.Hero.Name),
                     ChangeName = change == null ? string.Empty : HudFormat.HeroName(change.To.Hero.Name).ToUpperInvariant(),
@@ -165,6 +166,7 @@ namespace Owmeta.Display
         public required Brush EdgeBrush { get; init; }
         public required List<BoardIcon> Counters { get; init; }
         public required List<BoardIcon> CounteredBy { get; init; }
+        public required List<BoardIcon> Synergies { get; init; }
         public required List<CompositionWord> Fits { get; init; }
         public ImageSource? ChangeIcon { get; init; }
         public required string ChangeName { get; init; }

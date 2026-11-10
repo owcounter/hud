@@ -79,6 +79,8 @@ namespace Owmeta.Display
                 SwapSection.Visibility = Visibility.Visible;
 
                 bool IsEnemy(HeroName hero) => enemyTeam == null || enemyTeam.Count == 0 || enemyTeam.ContainsKey(hero);
+                // Synergies count towards the score only with the teammates you keep.
+                bool IsTeammate(HeroName hero) => hero != playerHero && ourTeam.ContainsKey(hero);
 
                 var minScore = AppSettings.Instance.MinScoreF2;
                 // Only heroes the team can pick: known, and not already played by a teammate.
@@ -94,11 +96,11 @@ namespace Owmeta.Display
                 Logger.Log(
                     $"F2 swap suggestions for {playerHero}: total={selection.TotalCount}, eligible={eligible}, shown={selection.ShownCount}, minScore={minScore}, grouped={grouped}, target={target}");
 
-                CurrentRow.Content = CreateRow(current, target, 0, IsEnemy, isYou: true);
+                CurrentRow.Content = CreateRow(current, target, 0, IsEnemy, IsTeammate, isYou: true);
                 var options = selection.Suggestions;
 
                 int index = 0;
-                void AddRow(HeroAnalysis swap) => Rows.Add(CreateRow(swap, target, index++, IsEnemy));
+                void AddRow(HeroAnalysis swap) => Rows.Add(CreateRow(swap, target, index++, IsEnemy, IsTeammate));
                 if (grouped)
                 {
                     foreach (var group in CompositionPolicy.Group(options, target))
@@ -130,6 +132,7 @@ namespace Owmeta.Display
             CompositionType? target,
             int index,
             Func<HeroName, bool> isEnemy,
+            Func<HeroName, bool> isTeammate,
             bool isYou = false)
         {
             var hero = analysis.Hero?.Name ?? HeroName.Unknown;
@@ -146,6 +149,7 @@ namespace Owmeta.Display
                 YouVisibility = isYou ? Visibility.Visible : Visibility.Collapsed,
                 Counters = Board.Relations(analysis.HardCounters, analysis.SoftCounters, isEnemy, HudPalette.Good),
                 CounteredBy = Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, isEnemy, HudPalette.Bad),
+                Synergies = Board.Synergies(analysis.Synergies, isTeammate),
                 Fits = Board.Fits(analysis.Hero, target)
             };
         }
@@ -179,6 +183,7 @@ namespace Owmeta.Display
         public Visibility YouVisibility { get; init; } = Visibility.Collapsed;
         public required List<BoardIcon> Counters { get; init; }
         public required List<BoardIcon> CounteredBy { get; init; }
+        public required List<BoardIcon> Synergies { get; init; }
         public required List<CompositionWord> Fits { get; init; }
     }
 
