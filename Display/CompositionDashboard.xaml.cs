@@ -11,7 +11,8 @@ namespace Owmeta.Display
     /// F3: the composition table, then the enemies to counter first (ranked by
     /// <see cref="CompositionPolicy.RankThreats"/>) with the swap that answers each one, then your team:
     /// who each hero counters and is countered by, the compositions he is good and bad in, and the hero
-    /// to change to when a swap raises his score by at least <see cref="AppSettings.MinScoreF3"/>.
+    /// to change to. Both come from one <see cref="CompositionPolicy.PlanSwaps"/>, so the threat answers
+    /// and the team changes always agree and no hero is suggested twice.
     /// </summary>
     public partial class CompositionDashboard : UserControl
     {
@@ -48,8 +49,9 @@ namespace Owmeta.Display
                 var target = CompositionPolicy.FitTarget(blueTeamAnalysis, redTeamAnalysis, null);
                 Header.Update(blueTeamAnalysis, redTeamAnalysis, target);
                 UpdateTeamTitle();
-                UpdateThreats(blueTeamAnalysis, redTeamAnalysis);
-                UpdateTeam(blueTeamAnalysis, redTeamAnalysis, target);
+                var plan = CompositionPolicy.PlanSwaps(blueTeamAnalysis, redTeamAnalysis, AppSettings.Instance.MinScoreF3, MaxThreats);
+                UpdateThreats(plan, blueTeamAnalysis.Count > 0 && redTeamAnalysis.Count > 0);
+                UpdateTeam(blueTeamAnalysis, redTeamAnalysis, target, plan);
             }
             catch (Exception ex)
             {
@@ -73,14 +75,11 @@ namespace Owmeta.Display
             }
         }
 
-        private void UpdateThreats(
-            Dictionary<HeroName, HeroAnalysis> blue,
-            Dictionary<HeroName, HeroAnalysis> red)
+        private void UpdateThreats(SwapPlan plan, bool bothTeams)
         {
             Threats.Clear();
-            foreach (var threat in CompositionPolicy.RankThreats(red, blue).Take(MaxThreats))
+            foreach (var (threat, answer, shared) in plan.Threats)
             {
-                var answer = threat.IsHandled ? null : CompositionPolicy.BestAnswer(blue, red, threat.Enemy);
                 string note = threat.IsHandled ? "ALREADY HANDLED · NO SWAP NEEDED"
                     : answer == null ? "NO SWAP COUNTERS HIM" : string.Empty;
                 Threats.Add(new ThreatRowViewModel
@@ -96,23 +95,24 @@ namespace Owmeta.Display
                     ToIcon = answer == null ? null : Board.Portrait(answer.To.Hero.Name),
                     ToName = answer == null ? string.Empty : HudFormat.HeroName(answer.To.Hero.Name).ToUpperInvariant(),
                     ToScore = answer == null ? string.Empty : HudFormat.Score(answer.To.HeroScore),
+                    Hint = shared ? "SAME SWAP" : string.Empty,
                     Note = note
                 });
             }
-            NoThreatsCard.Visibility = Threats.Count == 0 && blue.Count > 0 && red.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            NoThreatsCard.Visibility = Threats.Count == 0 && bothTeams ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void UpdateTeam(
             Dictionary<HeroName, HeroAnalysis> blue,
             Dictionary<HeroName, HeroAnalysis> red,
-            CompositionType? target)
+            CompositionType? target,
+            SwapPlan plan)
         {
             Team.Clear();
-            int minGain = AppSettings.Instance.MinScoreF3;
             int i = 0;
             foreach (var (hero, analysis) in CompositionPolicy.Ordered(blue))
             {
-                var change = CompositionPolicy.BestSwap(blue, red, hero, minGain);
+                var change = plan.Changes.TryGetValue(hero, out var planned) ? planned : null;
                 // A change is urgent for a hero who is losing his matchups, optional otherwise.
                 bool urgent = change != null && analysis.HeroScore < 0;
                 var background = urgent ? HudPalette.RowChange : i++ % 2 == 0 ? HudPalette.RowA : HudPalette.RowB;
@@ -148,6 +148,7 @@ namespace Owmeta.Display
         public ImageSource? ToIcon { get; init; }
         public required string ToName { get; init; }
         public required string ToScore { get; init; }
+        public required string Hint { get; init; }
         public required string Note { get; init; }
 
         public Visibility AnswerVisibility => ToIcon != null ? Visibility.Visible : Visibility.Collapsed;

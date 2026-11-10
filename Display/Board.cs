@@ -13,11 +13,15 @@ namespace Owmeta.Display
     /// </summary>
     public sealed class BoardIcon
     {
-        public required ImageSource Icon { get; init; }
+        public ImageSource? Icon { get; init; }
         public Brush? Ring { get; init; }
         public bool IsHard { get; init; }
+        /// <summary>"+N" when this item stands for the relations that did not fit.</summary>
+        public string? More { get; init; }
 
         public Visibility HardVisibility => IsHard ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AvatarVisibility => More == null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility MoreVisibility => More == null ? Visibility.Collapsed : Visibility.Visible;
         public Brush HardText => HudPalette.OnColor;
     }
 
@@ -43,27 +47,33 @@ namespace Owmeta.Display
             Brush ring,
             int max = MaxIcons)
         {
-            var result = new List<BoardIcon>();
+            var links = new List<CounterLink>();
             var seen = new HashSet<HeroName>();
             void Add(IEnumerable<HeroCounter>? list, bool isHard)
             {
                 if (list == null) return;
                 foreach (var c in list)
                 {
-                    if (result.Count >= max) return;
                     if (!CompositionPolicy.IsKnownHero(c.HeroName) || !include(c.HeroName) || !seen.Add(c.HeroName)) continue;
-                    result.Add(new BoardIcon { Icon = Portrait(c.HeroName), IsHard = isHard, Ring = ring });
+                    links.Add(new CounterLink(c.HeroName, isHard));
                 }
             }
             Add(hard, true);
             Add(soft, false);
-            return result;
+            return Links(links, ring, max);
         }
 
-        public static List<BoardIcon> Links(IEnumerable<CounterLink> links, Brush ring, int max = MaxIcons) =>
-            links.OrderByDescending(l => l.IsHard).Take(max)
-                 .Select(l => new BoardIcon { Icon = Portrait(l.Hero), IsHard = l.IsHard, Ring = ring })
-                 .ToList();
+        /// <summary>Hard links first. Past <paramref name="max"/> portraits, the last slot shows "+N" for the rest.</summary>
+        public static List<BoardIcon> Links(IEnumerable<CounterLink> links, Brush ring, int max = MaxIcons)
+        {
+            var ordered = links.OrderByDescending(l => l.IsHard).ToList();
+            int shown = ordered.Count > max ? max - 1 : ordered.Count;
+            var result = ordered.Take(shown)
+                .Select(l => new BoardIcon { Icon = Portrait(l.Hero), IsHard = l.IsHard, Ring = ring })
+                .ToList();
+            if (ordered.Count > shown) result.Add(new BoardIcon { More = $"+{ordered.Count - shown}", Ring = ring });
+            return result;
+        }
 
         private static readonly TextDecorationCollection Strike = CreateStrike(HudPalette.Bad);
         private static readonly TextDecorationCollection StrikeOnFill = CreateStrike(HudPalette.OnColor);

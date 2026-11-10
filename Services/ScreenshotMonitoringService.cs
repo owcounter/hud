@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 
 namespace Owmeta.Services
@@ -282,6 +283,7 @@ namespace Owmeta.Services
                 }
 
                 bool analyzing = false;
+                bool cancelledBeforeCapture = false;
                 try
                 {
                     HudDiagnostics.Write($"capture-start delayMs={AppSettings.Instance.ScreenshotDelayMs}");
@@ -344,16 +346,18 @@ namespace Owmeta.Services
                 // during analysis also throw OperationCanceledException and must surface as errors.
                 catch (OperationCanceledException) when (!analyzing)
                 {
+                    cancelledBeforeCapture = true;
                     HudDiagnostics.Write("capture-canceled key released before pixels were captured");
                 }
                 catch (Exception ex)
                 {
                     Logger.Log($"Error capturing/processing screenshot: {ex.Message}");
-                    AnalysisError?.Invoke(this, "Error capturing screenshot");
+                    AnalysisError?.Invoke(this, DescribeError(ex));
                 }
                 finally
                 {
-                    captureThrottle.CompleteCapture();
+                    if (cancelledBeforeCapture) captureThrottle.CancelCapture();
+                    else captureThrottle.CompleteCapture();
                     HudDiagnostics.Write($"capture-complete elapsedMs={Stopwatch.GetElapsedTime(captureQueuedAt).TotalMilliseconds:F2}");
                 }
             }, null);
@@ -539,7 +543,7 @@ namespace Owmeta.Services
                 catch (Exception ex)
                 {
                     Logger.Log($"Error processing screenshot: {ex.Message}");
-                    AnalysisError?.Invoke(sender ?? this, "Error processing screenshot");
+                    AnalysisError?.Invoke(sender ?? this, DescribeError(ex));
                 }
                 finally
                 {
@@ -547,6 +551,16 @@ namespace Owmeta.Services
                 }
             }, null);
         }
+
+        /// <summary>A short, actionable status line for a failed analysis.</summary>
+        public static string DescribeError(Exception ex) => ex switch
+        {
+            RecognitionRejectedException => "Scoreboard not found · open it and try again",
+            UnauthorizedException => "Session expired · log in again",
+            HttpRequestException or TaskCanceledException => "Server unreachable · try again",
+            ApiException => "Analysis failed · try again",
+            _ => "Error capturing screenshot"
+        };
 
         public static async Task<byte[]> ReadOriginalScreenshot(string path)
         {

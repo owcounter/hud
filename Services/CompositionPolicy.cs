@@ -49,6 +49,12 @@ namespace Owmeta.Services
     /// <summary>A teammate swapping to another hero, and how much his score would rise.</summary>
     public sealed record TeamSwap(HeroName From, HeroAnalysis To, int Gain);
 
+    /// <summary>A threat and the planned swap that answers it (<see cref="Shared"/>: a swap already planned for an earlier threat).</summary>
+    public sealed record ThreatAnswer(EnemyThreat Threat, TeamSwap? Swap, bool Shared);
+
+    /// <summary>The F3 plan: an answer per threat, and at most one change per teammate, never two to the same hero.</summary>
+    public sealed record SwapPlan(IReadOnlyList<ThreatAnswer> Threats, IReadOnlyDictionary<HeroName, TeamSwap> Changes);
+
     public sealed record CompositionGroup(
         CompositionType Composition,
         bool IsRecommended,
@@ -197,10 +203,14 @@ namespace Owmeta.Services
                 .ToList();
         }
 
+        /// <summary>A swap suggestion the team can actually pick: a known hero no teammate already plays.</summary>
+        public static bool IsCandidate(IReadOnlyDictionary<HeroName, HeroAnalysis> team, HeroAnalysis? suggestion) =>
+            suggestion?.Hero != null && IsKnownHero(suggestion.Hero.Name) && !team.ContainsKey(suggestion.Hero.Name);
+
         /// <summary>
-        /// The best swap for <paramref name="from"/>: the highest-scoring suggestion that raises his score
-        /// by at least <paramref name="minGain"/> (and at least 1), is not already on the team, is not bad
-        /// in the composition the rest of the team should fit, and passes <paramref name="accept"/>.
+        /// The best swap for <paramref name="from"/>: the highest-scoring candidate that raises his score
+        /// by at least <paramref name="minGain"/> (and at least 1), is not bad in the composition the rest
+        /// of the team should fit, and passes <paramref name="accept"/>.
         /// </summary>
         public static TeamSwap? BestSwap(
             IReadOnlyDictionary<HeroName, HeroAnalysis> team,
@@ -214,7 +224,7 @@ namespace Owmeta.Services
             var target = FitTarget(team, enemies, from);
             int threshold = Math.Max(1, minGain);
             return current.SwapSuggestions
-                .Where(s => s.Hero != null && IsKnownHero(s.Hero.Name) && !team.ContainsKey(s.Hero.Name))
+                .Where(s => IsCandidate(team, s))
                 .Where(s => s.HeroScore - current.HeroScore >= threshold)
                 .Where(s => !target.HasValue || Fit(s.Hero, target.Value) != CompositionFit.Weak)
                 .Where(s => accept == null || accept(s))
@@ -223,19 +233,63 @@ namespace Owmeta.Services
                 .FirstOrDefault();
         }
 
-        /// <summary>The best swap on the whole team that counters <paramref name="enemy"/>, hard counters first on a tie.</summary>
-        public static TeamSwap? BestAnswer(
+        /// <summary>
+        /// Plans the team's swaps, threats first. For each of the top <paramref name="maxThreats"/> threats
+        /// that the team does not already handle: reuse a planned swap that counters him, otherwise pick
+        /// the swap with the biggest gain (any gain, hard counters first on a tie) that counters him, from
+        /// a teammate without a planned swap, to a hero not already planned. Then every other teammate
+        /// gets his best swap with a gain of at least <paramref name="minGain"/>, biggest gains first.
+        /// A teammate changes at most once and no hero is suggested twice.
+        /// </summary>
+        public static SwapPlan PlanSwaps(
             IReadOnlyDictionary<HeroName, HeroAnalysis> team,
             IReadOnlyDictionary<HeroName, HeroAnalysis>? enemies,
-            HeroName enemy)
+            int minGain,
+            int maxThreats)
         {
-            return Ordered(team)
-                .Select(kvp => BestSwap(team, enemies, kvp.Key, 1, s => CounterOf(s, enemy).HasValue))
-                .Where(s => s != null)
-                .Select(s => s!)
-                .OrderByDescending(s => s.Gain)
-                .ThenByDescending(s => CounterOf(s.To, enemy) == true)
-                .FirstOrDefault();
+            var changes = new Dictionary<HeroName, TeamSwap>();
+            var planned = new HashSet<HeroName>();
+            var answers = new List<ThreatAnswer>();
+
+            TeamSwap? Pick(int gain, Func<HeroAnalysis, bool> accept, Func<TeamSwap, bool>? preferHard = null) =>
+                Ordered(team)
+                    .Where(kvp => !changes.ContainsKey(kvp.Key))
+                    .Select(kvp => BestSwap(team, enemies, kvp.Key, gain, s => !planned.Contains(s.Hero.Name) && accept(s)))
+                    .Where(s => s != null)
+                    .Select(s => s!)
+                    .OrderByDescending(s => s.Gain)
+                    .ThenByDescending(s => preferHard?.Invoke(s) == true)
+                    .FirstOrDefault();
+
+            void Plan(TeamSwap swap)
+            {
+                changes[swap.From] = swap;
+                planned.Add(swap.To.Hero.Name);
+            }
+
+            foreach (var threat in RankThreats(enemies, team).Take(maxThreats))
+            {
+                if (threat.IsHandled)
+                {
+                    answers.Add(new ThreatAnswer(threat, null, false));
+                    continue;
+                }
+
+                var shared = changes.Values.FirstOrDefault(c => CounterOf(c.To, threat.Enemy).HasValue);
+                if (shared != null)
+                {
+                    answers.Add(new ThreatAnswer(threat, shared, true));
+                    continue;
+                }
+
+                var answer = Pick(1, s => CounterOf(s, threat.Enemy).HasValue, s => CounterOf(s.To, threat.Enemy) == true);
+                if (answer != null) Plan(answer);
+                answers.Add(new ThreatAnswer(threat, answer, false));
+            }
+
+            while (Pick(minGain, _ => true) is { } swap) Plan(swap);
+
+            return new SwapPlan(answers, changes);
         }
 
         /// <summary>Whether <paramref name="analysis"/> counters <paramref name="target"/>: null if not, true if hard.</summary>

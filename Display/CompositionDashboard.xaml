@@ -48,6 +48,8 @@
                                               Accent="{x:Static local:HudPalette.Good}" RingThickness="3"/>
                             <TextBlock Text="{Binding ToName}" Style="{StaticResource Hud.Board}" FontSize="38" Margin="16,0,14,0"/>
                             <TextBlock Text="{Binding ToScore}" Style="{StaticResource Hud.Board}" FontSize="38" Foreground="{x:Static local:HudPalette.Good}"/>
+                            <TextBlock Text="{Binding Hint}" Style="{StaticResource Hud.Board}" FontSize="26" Margin="20,0,0,0"
+                                       Foreground="{x:Static local:HudPalette.TextSecondary}"/>
                         </StackPanel>
                         <TextBlock Grid.Column="4" Text="{Binding Note}" Visibility="{Binding NoteVisibility}" Style="{StaticResource Hud.Board}"
                                    FontSize="30" Foreground="{x:Static local:HudPalette.TextSecondary}"/>
@@ -77,13 +79,20 @@
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
                         <ItemsControl Grid.Column="5" ItemsSource="{Binding Fits}" ItemTemplate="{StaticResource Hud.FitWord}"
                                       ItemsPanel="{StaticResource Hud.HorizontalPanel}" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding ChangeVisibility}">
+                        <!-- A long name trims; the arrow, portrait and score always stay visible -->
+                        <Grid Grid.Column="6" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="{Binding ChangeVisibility}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <Path Data="M0,0 L18,13 L0,26 Z" Fill="{x:Static local:HudPalette.TextSecondary}" VerticalAlignment="Center" Margin="0,0,18,0"/>
-                            <local:HeroAvatar Source="{Binding ChangeIcon}" Width="62" Height="62" CornerRatio="0.06" ShowPip="False"
+                            <local:HeroAvatar Grid.Column="1" Source="{Binding ChangeIcon}" Width="62" Height="62" CornerRatio="0.06" ShowPip="False"
                                               Accent="{x:Static local:HudPalette.Good}" RingThickness="3"/>
-                            <TextBlock Text="{Binding ChangeName}" Style="{StaticResource Hud.Board}" FontSize="38" Margin="16,0,14,0"/>
-                            <TextBlock Text="{Binding ChangeScore}" Style="{StaticResource Hud.Board}" FontSize="38" Foreground="{x:Static local:HudPalette.Good}"/>
-                        </StackPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding ChangeName}" Style="{StaticResource Hud.Board}" FontSize="38" Margin="16,0,14,0"/>
+                            <TextBlock Grid.Column="3" Text="{Binding ChangeScore}" Style="{StaticResource Hud.Board}" FontSize="38" Foreground="{x:Static local:HudPalette.Good}"/>
+                        </Grid>
                     </Grid>
                 </Border>
             </DataTemplate>

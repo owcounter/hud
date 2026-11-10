@@ -4,6 +4,7 @@ namespace Owmeta.Services
     {
         private readonly TimeSpan _cooldown;
         private DateTimeOffset? _lastCaptureStartedAt;
+        private DateTimeOffset? _previousCaptureStartedAt;
         private bool _captureInProgress;
 
         public ScreenshotCaptureThrottle(TimeSpan cooldown)
@@ -30,6 +31,7 @@ namespace Owmeta.Services
                 }
             }
 
+            _previousCaptureStartedAt = _lastCaptureStartedAt;
             _lastCaptureStartedAt = now;
             _captureInProgress = true;
             reason = string.Empty;
@@ -38,6 +40,17 @@ namespace Owmeta.Services
 
         public void CompleteCapture()
         {
+            _captureInProgress = false;
+        }
+
+        /// <summary>
+        /// Ends a capture that was cancelled before any pixels were taken (Tab released too early):
+        /// it does not count towards the cooldown, so holding Tab again right away still captures.
+        /// </summary>
+        public void CancelCapture()
+        {
+            if (!_captureInProgress) return;
+            _lastCaptureStartedAt = _previousCaptureStartedAt;
             _captureInProgress = false;
         }
     }

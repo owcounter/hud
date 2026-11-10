@@ -144,8 +144,11 @@
     <!-- Portrait in a counters / countered-by column: green or red ring, small HARD tag under a hard counter -->
     <DataTemplate x:Key="Hud.BoardIcon">
         <Grid Width="58" Height="76" Margin="0,0,10,0" VerticalAlignment="Center">
-            <local:HeroAvatar Source="{Binding Icon}" Accent="{Binding Ring}" RingThickness="4"
+            <local:HeroAvatar Source="{Binding Icon}" Accent="{Binding Ring}" RingThickness="4" Visibility="{Binding AvatarVisibility}"
                               ShowPip="False" CornerRatio="0.08" Width="58" Height="58" VerticalAlignment="Top"/>
+            <!-- More relations than fit: "+N" in place of the last portrait -->
+            <TextBlock Text="{Binding More}" Visibility="{Binding MoreVisibility}" Foreground="{Binding Ring}"
+                       Style="{StaticResource Hud.Board}" FontSize="34" VerticalAlignment="Top" Margin="0,8,0,0"/>
             <Border Background="{Binding Ring}" Visibility="{Binding HardVisibility}" CornerRadius="3"
                     HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="6,0,6,1">
                 <TextBlock Text="HARD" Foreground="{Binding HardText}" FontFamily="{StaticResource Hud.DisplayFont}"

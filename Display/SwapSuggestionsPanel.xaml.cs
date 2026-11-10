@@ -17,8 +17,8 @@ namespace Owmeta.Display
     /// </summary>
     public partial class SwapSuggestionsPanel : UserControl
     {
-        /// <summary>Heroes that fit on screen: the best swap plus the option rows under it.</summary>
-        public const int MaxSwaps = 9;
+        /// <summary>Option rows that fit on screen under the best swap.</summary>
+        public const int MaxOptions = 8;
 
         public ObservableCollection<object> Rows { get; } = new();
 
@@ -84,23 +84,31 @@ namespace Owmeta.Display
                 bool IsEnemy(HeroName hero) => enemyTeam == null || enemyTeam.Count == 0 || enemyTeam.ContainsKey(hero);
 
                 var minScore = AppSettings.Instance.MinScoreF2;
-                var suggestions = current.SwapSuggestions?.ToList() ?? new List<HeroAnalysis>();
-                var selection = SwapSuggestionPolicy.SelectSuggestions(suggestions, minScore, MaxSwaps);
-                int eligible = suggestions.Count(s => s.HeroScore >= minScore);
+                // Only heroes the team can pick: known, and not already played by a teammate.
+                var suggestions = (current.SwapSuggestions ?? Enumerable.Empty<HeroAnalysis>())
+                    .Where(s => CompositionPolicy.IsCandidate(ourTeam, s))
+                    .OrderByDescending(s => s.HeroScore)
+                    .ToList();
                 bool grouped = AppSettings.Instance.GroupSwapsByComposition;
 
-                // The best swap must beat your score and must not be bad in the composition to fit.
-                var best = selection.Suggestions.FirstOrDefault(s =>
+                // The best swap, from the whole list: it must reach the minimum score, beat yours, and
+                // not be bad in the composition to fit.
+                var best = suggestions.FirstOrDefault(s =>
+                    s.HeroScore >= minScore &&
                     s.HeroScore > current.HeroScore &&
                     (!target.HasValue || CompositionPolicy.Fit(s.Hero, target.Value) != CompositionFit.Weak));
-                BestSwap = best?.Hero?.Name;
+                BestSwap = best?.Hero.Name;
+
+                var others = suggestions.Where(s => s != best).ToList();
+                var selection = SwapSuggestionPolicy.SelectSuggestions(others, minScore, MaxOptions);
+                int eligible = others.Count(s => s.HeroScore >= minScore);
 
                 Logger.Log(
                     $"F2 swap suggestions for {playerHero}: total={selection.TotalCount}, eligible={eligible}, shown={selection.ShownCount}, minScore={minScore}, grouped={grouped}, target={target}, best={BestSwap}");
 
                 ShowVerdict(playerHero, current, best, target, IsEnemy);
 
-                var options = selection.Suggestions.Where(s => s != best).ToList();
+                var options = selection.Suggestions;
                 OptionsHint.Text = $"· {RoleName(current.Hero?.Role)} · BEST FIRST";
 
                 int index = 0;
@@ -119,7 +127,9 @@ namespace Owmeta.Display
                 }
 
                 NoSwapsCard.Visibility = selection.ShownCount == 0 ? Visibility.Visible : Visibility.Collapsed;
-                NoSwapsText.Text = $"NO SWAP SCORES {HudFormat.Score(minScore)} OR MORE";
+                NoSwapsText.Text = best == null
+                    ? $"NO SWAP SCORES {HudFormat.Score(minScore)} OR MORE"
+                    : $"NO OTHER SWAP SCORES {HudFormat.Score(minScore)} OR MORE";
 
                 int hidden = eligible - selection.ShownCount;
                 MoreCard.Visibility = hidden > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -150,6 +160,7 @@ namespace Owmeta.Display
 
             bool hasBest = best?.Hero != null;
             SwapArrow.Visibility = hasBest ? Visibility.Visible : Visibility.Collapsed;
+            BestAvatar.Visibility = hasBest ? Visibility.Visible : Visibility.Collapsed;
             BestPanel.Visibility = hasBest ? Visibility.Visible : Visibility.Collapsed;
             NoBetterText.Visibility = hasBest ? Visibility.Collapsed : Visibility.Visible;
             if (!hasBest) return;

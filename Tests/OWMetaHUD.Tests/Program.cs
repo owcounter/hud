@@ -406,9 +406,89 @@ var tests = new (string Name, Action Run)[]
         AssertTrue(CompositionPolicy.BestSwap(team, dive, HeroName.Sigma, 4) == null);
         AssertTrue(CompositionPolicy.BestSwap(team, enemies, HeroName.Sigma, 8) == null);
 
+        // A hero a teammate already plays is never suggested.
         dva.Hero.IncompatibleCompositions.Clear();
-        AssertTrue(CompositionPolicy.BestAnswer(team, enemies, HeroName.Anran)?.To.Hero.Name == HeroName.Dva);
-        AssertTrue(CompositionPolicy.BestAnswer(team, enemies, HeroName.Ana) == null);
+        var taken = Team(sigma, Comp(HeroName.Dva, HeroRole.Damage, 0));
+        AssertTrue(CompositionPolicy.BestSwap(taken, enemies, HeroName.Sigma, 1)?.To.Hero.Name == HeroName.Winston);
+        AssertFalse(CompositionPolicy.IsCandidate(taken, dva));
+        AssertFalse(CompositionPolicy.IsCandidate(taken, new HeroAnalysis()));
+    }),
+    ("swap plan answers threats first and never suggests a hero twice", () =>
+    {
+        // Genji counters Soldier and Kiriko; Tracer counters Kiriko and Lucio. Soldier's best swap is
+        // Hanzo (+4) but only Mei (+3) counters Genji; Kiriko's best is Baptiste but Brigitte counters Tracer.
+        var soldier = Comp(HeroName.Soldier76, HeroRole.Damage, 0);
+        var kiriko = Comp(HeroName.Kiriko, HeroRole.Support, -2);
+        var lucio = Comp(HeroName.Lucio, HeroRole.Support, 1);
+        var genji = Comp(HeroName.Genji, HeroRole.Damage, 2);
+        var tracer = Comp(HeroName.Tracer, HeroRole.Damage, 2);
+        genji.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Soldier76 });
+        genji.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        tracer.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        tracer.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Lucio });
+        var hanzo = Comp(HeroName.Hanzo, HeroRole.Damage, 4);
+        var mei = Comp(HeroName.Mei, HeroRole.Damage, 3);
+        mei.HardCounters.Add(new HeroCounter { HeroName = HeroName.Genji });
+        soldier.SwapSuggestions.Add(new[] { hanzo, mei });
+        var baptiste = Comp(HeroName.Baptiste, HeroRole.Support, 1);
+        var brigitte = Comp(HeroName.Brigitte, HeroRole.Support, 1);
+        brigitte.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Tracer });
+        kiriko.SwapSuggestions.Add(new[] { baptiste, brigitte });
+        // Lucio could also take Brigitte, but she is already planned for Kiriko.
+        lucio.SwapSuggestions.Add(Comp(HeroName.Brigitte, HeroRole.Support, 4));
+        var team = Team(soldier, kiriko, lucio);
+
+        var plan = CompositionPolicy.PlanSwaps(team, Team(genji, tracer), 2, 3);
+
+        AssertEqual(2, plan.Threats.Count);
+        AssertTrue(plan.Threats[0].Swap?.To.Hero.Name == HeroName.Mei);
+        AssertTrue(plan.Threats[1].Swap?.To.Hero.Name == HeroName.Brigitte);
+        AssertTrue(plan.Changes[HeroName.Soldier76].To.Hero.Name == HeroName.Mei);
+        AssertTrue(plan.Changes[HeroName.Kiriko].To.Hero.Name == HeroName.Brigitte);
+        AssertFalse(plan.Changes.ContainsKey(HeroName.Lucio));
+        AssertEqual(plan.Changes.Count, plan.Changes.Values.Select(c => c.To.Hero.Name).Distinct().Count());
+    }),
+    ("swap plan reuses a planned swap that also counters a later threat", () =>
+    {
+        // Real match: Sigma -> D.Va counters both Anran and Kiriko; Reinhardt is already handled.
+        var sigma = Comp(HeroName.Sigma, HeroRole.Tank, -3);
+        var junkrat = Comp(HeroName.Junkrat, HeroRole.Damage, 2);
+        var kiriko = Comp(HeroName.Kiriko, HeroRole.Support, 2);
+        var rein = Comp(HeroName.Reinhardt, HeroRole.Tank, -1);
+        var anran = Comp(HeroName.Anran, HeroRole.Damage, 1);
+        var enemyKiriko = Comp(HeroName.Kiriko, HeroRole.Support, 2);
+        rein.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sigma });
+        rein.SoftCounteredBy.Add(new HeroCounter { HeroName = HeroName.Junkrat });
+        rein.SoftCounteredBy.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        anran.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sigma });
+        anran.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Lifeweaver });
+        enemyKiriko.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Sigma });
+        var dva = Comp(HeroName.Dva, HeroRole.Tank, 4);
+        dva.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Anran });
+        dva.SoftCounters.Add(new HeroCounter { HeroName = HeroName.Kiriko });
+        sigma.SwapSuggestions.Add(dva);
+
+        var plan = CompositionPolicy.PlanSwaps(
+            Team(sigma, junkrat, kiriko, Comp(HeroName.Lifeweaver, HeroRole.Support, 0)), Team(rein, anran, enemyKiriko), 2, 3);
+
+        AssertTrue(plan.Threats.Select(t => t.Threat.Enemy).SequenceEqual(new[] { HeroName.Anran, HeroName.Kiriko, HeroName.Reinhardt }));
+        AssertTrue(plan.Threats[0].Swap?.To.Hero.Name == HeroName.Dva && !plan.Threats[0].Shared);
+        AssertTrue(plan.Threats[1].Swap?.To.Hero.Name == HeroName.Dva && plan.Threats[1].Shared);
+        AssertTrue(plan.Threats[2].Threat.IsHandled && plan.Threats[2].Swap == null);
+        AssertEqual(1, plan.Changes.Count);
+    }),
+    ("a capture cancelled before pixels does not start the cooldown", () =>
+    {
+        var throttle = new ScreenshotCaptureThrottle(TimeSpan.FromSeconds(2));
+        var t0 = DateTimeOffset.UnixEpoch;
+        AssertTrue(throttle.TryBeginCapture(t0, out _));
+        throttle.CompleteCapture();
+        AssertTrue(throttle.TryBeginCapture(t0.AddSeconds(3), out _));
+        throttle.CancelCapture();
+        AssertTrue(throttle.TryBeginCapture(t0.AddSeconds(3.1), out _));
+        throttle.CompleteCapture();
+        AssertFalse(throttle.TryBeginCapture(t0.AddSeconds(4), out var reason));
+        AssertContains(reason, "cooldown");
     }),
     ("grouped swaps put the recommended composition first", () =>
     {

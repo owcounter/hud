@@ -52,7 +52,6 @@ namespace Owmeta.Display
         private Dictionary<HeroName, HeroAnalysis>? _redTeamAnalysis;
         private HeroName? _displayedPlayerHero;
         private readonly MatchBoundaryTracker _matchBoundaryTracker = new();
-        private Dictionary<HeroName, HeroAnalysis>? _playerAnalyses;
 
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
@@ -577,7 +576,8 @@ namespace Owmeta.Display
             {
                 using var diagnostic = HudDiagnostics.Measure("apply-analysis-ui");
                 // Filter out Unknown/Hidden heroes, keeping only recognized ones
-                var filteredBlue = FilterUnknownHeroes(response.BlueTeamAnalysis);
+                // F2 and F3 read the same team: the blue team with the player's own analysis.
+                var filteredBlue = FilterUnknownHeroes(ServerRecognitionContract.PlayerAnalyses(response));
                 var filteredRed = FilterUnknownHeroes(response.RedTeamAnalysis);
 
                 bool knownMapChanged = _matchBoundaryTracker.Observe(response.MatchState.Map);
@@ -598,8 +598,7 @@ namespace Owmeta.Display
 
                 if (_blueTeamAnalysis != null)
                 {
-                    _playerAnalyses = ServerRecognitionContract.PlayerAnalyses(response);
-                    var selectedHero = SelectedHeroPolicy.ResolveForSwapPanel(response.MatchState.PlayerHero, null, _playerAnalyses);
+                    var selectedHero = SelectedHeroPolicy.ResolveForSwapPanel(response.MatchState.PlayerHero, null, _blueTeamAnalysis);
 
                     response.Capture?.Write("displayed.json", new {
                         map = (int)response.MatchState.Map,
@@ -620,12 +619,12 @@ namespace Owmeta.Display
                         }
 
                         _displayedPlayerHero = selectedHero.Hero.Value;
-                        SwapSuggestionsPanel.UpdateSuggestions(selectedHero.Hero.Value, _playerAnalyses, _redTeamAnalysis);
+                        SwapSuggestionsPanel.UpdateSuggestions(selectedHero.Hero.Value, _blueTeamAnalysis, _redTeamAnalysis);
                     }
                     else
                     {
                         _displayedPlayerHero = null;
-                        SwapSuggestionsPanel.UpdateSuggestions(HeroName.Unknown, _playerAnalyses, _redTeamAnalysis,
+                        SwapSuggestionsPanel.UpdateSuggestions(HeroName.Unknown, _blueTeamAnalysis, _redTeamAnalysis,
                             "HERO NOT IDENTIFIED · OPEN THE SCOREBOARD AGAIN");
                         Logger.Log($"F2 cleared: {selectedHero.Reason}");
                     }
@@ -698,9 +697,9 @@ namespace Owmeta.Display
             Dispatcher.Invoke(() =>
             {
                 // Settings changes (grouping, min score) rebuild the view for the hero already shown.
-                if (_displayedPlayerHero.HasValue && _playerAnalyses != null)
+                if (_displayedPlayerHero.HasValue && _blueTeamAnalysis != null)
                 {
-                    SwapSuggestionsPanel.UpdateSuggestions(_displayedPlayerHero.Value, _playerAnalyses, _redTeamAnalysis);
+                    SwapSuggestionsPanel.UpdateSuggestions(_displayedPlayerHero.Value, _blueTeamAnalysis, _redTeamAnalysis);
                 }
 
                 UpdateCompositionDashboard();
@@ -750,7 +749,6 @@ namespace Owmeta.Display
             _matchState = null;
             _blueTeamAnalysis = null;
             _redTeamAnalysis = null;
-            _playerAnalyses = null;
             _displayedPlayerHero = null;
 
             SwapSuggestionsPanel.Clear();
@@ -903,7 +901,6 @@ namespace Owmeta.Display
                 return;
             }
 
-            FlushCompositionDashboardUpdate();
             _contentState.GameAvailable = true;
             _contentState.Toggle(2);
 
@@ -934,6 +931,9 @@ namespace Owmeta.Display
             TraceHudState("visibility-before");
             bool surfaceVisible = _contentState.ShowSwap || _contentState.ShowComposition;
             if (surfaceVisible) UnparkWindow();
+            // A capture finished while F3 was hidden (Tab held) leaves its rebuild pending at
+            // background priority: apply it before the layout shows, never the old rows.
+            if (_contentState.ShowComposition) FlushCompositionDashboardUpdate();
             SwapLayout.Visibility = _contentState.ShowSwap ? Visibility.Visible : Visibility.Hidden;
             CompositionLayout.Visibility = _contentState.ShowComposition ? Visibility.Visible : Visibility.Hidden;
             UpdateHeaderTabs();
