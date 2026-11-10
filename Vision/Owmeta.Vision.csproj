@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Scoreboard recognition engine. The .cs files are synced copies of the owmeta sources
-       (tools/portrait-prototype/sync-hud-vision.ps1); edit them there, not here. This project
-       is HUD-owned: a plain library so the engine compiles with the same usings as in owmeta. -->
+  <!-- Scoreboard recognition engine: frame preparation, portrait encoder (ONNX Runtime) and OCR
+       (Tesseract). A plain library rather than part of the WPF project, whose implicit usings
+       omit System.IO. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

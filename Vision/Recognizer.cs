@@ -1,4 +1,3 @@
-// Synced from owmeta:tools/portrait-prototype/Worker/Recognizer.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 using System.Buffers.Binary;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -6,7 +5,7 @@ using System.Text.Json;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace PortraitPrototype;
+namespace Owmeta.Vision;
 
 public sealed record Observation(int Hero, float Similarity, float Margin, int BestCandidate = 1, int RunnerUp = 1, string Reason = "accepted");
 

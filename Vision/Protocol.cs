@@ -1,4 +1,3 @@
-// Synced from owmeta:csharp/Owmeta.Vision.Protocol/Protocol.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 namespace Owmeta.Vision.Protocol;
 
 // Versioned prepared-frame and recognition-result types. Scores are similarities, never probabilities.

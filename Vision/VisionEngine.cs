@@ -1,10 +1,8 @@
-// Synced from owmeta:csharp/Owmeta.Vision/VisionEngine.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Owmeta.Vision.Protocol;
-using PortraitPrototype;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;

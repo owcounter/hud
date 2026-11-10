@@ -1,4 +1,3 @@
-// Synced from owmeta:csharp/Owmeta.Vision.Preparation/FramePreparer.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO; // Explicit: WPF implicit usings omit System.IO.
