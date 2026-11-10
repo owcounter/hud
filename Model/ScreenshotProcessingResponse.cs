@@ -10,6 +10,12 @@ namespace Owmeta.Model
         public required Dictionary<HeroName, HeroAnalysis> RedTeamAnalysis { get; set; }
         public List<string> PersistedBlueTeamSlots { get; set; } = new();
         public List<string> PersistedRedTeamSlots { get; set; } = new();
+        public bool PersistedPlayerHero { get; set; }
+        public bool RecognitionFailed { get; set; }
+        public MatchState? RecognizedMatchState { get; set; }
+        public HeroAnalysis? PlayerAnalysis { get; set; }
+        [JsonIgnore] public Owmeta.Vision.Protocol.RecognitionResult? RawRecognition { get; set; }
+        [JsonIgnore] public Owmeta.Services.CaptureJournal? Capture { get; set; }
     }
 
     public class ScreenshotProcessingResponseConverter : JsonConverter
@@ -92,6 +98,11 @@ namespace Owmeta.Model
             if (persistedRed != null)
                 response.PersistedRedTeamSlots = persistedRed.Select(t => t.ToString()).ToList();
 
+            response.PersistedPlayerHero = jo["persistedPlayerHero"]?.Value<bool>() ?? false;
+            response.RecognitionFailed = jo["recognitionFailed"]?.Value<bool>() ?? false;
+            response.RecognizedMatchState = jo["recognizedMatchState"]?.ToObject<MatchState>(serializer);
+            response.PlayerAnalysis = jo["playerAnalysis"]?.ToObject<HeroAnalysis>(serializer);
+
             return response;
         }
 
@@ -138,6 +149,10 @@ namespace Owmeta.Model
                 jo["persistedBlueTeamSlots"] = new JArray(response.PersistedBlueTeamSlots);
             if (response.PersistedRedTeamSlots?.Count > 0)
                 jo["persistedRedTeamSlots"] = new JArray(response.PersistedRedTeamSlots);
+            jo["persistedPlayerHero"] = response.PersistedPlayerHero;
+            jo["recognitionFailed"] = response.RecognitionFailed;
+            if (response.RecognizedMatchState != null) jo["recognizedMatchState"] = JToken.FromObject(response.RecognizedMatchState, serializer);
+            if (response.PlayerAnalysis != null) jo["playerAnalysis"] = JToken.FromObject(response.PlayerAnalysis, serializer);
 
             jo.WriteTo(writer);
         }

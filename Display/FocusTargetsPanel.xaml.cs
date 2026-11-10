@@ -267,6 +267,7 @@ namespace Owmeta.Display
         public required BitmapSource HeroIcon { get; set; }
         public bool IsHardCountered { get; set; }
         public int ScoreValue { get; set; }
+        public string ScoreText => HudFormat.Score(ScoreValue);
         public required SolidColorBrush ScoreBrush { get; set; }
         public required SolidColorBrush ScoreBackgroundBrush { get; set; }
         public required List<CompositionInfo> Compositions { get; set; }
@@ -282,6 +283,7 @@ namespace Owmeta.Display
         public required BitmapSource HeroIcon { get; set; }
         public bool IsHighThreat { get; set; }
         public int ScoreValue { get; set; }
+        public string ScoreText => HudFormat.Score(ScoreValue);
         public required SolidColorBrush ScoreBrush { get; set; }
         public required SolidColorBrush ScoreBackgroundBrush { get; set; }
         public required List<CompositionInfo> Compositions { get; set; }

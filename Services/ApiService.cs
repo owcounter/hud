@@ -10,8 +10,9 @@ namespace Owmeta.Services
     public class ApiService : IDisposable
     {
         private readonly HttpClient httpClient;
+        private readonly RecognitionClient recognitionClient = new();
         private readonly KeycloakAuth keycloakAuth;
-        private readonly string tokenFileName = "owmeta_oauth_token.json";
+        private readonly string tokenFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "owmeta_oauth_token.json");
         private string? accessToken;
         private string? refreshToken;
         private readonly SemaphoreSlim tokenRefreshSemaphore = new SemaphoreSlim(1, 1);
@@ -304,37 +305,52 @@ namespace Owmeta.Services
 
         private async Task<ScreenshotProcessingResponse?> SendScreenshotRequest(string screenshotBase64, bool retryOnUnauthorized)
         {
-            string formattedBase64 = $"data:image/jpeg;base64,{screenshotBase64}";
-            var input = new
+            if (screenshotBase64.Length > Owmeta.Vision.Preparation.FramePreparer.MaximumImageBytes * 4 / 3 + 4)
+                throw new ApiException("Screenshot is too large");
+            var bytes = Convert.FromBase64String(screenshotBase64);
+            var capture = new CaptureJournal(bytes);
+            try
             {
-                screenshot_base64 = formattedBase64,
-                use_websocket = false,
-                previous_match_state = SerializeMatchState(_lastMatchState)
-            };
+                MatchState? observedState = null;
+                Owmeta.Vision.Protocol.RecognitionResult raw;
+                bool recognitionFailed = false;
+                try {
+                    var recognition = await recognitionClient.Recognize(bytes, capture);
+                    observedState = recognition.State;
+                    raw = recognition.Raw;
+                } catch (RecognitionRejectedException rejected) when (_lastMatchState != null) {
+                    raw = rejected.Raw;
+                    recognitionFailed = true;
+                }
+                var result = await SendRecognizedState(observedState, _lastMatchState, recognitionFailed, retryOnUnauthorized);
+                result.RawRecognition = raw;
+                result.Capture = capture;
+                capture.Write("analysis-result.json", new { matchState = SerializeMatchState(result.MatchState),
+                    blueTeamAnalysis=result.BlueTeamAnalysis, redTeamAnalysis=result.RedTeamAnalysis,
+                    result.PersistedBlueTeamSlots, result.PersistedRedTeamSlots, result.PersistedPlayerHero,
+                    result.RecognitionFailed, result.PlayerAnalysis, result.RecognizedMatchState });
+                return result;
+            }
+            catch (Exception ex)
+            {
+                capture.Write("error.json", new { type=ex.GetType().Name, message=ex.Message });
+                throw;
+            }
+        }
+
+        private async Task<ScreenshotProcessingResponse> SendRecognizedState(MatchState? state, MatchState? previous, bool recognitionFailed, bool retryOnUnauthorized)
+        {
+            var input = new { match_state = SerializeMatchState(state), previous_match_state = SerializeMatchState(previous), recognition_failed = recognitionFailed };
             var serializedInput = JsonConvert.SerializeObject(input);
-            Logger.Log($"Sending request with previous_match_state: {(_lastMatchState != null ? "present" : "null")}");
-            var content = new StringContent(serializedInput, System.Text.Encoding.UTF8, "application/json");
+            using var content = new StringContent(serializedInput, System.Text.Encoding.UTF8, "application/json");
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            var response = await httpClient.PostAsync("/process-screenshot", content);
+            using var response = await httpClient.PostAsync("/process-match-state-authenticated", content);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonResponse = await response.Content.ReadAsStringAsync();
-                var settings = new JsonSerializerSettings
-                {
-                    Converters = new List<JsonConverter>
-                    {
-                        new StringEnumConverter(),
-                        new ScreenshotProcessingResponseConverter()
-                    }
-                };
-
-                var result = JsonConvert.DeserializeObject<ScreenshotProcessingResponse>(jsonResponse, settings);
-                if (result == null)
-                {
-                    throw new ApiException("Failed to deserialize screenshot processing response");
-                }
+                var result = ServerRecognitionContract.ReadResponse(jsonResponse);
                 _lastMatchState = result.MatchState;
                 Logger.Log($"Response persisted slots: blue={result.PersistedBlueTeamSlots.Count}, red={result.PersistedRedTeamSlots.Count}");
                 return result;
@@ -354,7 +370,7 @@ namespace Owmeta.Services
                     if (refreshed)
                     {
                         Logger.Log("Token refreshed successfully - retrying request");
-                        return await SendScreenshotRequest(screenshotBase64, retryOnUnauthorized: false);
+                        return await SendRecognizedState(state, previous, recognitionFailed, retryOnUnauthorized: false);
                     }
                 }
 
@@ -414,6 +430,7 @@ namespace Owmeta.Services
             StopTokenRefreshTimer();
             tokenRefreshSemaphore.Dispose();
             httpClient.Dispose();
+            recognitionClient.Dispose();
         }
     }
 

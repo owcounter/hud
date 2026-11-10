@@ -139,6 +139,15 @@ namespace Owmeta
                 var logMenuItem = new System.Windows.Controls.MenuItem { Header = "Open Log" };
                 logMenuItem.Click += OpenLog;
                 _notifyIcon.ContextMenu.Items.Add(logMenuItem);
+                if (CaptureJournal.Enabled)
+                {
+                    _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Open Recognition Captures", () => {
+                        try {
+                            Directory.CreateDirectory(CaptureJournal.Root);
+                            Process.Start(new ProcessStartInfo(Path.GetFullPath(CaptureJournal.Root)) { UseShellExecute = true });
+                        } catch (Exception ex) { Logger.Log("Cannot open recognition captures: " + ex.Message); }
+                    }));
+                }
                 _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Settings", () => ShowSettingsWindow()));
                 _notifyIcon.ContextMenu.Items.Add(new System.Windows.Controls.Separator());
                 _notifyIcon.ContextMenu.Items.Add(CreateMenuItem("Logout", () => Logout()));

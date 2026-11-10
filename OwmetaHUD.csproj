@@ -11,6 +11,7 @@
     <NoWarn>CS8981</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>OWMetaHUD.ico</ApplicationIcon>
     <Version>1.1.2</Version>
   </PropertyGroup>
@@ -21,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Tests\**\*.cs" />
+    <Compile Remove="tools\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Model\"/>
@@ -30,5 +32,7 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1"/>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     <PackageReference Include="System.Drawing.Common" Version="8.0.10"/>
+    <!-- Vision/*.cs (synced from the OWMETA worker sources) prepares frames with ImageSharp. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11"/>
   </ItemGroup>
 </Project>

@@ -13,7 +13,7 @@ namespace Owmeta.Services
                    previousMap.Value != currentMap.Value;
         }
 
-        private static bool IsKnownMap(MapName map)
+        public static bool IsKnownMap(MapName map)
         {
             return map != MapName.MapUnspecified &&
                    map != MapName.AllMaps;

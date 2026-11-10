@@ -2,573 +2,231 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Owmeta.Display">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/OWMetaHUD;component/Display/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- One entry in a matchup column: portrait, name and the reason -->
+            <DataTemplate x:Key="MatchupEntry">
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <local:HeroAvatar Source="{Binding Icon}" IsHard="{Binding IsHard}"
+                                      Accent="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                      Width="50" Height="50" RingThickness="2" VerticalAlignment="Top" Margin="0,2,14,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource Hud.Text}" FontSize="21" FontWeight="SemiBold"/>
+                            <Border Padding="7,1,7,2" Margin="10,0,0,0"
+                                    Background="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource Hud.Pill}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsHard}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="HARD" Style="{StaticResource Hud.Text}" FontSize="13" FontWeight="Bold"
+                                           Foreground="{x:Static local:HudPalette.Panel}"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Comment}" Style="{StaticResource Hud.Body}" FontSize="16" MaxHeight="44" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <Style x:Key="MatchupColumn" TargetType="ItemsControl">
+                <Setter Property="ItemTemplate" Value="{StaticResource MatchupEntry}"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <StackPanel>
-        <!-- Current Hero Card - Full details (outside swap container) -->
-        <Border x:Name="CurrentHeroCard"
-                Background="#BF111827"
-                CornerRadius="12"
-                Padding="20"
-                BorderBrush="#F59E0B"
-                BorderThickness="2"
-                Margin="0,0,0,16"
-                HorizontalAlignment="Stretch">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="0" Opacity="0.4"/>
-            </Border.Effect>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <!-- Hero Identity -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Margin="0,0,40,0">
-                        <Border Width="72" Height="72"
-                                CornerRadius="36"
-                                ClipToBounds="True"
-                                Margin="0,0,16,0">
-                            <Image Source="{Binding HeroIcon}"
-                                   RenderOptions.BitmapScalingMode="HighQuality"/>
-                        </Border>
+        <!-- ============ YOUR HERO ============ -->
+        <Border x:Name="CurrentHeroCard" Style="{StaticResource Hud.Panel}" Padding="26,20" Margin="0,0,0,12" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="440"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="YOU ARE"
-                                      FontSize="13"
-                                      FontWeight="Medium"
-                                      Foreground="#9CA3AF"/>
-                            <TextBlock Text="{Binding HeroName}"
-                                      FontSize="26"
-                                      FontWeight="Bold"
-                                      Foreground="White"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                <Border Background="{Binding ScoreBackgroundBrush}"
-                                        CornerRadius="5"
-                                        Padding="10,4"
-                                        Margin="0,0,8,0">
-                                    <TextBlock Text="{Binding ScoreValue, StringFormat='{}{0:+#;-#;0}'}"
-                                              FontSize="16"
-                                              FontWeight="Bold"
-                                              Foreground="{Binding ScoreBrush}"/>
-                                </Border>
-                                <ItemsControl ItemsSource="{Binding Compositions}" VerticalAlignment="Center">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="{Binding Background}"
-                                                    CornerRadius="4"
-                                                    Padding="8,4"
-                                                    Margin="0,0,5,0">
-                                                <TextBlock Text="{Binding Name}"
-                                                          FontSize="12"
-                                                          FontWeight="SemiBold"
-                                                          Foreground="{Binding Foreground}"/>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <!-- Incompatible Compositions -->
-                                <ItemsControl ItemsSource="{Binding IncompatibleCompositions}" VerticalAlignment="Center">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#33EF4444"
-                                                    BorderBrush="#EF4444"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="8,4"
-                                                    Margin="0,0,5,0">
-                                                <TextBlock Text="{Binding Name}"
-                                                          FontSize="12"
-                                                          FontWeight="SemiBold"
-                                                          Foreground="#EF4444">
-                                                    <TextBlock.TextDecorations>
-                                                        <TextDecoration Location="Strikethrough">
-                                                            <TextDecoration.Pen>
-                                                                <Pen Brush="#EF4444" Thickness="3"/>
-                                                            </TextDecoration.Pen>
-                                                        </TextDecoration>
-                                                    </TextBlock.TextDecorations>
-                                                </TextBlock>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal"
-                                       Visibility="{Binding MapStrengthVisibility}"
-                                       Margin="0,6,0,0">
-                                <Viewbox Width="16" Height="16" Margin="0,0,5,0">
-                                    <Path Fill="{Binding MapStrengthBrush}"
-                                          Data="M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z"/>
-                                </Viewbox>
-                                <TextBlock Text="{Binding MapStrengthText}"
-                                          FontSize="14"
-                                          FontWeight="Medium"
-                                          Foreground="{Binding MapStrengthBrush}"/>
-                            </StackPanel>
+                <!-- Identity -->
+                <Grid VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <local:HeroAvatar Source="{Binding HeroIcon}" Accent="{x:Static local:HudPalette.Ally}"
+                                      Width="116" Height="116" RingThickness="3" VerticalAlignment="Top" Margin="0,0,22,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                        <TextBlock Text="YOU'RE PLAYING" Style="{StaticResource Hud.RowLabel}" FontSize="16"/>
+                        <TextBlock Text="{Binding HeroName}" Style="{StaticResource Hud.HeroName}" FontSize="40" Margin="0,0,0,2"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}" Style="{StaticResource Hud.Score}" FontSize="32"/>
+                            <TextBlock Text="hero score" Style="{StaticResource Hud.Caption}" Margin="10,6,0,0"/>
                         </StackPanel>
+                        <WrapPanel>
+                            <ItemsControl ItemsSource="{Binding Compositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
+                                          ItemTemplate="{StaticResource Hud.CompositionTag}" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding IncompatibleCompositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
+                                          ItemTemplate="{StaticResource Hud.IncompatibleTag}" Margin="0,0,0,8"/>
+                        </WrapPanel>
+                        <Border Style="{StaticResource Hud.Pill}" HorizontalAlignment="Left" Background="{Binding MapStrengthBackground}"
+                                Visibility="{Binding MapStrengthVisibility}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Hud.MapIcon}" Fill="{Binding MapStrengthBrush}" Width="16" Height="16"
+                                      Stretch="Uniform" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding MapStrengthText}" Foreground="{Binding MapStrengthBrush}"
+                                           Style="{StaticResource Hud.Text}" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                </Grid>
 
-                    <!-- Focus Targets (Counters) with comments -->
-                    <StackPanel Margin="0,0,50,0" VerticalAlignment="Top">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasCounters}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="FOCUS TARGETS"
-                                  FontSize="17"
-                                  FontWeight="Bold"
-                                  Foreground="#10B981"
-                                  Margin="0,0,0,12"/>
-                        <ItemsControl ItemsSource="{Binding Counters}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                        <Grid Width="66" Height="66" Margin="-8,0,6,0">
-                                            <!-- Glow layer for hard counters -->
-                                            <Ellipse Width="66" Height="66" Fill="#22C55E">
-                                                <Ellipse.Style>
-                                                    <Style TargetType="Ellipse">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsHard}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Ellipse.Style>
-                                                <Ellipse.Effect>
-                                                    <BlurEffect Radius="12"/>
-                                                </Ellipse.Effect>
-                                            </Ellipse>
-                                            <!-- Hero image -->
-                                            <Ellipse Width="50" Height="50">
-                                                <Ellipse.Fill>
-                                                    <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                </Ellipse.Fill>
-                                            </Ellipse>
-                                            <!-- Ring overlay -->
-                                            <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#10B981" Fill="Transparent"/>
-                                        </Grid>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}"
-                                                      FontSize="18"
-                                                      FontWeight="SemiBold"
-                                                      Foreground="White"/>
-                                            <TextBlock Text="{Binding Comment}"
-                                                      FontSize="15"
-                                                      Foreground="#9CA3AF"
-                                                      MaxWidth="480"
-                                                      TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                <Rectangle Grid.Column="1" Width="1" Fill="{x:Static local:HudPalette.Divider}" Margin="12,0,36,0"/>
 
-                    <!-- Avoid (Countered By) with comments -->
-                    <StackPanel Margin="0,0,50,0" VerticalAlignment="Top">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasCounteredBy}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="AVOID"
-                                  FontSize="17"
-                                  FontWeight="Bold"
-                                  Foreground="#F43F5E"
-                                  Margin="0,0,0,12"/>
-                        <ItemsControl ItemsSource="{Binding CounteredBy}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                        <Grid Width="66" Height="66" Margin="-8,0,6,0">
-                                            <!-- Glow layer for hard counters -->
-                                            <Ellipse Width="66" Height="66" Fill="#EF4444">
-                                                <Ellipse.Style>
-                                                    <Style TargetType="Ellipse">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsHard}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Ellipse.Style>
-                                                <Ellipse.Effect>
-                                                    <BlurEffect Radius="12"/>
-                                                </Ellipse.Effect>
-                                            </Ellipse>
-                                            <!-- Hero image -->
-                                            <Ellipse Width="50" Height="50">
-                                                <Ellipse.Fill>
-                                                    <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                </Ellipse.Fill>
-                                            </Ellipse>
-                                            <!-- Ring overlay -->
-                                            <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#F43F5E" Fill="Transparent"/>
-                                        </Grid>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}"
-                                                      FontSize="18"
-                                                      FontWeight="SemiBold"
-                                                      Foreground="White"/>
-                                            <TextBlock Text="{Binding Comment}"
-                                                      FontSize="15"
-                                                      Foreground="#9CA3AF"
-                                                      MaxWidth="480"
-                                                      TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                <!-- Focus targets: enemies you counter -->
+                <StackPanel Grid.Column="2" Margin="0,0,32,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Good}" Margin="0,0,10,0"/>
+                        <TextBlock Text="FOCUS TARGETS" Style="{StaticResource Hud.SectionLabel}" Foreground="{x:Static local:HudPalette.Good}"/>
+                        <TextBlock Text="you counter them" Style="{StaticResource Hud.Caption}" Margin="10,1,0,0"/>
                     </StackPanel>
-
-                    <!-- Synergies with comments -->
-                    <StackPanel VerticalAlignment="Top">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasSynergies}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="SYNERGIES"
-                                  FontSize="17"
-                                  FontWeight="Bold"
-                                  Foreground="#3B82F6"
-                                  Margin="0,0,0,12"/>
-                        <ItemsControl ItemsSource="{Binding Synergies}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                        <Grid Width="50" Height="50" Margin="0,0,14,0">
-                                            <Ellipse Width="50" Height="50">
-                                                <Ellipse.Fill>
-                                                    <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                </Ellipse.Fill>
-                                            </Ellipse>
-                                            <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#3B82F6" Fill="Transparent"/>
-                                        </Grid>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}"
-                                                      FontSize="18"
-                                                      FontWeight="SemiBold"
-                                                      Foreground="White"/>
-                                            <TextBlock Text="{Binding Comment}"
-                                                      FontSize="15"
-                                                      Foreground="#9CA3AF"
-                                                      MaxWidth="480"
-                                                      TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Counters}" Style="{StaticResource MatchupColumn}" Tag="{x:Static local:HudPalette.Good}"/>
+                    <TextBlock Text="No clear targets" Style="{StaticResource Hud.Caption}" Visibility="{Binding NoCountersVisibility}"/>
                 </StackPanel>
+
+                <!-- Threats: enemies that counter you -->
+                <StackPanel Grid.Column="3" Margin="0,0,32,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Bad}" Margin="0,0,10,0"/>
+                        <TextBlock Text="THREATS" Style="{StaticResource Hud.SectionLabel}" Foreground="{x:Static local:HudPalette.Bad}"/>
+                        <TextBlock Text="they counter you" Style="{StaticResource Hud.Caption}" Margin="10,1,0,0"/>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding CounteredBy}" Style="{StaticResource MatchupColumn}" Tag="{x:Static local:HudPalette.Bad}"/>
+                    <TextBlock Text="Nobody counters you" Style="{StaticResource Hud.Caption}" Visibility="{Binding NoCounteredByVisibility}"/>
+                </StackPanel>
+
+                <!-- Synergies: teammates that pair well -->
+                <StackPanel Grid.Column="4">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Info}" Margin="0,0,10,0"/>
+                        <TextBlock Text="SYNERGIES" Style="{StaticResource Hud.SectionLabel}" Foreground="{x:Static local:HudPalette.Info}"/>
+                        <TextBlock Text="on your team" Style="{StaticResource Hud.Caption}" Margin="10,1,0,0"/>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Synergies}" Style="{StaticResource MatchupColumn}" Tag="{x:Static local:HudPalette.Info}"/>
+                    <TextBlock Text="No notable synergies" Style="{StaticResource Hud.Caption}" Visibility="{Binding NoSynergiesVisibility}"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Swap Suggestions Section -->
-        <Border Background="#BF111827"
-                CornerRadius="16"
-                Padding="20,16">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="0" Opacity="0.5"/>
-            </Border.Effect>
+        <!-- Shown instead of the hero card when your hero could not be resolved -->
+        <Border x:Name="NoticeCard" Style="{StaticResource Hud.Panel}" Margin="0,0,0,12" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse Width="10" Height="10" Fill="{x:Static local:HudPalette.Warn}" Margin="0,0,14,0"/>
+                <TextBlock x:Name="NoticeText" Style="{StaticResource Hud.Text}" FontSize="22" Foreground="{x:Static local:HudPalette.TextSecondary}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ============ SWAP OPTIONS ============ -->
+        <Border x:Name="SwapSection" Style="{StaticResource Hud.Panel}" Padding="22,16,22,8" Visibility="Collapsed">
             <StackPanel>
-                <TextBlock Text="SWAP SUGGESTIONS"
-                          FontSize="14"
-                          FontWeight="Bold"
-                          Foreground="#F59E0B"
-                          Margin="0,0,0,12"/>
+                <Grid Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="SWAP OPTIONS" Style="{StaticResource Hud.SectionLabel}" FontSize="22" Foreground="{x:Static local:HudPalette.TextPrimary}"/>
+                        <TextBlock x:Name="SwapSummaryText" Style="{StaticResource Hud.Caption}" Margin="16,2,0,0"/>
+                    </StackPanel>
 
-                <ItemsControl x:Name="SuggestionsControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <UniformGrid Columns="7"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <!-- Swap Hero Card - Collapsed style -->
-                        <Border Background="#CC1E293B"
-                                CornerRadius="10"
-                                Padding="10"
-                                Margin="6">
-                            <Grid>
-                                <!-- Map Strength (Top Right) -->
-                                <StackPanel Orientation="Horizontal"
-                                           Visibility="{Binding MapStrengthVisibility}"
-                                           HorizontalAlignment="Right"
-                                           VerticalAlignment="Top"
-                                           Margin="0,-2,-2,0">
-                                    <Viewbox Width="14" Height="14" Margin="0,0,3,0">
-                                        <Path Fill="{Binding MapStrengthBrush}"
-                                              Data="M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z"/>
-                                    </Viewbox>
-                                    <TextBlock Text="{Binding MapStrengthText}"
-                                              FontSize="11"
-                                              FontWeight="Medium"
-                                              Foreground="{Binding MapStrengthBrush}"/>
-                                </StackPanel>
+                    <!-- Legend -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <local:HeroAvatar Width="22" Height="22" Accent="{x:Static local:HudPalette.TextSecondary}" IsHard="True" RingThickness="1.5" Margin="0,0,8,0"/>
+                        <TextBlock Text="thick ring + dot = hard counter" Style="{StaticResource Hud.Caption}" FontSize="16"/>
+                    </StackPanel>
+                </Grid>
 
+                <ItemsControl x:Name="SuggestionsControl" Margin="-6,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="7"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="6,0,6,10" CornerRadius="10" Padding="14,12" BorderThickness="1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{x:Static local:HudPalette.Card}"/>
+                                        <Setter Property="BorderBrush" Value="{x:Static local:HudPalette.CardBorder}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBest}" Value="True">
+                                                <Setter Property="Background" Value="{x:Static local:HudPalette.AccentSoft}"/>
+                                                <Setter Property="BorderBrush" Value="{x:Static local:HudPalette.Accent}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <StackPanel>
-                                    <!-- Hero Header -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <Border Width="60" Height="60"
-                                                CornerRadius="30"
-                                                ClipToBounds="True"
-                                                Margin="0,0,12,0">
-                                            <Image Source="{Binding HeroIcon}"
-                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
-                                        </Border>
-
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding HeroName}"
-                                                      FontSize="22"
-                                                      FontWeight="Bold"
-                                                      Foreground="White"/>
-                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <Border Background="{Binding ScoreBackgroundBrush}"
-                                                        CornerRadius="4"
-                                                        Padding="8,3"
-                                                        Margin="0,0,6,0">
-                                                    <TextBlock Text="{Binding ScoreValue, StringFormat='{}{0:+#;-#;0}'}"
-                                                              FontSize="18"
-                                                              FontWeight="Bold"
-                                                              Foreground="{Binding ScoreBrush}"/>
-                                                </Border>
-                                                <ItemsControl ItemsSource="{Binding Compositions}" VerticalAlignment="Center">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate>
-                                                            <StackPanel Orientation="Horizontal"/>
-                                                        </ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border Background="{Binding Background}"
-                                                                    CornerRadius="3"
-                                                                    Padding="6,3"
-                                                                    Margin="0,0,4,0">
-                                                                <TextBlock Text="{Binding Name}"
-                                                                          FontSize="13"
-                                                                          FontWeight="SemiBold"
-                                                                          Foreground="{Binding Foreground}"/>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                                <!-- Incompatible Compositions -->
-                                                <ItemsControl ItemsSource="{Binding IncompatibleCompositions}" VerticalAlignment="Center">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate>
-                                                            <StackPanel Orientation="Horizontal"/>
-                                                        </ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border Background="#33EF4444"
-                                                                    BorderBrush="#EF4444"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="3"
-                                                                    Padding="6,3"
-                                                                    Margin="0,0,4,0">
-                                                                <TextBlock Text="{Binding Name}"
-                                                                          FontSize="13"
-                                                                          FontWeight="SemiBold"
-                                                                          Foreground="#EF4444">
-                                                                    <TextBlock.TextDecorations>
-                                                                        <TextDecoration Location="Strikethrough">
-                                                                            <TextDecoration.Pen>
-                                                                                <Pen Brush="#EF4444" Thickness="3"/>
-                                                                            </TextDecoration.Pen>
-                                                                        </TextDecoration>
-                                                                    </TextBlock.TextDecorations>
-                                                                </TextBlock>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </StackPanel>
+                                    <!-- Header: portrait, name, score -->
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <local:HeroAvatar Source="{Binding HeroIcon}" Width="62" Height="62" Margin="0,0,12,0"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource Hud.RowLabel}" Text="BEST PICK" Foreground="{x:Static local:HudPalette.Accent}"
+                                                       Visibility="{Binding BestVisibility}"/>
+                                            <TextBlock Text="{Binding HeroName}" Style="{StaticResource Hud.HeroName}"/>
+                                            <TextBlock Text="{Binding DeltaText}" Foreground="{Binding DeltaBrush}" Style="{StaticResource Hud.Text}"
+                                                       FontSize="16" FontWeight="SemiBold"/>
                                         </StackPanel>
-                                    </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding ScoreText}" Foreground="{Binding ScoreBrush}"
+                                                   Style="{StaticResource Hud.Score}" VerticalAlignment="Top" Margin="8,-2,0,0"/>
+                                    </Grid>
 
-                                <!-- Counters row - icons only -->
-                                <StackPanel Margin="0,0,0,12">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasCounters}" Value="False">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <ItemsControl ItemsSource="{Binding Counters}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Horizontal"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Width="50" Height="50" Margin="0,0,6,0" ToolTip="{Binding Comment}">
-                                                    <!-- Glow layer for hard counters -->
-                                                    <Ellipse Width="66" Height="66" Margin="-8" Fill="#22C55E">
-                                                        <Ellipse.Style>
-                                                            <Style TargetType="Ellipse">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsHard}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Ellipse.Style>
-                                                        <Ellipse.Effect>
-                                                            <BlurEffect Radius="12"/>
-                                                        </Ellipse.Effect>
-                                                    </Ellipse>
-                                                    <!-- Hero image -->
-                                                    <Ellipse Width="50" Height="50">
-                                                        <Ellipse.Fill>
-                                                            <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                        </Ellipse.Fill>
-                                                    </Ellipse>
-                                                    <!-- Ring overlay -->
-                                                    <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#10B981" Fill="Transparent"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+                                    <!-- Tags -->
+                                    <WrapPanel Margin="0,0,0,2" MinHeight="36">
+                                        <ItemsControl ItemsSource="{Binding Compositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
+                                                      ItemTemplate="{StaticResource Hud.CompositionTag}" Margin="0,0,0,6"/>
+                                        <ItemsControl ItemsSource="{Binding IncompatibleCompositions}" ItemsPanel="{StaticResource Hud.HorizontalPanel}"
+                                                      ItemTemplate="{StaticResource Hud.IncompatibleTag}" Margin="0,0,0,6"/>
+                                        <Border Style="{StaticResource Hud.Pill}" Padding="7,3" Margin="0,0,0,6" Background="{Binding MapStrengthBackground}"
+                                                Visibility="{Binding MapStrengthVisibility}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Data="{StaticResource Hud.MapIcon}" Fill="{Binding MapStrengthBrush}" Width="14" Height="14"
+                                                      Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding MapStrengthShortText}" Foreground="{Binding MapStrengthBrush}"
+                                                           Style="{StaticResource Hud.Text}" FontSize="15" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </WrapPanel>
 
-                                <!-- Countered By row - icons only -->
-                                <StackPanel Margin="0,0,0,12">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasCounteredBy}" Value="False">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <ItemsControl ItemsSource="{Binding CounteredBy}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Horizontal"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Width="50" Height="50" Margin="0,0,6,0" ToolTip="{Binding Comment}">
-                                                    <!-- Glow layer for hard counters -->
-                                                    <Ellipse Width="66" Height="66" Margin="-8" Fill="#EF4444">
-                                                        <Ellipse.Style>
-                                                            <Style TargetType="Ellipse">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsHard}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Ellipse.Style>
-                                                        <Ellipse.Effect>
-                                                            <BlurEffect Radius="12"/>
-                                                        </Ellipse.Effect>
-                                                    </Ellipse>
-                                                    <!-- Hero image -->
-                                                    <Ellipse Width="50" Height="50">
-                                                        <Ellipse.Fill>
-                                                            <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                        </Ellipse.Fill>
-                                                    </Ellipse>
-                                                    <!-- Ring overlay -->
-                                                    <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#F43F5E" Fill="Transparent"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <!-- Matchups -->
+                                    <Rectangle Height="1" Fill="{x:Static local:HudPalette.Divider}" Margin="0,0,0,8"/>
+                                    <local:AvatarRow Label="COUNTERS" Items="{Binding Counters}" Accent="{x:Static local:HudPalette.Good}"
+                                                     AvatarSize="34" LabelWidth="108" Margin="0,0,0,6"/>
+                                    <local:AvatarRow Label="COUNTERED BY" Items="{Binding CounteredBy}" Accent="{x:Static local:HudPalette.Bad}"
+                                                     AvatarSize="34" LabelWidth="108" Margin="0,0,0,6"/>
+                                    <local:AvatarRow Label="SYNERGY" Items="{Binding Synergies}" Accent="{x:Static local:HudPalette.Info}"
+                                                     AvatarSize="34" LabelWidth="108" Margin="0,0,0,6"/>
                                 </StackPanel>
-
-                                <!-- Synergies row - icons only -->
-                                <StackPanel>
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasSynergies}" Value="False">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <ItemsControl ItemsSource="{Binding Synergies}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Horizontal"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Width="50" Height="50" Margin="0,0,6,0" ToolTip="{Binding Comment}">
-                                                    <Ellipse Width="50" Height="50">
-                                                        <Ellipse.Fill>
-                                                            <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill"/>
-                                                        </Ellipse.Fill>
-                                                    </Ellipse>
-                                                    <Ellipse Width="50" Height="50" StrokeThickness="2" Stroke="#3B82F6" Fill="Transparent"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <TextBlock x:Name="NoSwapsText" Style="{StaticResource Hud.Caption}" FontSize="20" Margin="0,4,0,10" Visibility="Collapsed"/>
             </StackPanel>
         </Border>
     </StackPanel>

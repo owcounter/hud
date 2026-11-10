@@ -5,21 +5,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace Owmeta.Display
 {
     public partial class CompositionDashboard : UserControl
     {
+        private const int IconSize = 128;
+
+        // Two rows of seven cards is what fits on screen below the team panels.
+        private const int MaxTeamSwaps = 14;
+
         public ObservableCollection<VulnerableHeroViewModel> VulnerableTeammates { get; } = new();
         public ObservableCollection<DangerousHeroViewModel> DangerousEnemies { get; } = new();
         public ObservableCollection<TeamSwapViewModel> TeamSwapSuggestions { get; } = new();
 
-        // Matchup indicator colors and threshold
+        // Matchup indicator threshold
         private const int MatchupAdvantageThreshold = 3;
-        private static readonly SolidColorBrush AdvantageColor = new(Color.FromRgb(0x10, 0xB9, 0x81)); // Green #10B981
-        private static readonly SolidColorBrush DisadvantageColor = new(Color.FromRgb(0xEF, 0x44, 0x44)); // Red #EF4444
-        private static readonly SolidColorBrush EvenColor = new(Color.FromRgb(0xF5, 0x9E, 0x0B)); // Amber #F59E0B
 
         public CompositionDashboard()
         {
@@ -27,6 +28,7 @@ namespace Owmeta.Display
             VulnerableList.ItemsSource = VulnerableTeammates;
             DangerousList.ItemsSource = DangerousEnemies;
             TeamSwapList.ItemsSource = TeamSwapSuggestions;
+            Clear();
         }
 
         private MapName? _currentMap;
@@ -39,16 +41,13 @@ namespace Owmeta.Display
             VulnerableTeammates.Clear();
             DangerousEnemies.Clear();
             TeamSwapSuggestions.Clear();
-            VulnerableSection.Visibility = Visibility.Collapsed;
-            DangerousSection.Visibility = Visibility.Collapsed;
-            TeamSwapSection.Visibility = Visibility.Collapsed;
-            MatchupText.Text = "NO DATA";
-            MatchupText.Foreground = EvenColor;
+            UpdateSectionStates();
 
-            if (MatchupIcon != null)
-            {
-                MatchupIcon.Stroke = EvenColor;
-            }
+            MatchupDiffText.Text = "--";
+            MatchupDiffText.Foreground = HudPalette.TextMuted;
+            MatchupText.Text = "NO DATA";
+            MatchupText.Foreground = HudPalette.TextMuted;
+            MatchupBadge.Background = HudPalette.NeutralSoft;
         }
 
         private void UpdateMatchupIndicator()
@@ -59,30 +58,32 @@ namespace Owmeta.Display
 
             string text;
             SolidColorBrush color;
+            SolidColorBrush background;
 
             if (diff >= MatchupAdvantageThreshold)
             {
                 text = "ADVANTAGE";
-                color = AdvantageColor;
+                color = HudPalette.Good;
+                background = HudPalette.GoodSoft;
             }
             else if (diff <= -MatchupAdvantageThreshold)
             {
                 text = "DISADVANTAGE";
-                color = DisadvantageColor;
+                color = HudPalette.Bad;
+                background = HudPalette.BadSoft;
             }
             else
             {
                 text = "EVEN";
-                color = EvenColor;
+                color = HudPalette.Warn;
+                background = HudPalette.WarnSoft;
             }
 
+            MatchupDiffText.Text = HudFormat.Score(diff);
+            MatchupDiffText.Foreground = color;
             MatchupText.Text = text;
             MatchupText.Foreground = color;
-
-            if (MatchupIcon != null)
-            {
-                MatchupIcon.Stroke = color;
-            }
+            MatchupBadge.Background = background;
         }
 
         public void Update(
@@ -99,7 +100,16 @@ namespace Owmeta.Display
                 RedTeamPanel.UpdateCompositions(redTeamAnalysis);
 
                 // Update matchup indicator
-                UpdateMatchupIndicator();
+                if (blueTeamAnalysis.Count > 0 && redTeamAnalysis.Count > 0)
+                    UpdateMatchupIndicator();
+                else
+                {
+                    MatchupDiffText.Text = "--";
+                    MatchupDiffText.Foreground = HudPalette.TextMuted;
+                    MatchupText.Text = "INSUFFICIENT DATA";
+                    MatchupText.Foreground = HudPalette.Warn;
+                    MatchupBadge.Background = HudPalette.WarnSoft;
+                }
 
                 VulnerableTeammates.Clear();
                 DangerousEnemies.Clear();
@@ -111,61 +121,24 @@ namespace Owmeta.Display
                     .OrderBy(kvp => kvp.Value.HeroScore)  // Most negative first
                     .ToList();
 
-                // Add vulnerable teammates
                 foreach (var (heroName, analysis) in vulnerableHeroes)
                 {
-                    var counteredBy = new List<CounterIconInfo>();
-                    if (analysis.HardCounteredBy != null)
-                    {
-                        foreach (var c in analysis.HardCounteredBy.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3))
-                        {
-                            counteredBy.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = true,
-                                Comment = c.Comment ?? "Hard counter"
-                            });
-                        }
-                    }
-                    if (analysis.SoftCounteredBy != null)
-                    {
-                        foreach (var c in analysis.SoftCounteredBy.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3 - counteredBy.Count))
-                        {
-                            counteredBy.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = false,
-                                Comment = c.Comment ?? "Soft counter"
-                            });
-                        }
-                    }
-
-                    var compositions = new List<CompositionInfo>();
-                    if (analysis.Hero?.BestCompositions != null)
-                    {
-                        foreach (var comp in analysis.Hero.BestCompositions)
-                        {
-                            compositions.Add(new CompositionInfo
-                            {
-                                Name = comp.ToString(),
-                                Foreground = GetCompositionBrush(comp),
-                                Background = GetCompositionBackgroundBrush(comp)
-                            });
-                        }
-                    }
+                    var counteredBy = TakeCounters(
+                        analysis.HardCounteredBy, analysis.SoftCounteredBy,
+                        c => redTeamAnalysis.ContainsKey(c.HeroName), "Hard counter", "Soft counter");
 
                     var isHardCountered = analysis.HardCounteredBy?
                         .Any(c => redTeamAnalysis.ContainsKey(c.HeroName)) ?? false;
 
                     VulnerableTeammates.Add(new VulnerableHeroViewModel
                     {
-                        HeroName = FormatHeroName(heroName),
-                        HeroIcon = IconUtils.GetHeroIconAsBitmapSource(heroName),
+                        HeroName = HudFormat.HeroName(heroName),
+                        HeroIcon = IconUtils.GetHeroIconAsBitmapSource(heroName, IconSize),
                         IsHardCountered = isHardCountered,
                         ScoreValue = analysis.HeroScore,
-                        ScoreBrush = analysis.HeroScore >= 0 ? BrushCache.Green : BrushCache.Red,
-                        ScoreBackgroundBrush = analysis.HeroScore >= 0 ? BrushCache.GreenBg : BrushCache.RedBg,
-                        Compositions = compositions,
+                        ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
+                        ScoreBackgroundBrush = HudPalette.ScoreSoftBrush(analysis.HeroScore),
+                        Compositions = HudFormat.CreateCompositionInfos(analysis.Hero?.BestCompositions),
                         CounteredBy = counteredBy,
                         Synergies = new List<CounterIconInfo>(),
                         HasCounteredBy = counteredBy.Count > 0,
@@ -179,88 +152,27 @@ namespace Owmeta.Display
                     .OrderByDescending(kvp => kvp.Value.HeroScore)  // Highest score first
                     .ToList();
 
-                // Add dangerous enemies
                 foreach (var (enemyName, analysis) in dangerousHeroes)
                 {
-                    var compositions = new List<CompositionInfo>();
-                    if (analysis.Hero?.BestCompositions != null)
-                    {
-                        foreach (var comp in analysis.Hero.BestCompositions)
-                        {
-                            compositions.Add(new CompositionInfo
-                            {
-                                Name = comp.ToString(),
-                                Foreground = GetCompositionBrush(comp),
-                                Background = GetCompositionBackgroundBrush(comp)
-                            });
-                        }
-                    }
-
                     // Who this enemy counters on blue team
-                    var counters = new List<CounterIconInfo>();
-                    bool hasHard = false;
-                    if (analysis.HardCounters != null)
-                    {
-                        foreach (var c in analysis.HardCounters.Where(c => blueTeamAnalysis.ContainsKey(c.HeroName)).Take(3))
-                        {
-                            counters.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = true,
-                                Comment = c.Comment ?? "Hard counter"
-                            });
-                            hasHard = true;
-                        }
-                    }
-                    if (analysis.SoftCounters != null)
-                    {
-                        foreach (var c in analysis.SoftCounters.Where(c => blueTeamAnalysis.ContainsKey(c.HeroName)).Take(3 - counters.Count))
-                        {
-                            counters.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = false,
-                                Comment = c.Comment ?? "Soft counter"
-                            });
-                        }
-                    }
+                    var counters = TakeCounters(
+                        analysis.HardCounters, analysis.SoftCounters,
+                        c => blueTeamAnalysis.ContainsKey(c.HeroName), "Hard counter", "Soft counter");
 
                     // Swap suggestions to counter this enemy
-                    var counteredBy = new List<CounterIconInfo>();
-                    if (analysis.HardCounteredBy != null)
-                    {
-                        foreach (var c in analysis.HardCounteredBy.Take(3))
-                        {
-                            counteredBy.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = true,
-                                Comment = c.Comment ?? "Hard counter"
-                            });
-                        }
-                    }
-                    if (analysis.SoftCounteredBy != null)
-                    {
-                        foreach (var c in analysis.SoftCounteredBy.Take(3 - counteredBy.Count))
-                        {
-                            counteredBy.Add(new CounterIconInfo
-                            {
-                                Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                                IsHard = false,
-                                Comment = c.Comment ?? "Soft counter"
-                            });
-                        }
-                    }
+                    var counteredBy = TakeCounters(
+                        analysis.HardCounteredBy, analysis.SoftCounteredBy,
+                        _ => true, "Hard counter", "Soft counter");
 
                     DangerousEnemies.Add(new DangerousHeroViewModel
                     {
-                        HeroName = FormatHeroName(enemyName),
-                        HeroIcon = IconUtils.GetHeroIconAsBitmapSource(enemyName),
-                        IsHighThreat = hasHard,
+                        HeroName = HudFormat.HeroName(enemyName),
+                        HeroIcon = IconUtils.GetHeroIconAsBitmapSource(enemyName, IconSize),
+                        IsHighThreat = counters.Any(c => c.IsHard),
                         ScoreValue = analysis.HeroScore,
-                        ScoreBrush = analysis.HeroScore >= 0 ? BrushCache.Green : BrushCache.Red,
-                        ScoreBackgroundBrush = analysis.HeroScore >= 0 ? BrushCache.GreenBg : BrushCache.RedBg,
-                        Compositions = compositions,
+                        ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
+                        ScoreBackgroundBrush = HudPalette.ScoreSoftBrush(analysis.HeroScore),
+                        Compositions = HudFormat.CreateCompositionInfos(analysis.Hero?.BestCompositions),
                         Counters = counters,
                         CounteredBy = counteredBy,
                         HasCounters = counters.Count > 0,
@@ -271,15 +183,55 @@ namespace Owmeta.Display
                 // Calculate team swap suggestions - heroes that would help the team the most
                 CalculateTeamSwapSuggestions(blueTeamAnalysis, redTeamAnalysis);
 
-                // Hide sections if empty
-                VulnerableSection.Visibility = VulnerableTeammates.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                DangerousSection.Visibility = DangerousEnemies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                TeamSwapSection.Visibility = TeamSwapSuggestions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                UpdateSectionStates();
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error updating CompositionDashboard: {ex.Message}");
             }
+        }
+
+        private void UpdateSectionStates()
+        {
+            NoVulnerableText.Visibility = VulnerableTeammates.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            NoDangerousText.Visibility = DangerousEnemies.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            NoTeamSwapsText.Visibility = TeamSwapSuggestions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            NoTeamSwapsText.Text = $"No swap gains {HudFormat.Score(AppSettings.Instance.MinScoreF3)} or more. Your lineup is already a good fit.";
+        }
+
+        private static List<CounterIconInfo> TakeCounters(
+            IEnumerable<HeroCounter>? hard,
+            IEnumerable<HeroCounter>? soft,
+            Func<HeroCounter, bool> filter,
+            string hardFallback,
+            string softFallback)
+        {
+            var result = new List<CounterIconInfo>();
+            if (hard != null)
+            {
+                foreach (var c in hard.Where(filter).Take(3))
+                {
+                    result.Add(new CounterIconInfo
+                    {
+                        Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName, IconSize),
+                        IsHard = true,
+                        Comment = c.Comment ?? hardFallback
+                    });
+                }
+            }
+            if (soft != null)
+            {
+                foreach (var c in soft.Where(filter).Take(3 - result.Count))
+                {
+                    result.Add(new CounterIconInfo
+                    {
+                        Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName, IconSize),
+                        IsHard = false,
+                        Comment = c.Comment ?? softFallback
+                    });
+                }
+            }
+            return result;
         }
 
         private void CalculateTeamSwapSuggestions(
@@ -313,68 +265,26 @@ namespace Owmeta.Display
 
             // Sort by highest score difference, filter by min score diff, and take top suggestions
             var minScoreDiff = AppSettings.Instance.MinScoreF3;
-            var topSwaps = allSwaps
+            var eligibleSwaps = allSwaps
                 .Where(x => x.scoreDiff >= minScoreDiff)
                 .OrderByDescending(x => x.scoreDiff)
-                .Take(21);
+                .ToList();
+            var topSwaps = eligibleSwaps.Take(MaxTeamSwaps);
+
+            TeamSwapSummaryText.Text = eligibleSwaps.Count > MaxTeamSwaps
+                ? $"top {MaxTeamSwaps} of {eligibleSwaps.Count} · min gain {HudFormat.Score(minScoreDiff)}"
+                : $"biggest score gains first · min gain {HudFormat.Score(minScoreDiff)}";
 
             foreach (var (fromHeroName, fromScore, toHeroName, toAnalysis, scoreDiff) in topSwaps)
             {
-                // Get counters for the swap target (who on red team this hero counters)
-                var counters = new List<CounterIconInfo>();
-                if (toAnalysis.HardCounters != null)
-                {
-                    foreach (var c in toAnalysis.HardCounters.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3))
-                    {
-                        counters.Add(new CounterIconInfo
-                        {
-                            Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                            IsHard = true,
-                            Comment = c.Comment ?? "Hard counter"
-                        });
-                    }
-                }
-                if (toAnalysis.SoftCounters != null)
-                {
-                    foreach (var c in toAnalysis.SoftCounters.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3 - counters.Count))
-                    {
-                        counters.Add(new CounterIconInfo
-                        {
-                            Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                            IsHard = false,
-                            Comment = c.Comment ?? "Soft counter"
-                        });
-                    }
-                }
+                // Who on red team this hero counters / is countered by, and who on blue team it pairs with
+                var counters = TakeCounters(
+                    toAnalysis.HardCounters, toAnalysis.SoftCounters,
+                    c => redTeamAnalysis.ContainsKey(c.HeroName), "Hard counter", "Soft counter");
+                var counteredBy = TakeCounters(
+                    toAnalysis.HardCounteredBy, toAnalysis.SoftCounteredBy,
+                    c => redTeamAnalysis.ContainsKey(c.HeroName), "Hard countered by", "Soft countered by");
 
-                // Get countered by for the swap target (who on red team counters this hero)
-                var counteredBy = new List<CounterIconInfo>();
-                if (toAnalysis.HardCounteredBy != null)
-                {
-                    foreach (var c in toAnalysis.HardCounteredBy.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3))
-                    {
-                        counteredBy.Add(new CounterIconInfo
-                        {
-                            Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                            IsHard = true,
-                            Comment = c.Comment ?? "Hard countered by"
-                        });
-                    }
-                }
-                if (toAnalysis.SoftCounteredBy != null)
-                {
-                    foreach (var c in toAnalysis.SoftCounteredBy.Where(c => redTeamAnalysis.ContainsKey(c.HeroName)).Take(3 - counteredBy.Count))
-                    {
-                        counteredBy.Add(new CounterIconInfo
-                        {
-                            Icon = IconUtils.GetHeroIconAsBitmapSource(c.HeroName),
-                            IsHard = false,
-                            Comment = c.Comment ?? "Soft countered by"
-                        });
-                    }
-                }
-
-                // Get synergies for the swap target (who on blue team synergizes with this hero)
                 var synergies = new List<CounterIconInfo>();
                 if (toAnalysis.Synergies != null)
                 {
@@ -382,71 +292,14 @@ namespace Owmeta.Display
                     {
                         synergies.Add(new CounterIconInfo
                         {
-                            Icon = IconUtils.GetHeroIconAsBitmapSource(s.HeroName),
+                            Icon = IconUtils.GetHeroIconAsBitmapSource(s.HeroName, IconSize),
                             IsHard = false,
                             Comment = s.Comment ?? "Good synergy"
                         });
                     }
                 }
 
-                // Get compositions for the "from" hero
-                var fromCompositions = new List<CompositionInfo>();
-                var fromIncompatibleCompositions = new List<CompositionInfo>();
-                if (blueTeamAnalysis.TryGetValue(fromHeroName, out var fromAnalysis))
-                {
-                    if (fromAnalysis.Hero?.BestCompositions != null)
-                    {
-                        foreach (var comp in fromAnalysis.Hero.BestCompositions)
-                        {
-                            fromCompositions.Add(new CompositionInfo
-                            {
-                                Name = comp.ToString(),
-                                Foreground = GetCompositionBrush(comp),
-                                Background = GetCompositionBackgroundBrush(comp)
-                            });
-                        }
-                    }
-                    if (fromAnalysis.Hero?.IncompatibleCompositions != null)
-                    {
-                        foreach (var comp in fromAnalysis.Hero.IncompatibleCompositions)
-                        {
-                            fromIncompatibleCompositions.Add(new CompositionInfo
-                            {
-                                Name = comp.ToString(),
-                                Foreground = GetCompositionBrush(comp),
-                                Background = GetCompositionBackgroundBrush(comp)
-                            });
-                        }
-                    }
-                }
-
-                // Get compositions for the "to" hero
-                var toCompositions = new List<CompositionInfo>();
-                var toIncompatibleCompositions = new List<CompositionInfo>();
-                if (toAnalysis.Hero?.BestCompositions != null)
-                {
-                    foreach (var comp in toAnalysis.Hero.BestCompositions)
-                    {
-                        toCompositions.Add(new CompositionInfo
-                        {
-                            Name = comp.ToString(),
-                            Foreground = GetCompositionBrush(comp),
-                            Background = GetCompositionBackgroundBrush(comp)
-                        });
-                    }
-                }
-                if (toAnalysis.Hero?.IncompatibleCompositions != null)
-                {
-                    foreach (var comp in toAnalysis.Hero.IncompatibleCompositions)
-                    {
-                        toIncompatibleCompositions.Add(new CompositionInfo
-                        {
-                            Name = comp.ToString(),
-                            Foreground = GetCompositionBrush(comp),
-                            Background = GetCompositionBackgroundBrush(comp)
-                        });
-                    }
-                }
+                blueTeamAnalysis.TryGetValue(fromHeroName, out var fromAnalysis);
 
                 // Get map strength for both heroes
                 bool fromIsStrongMap = false, fromIsWeakMap = false;
@@ -467,27 +320,27 @@ namespace Owmeta.Display
 
                 TeamSwapSuggestions.Add(new TeamSwapViewModel
                 {
-                    FromHeroName = FormatHeroName(fromHeroName),
-                    FromHeroIcon = IconUtils.GetHeroIconAsBitmapSource(fromHeroName),
+                    FromHeroName = HudFormat.HeroName(fromHeroName),
+                    FromHeroIcon = IconUtils.GetHeroIconAsBitmapSource(fromHeroName, IconSize),
                     FromScore = fromScore,
-                    FromScoreBrush = fromScore >= 0 ? BrushCache.Green : BrushCache.Red,
-                    FromScoreBackgroundBrush = fromScore >= 0 ? BrushCache.GreenBg : BrushCache.RedBg,
-                    FromCompositions = fromCompositions,
-                    FromIncompatibleCompositions = fromIncompatibleCompositions,
+                    FromScoreBrush = HudPalette.ScoreBrush(fromScore),
+                    FromScoreBackgroundBrush = HudPalette.ScoreSoftBrush(fromScore),
+                    FromCompositions = HudFormat.CreateCompositionInfos(fromAnalysis?.Hero?.BestCompositions),
+                    FromIncompatibleCompositions = HudFormat.CreateCompositionInfos(fromAnalysis?.Hero?.IncompatibleCompositions),
                     FromIsStrongMap = fromIsStrongMap,
                     FromIsWeakMap = fromIsWeakMap,
-                    ToHeroName = FormatHeroName(toHeroName),
-                    ToHeroIcon = IconUtils.GetHeroIconAsBitmapSource(toHeroName),
+                    ToHeroName = HudFormat.HeroName(toHeroName),
+                    ToHeroIcon = IconUtils.GetHeroIconAsBitmapSource(toHeroName, IconSize),
                     ToScore = toAnalysis.HeroScore,
-                    ToScoreBrush = toAnalysis.HeroScore >= 0 ? BrushCache.Green : BrushCache.Red,
-                    ToScoreBackgroundBrush = toAnalysis.HeroScore >= 0 ? BrushCache.GreenBg : BrushCache.RedBg,
-                    ToCompositions = toCompositions,
-                    ToIncompatibleCompositions = toIncompatibleCompositions,
+                    ToScoreBrush = HudPalette.ScoreBrush(toAnalysis.HeroScore),
+                    ToScoreBackgroundBrush = HudPalette.ScoreSoftBrush(toAnalysis.HeroScore),
+                    ToCompositions = HudFormat.CreateCompositionInfos(toAnalysis.Hero?.BestCompositions),
+                    ToIncompatibleCompositions = HudFormat.CreateCompositionInfos(toAnalysis.Hero?.IncompatibleCompositions),
                     ToIsStrongMap = toIsStrongMap,
                     ToIsWeakMap = toIsWeakMap,
                     ScoreDiff = scoreDiff,
-                    ScoreDiffBrush = BrushCache.Green,
-                    ScoreDiffBackgroundBrush = BrushCache.GreenBg,
+                    ScoreDiffBrush = HudPalette.Good,
+                    ScoreDiffBackgroundBrush = HudPalette.GoodSoft,
                     Counters = counters,
                     CounteredBy = counteredBy,
                     Synergies = synergies,
@@ -496,33 +349,6 @@ namespace Owmeta.Display
                     HasSynergies = synergies.Count > 0
                 });
             }
-        }
-
-        private SolidColorBrush GetCompositionBrush(CompositionType comp)
-        {
-            return comp switch
-            {
-                CompositionType.Brawl => BrushCache.Teal,   // Orange
-                CompositionType.Dive => BrushCache.Pink,    // Sky blue
-                CompositionType.Poke => BrushCache.Purple,  // Purple
-                _ => BrushCache.White
-            };
-        }
-
-        private SolidColorBrush GetCompositionBackgroundBrush(CompositionType comp)
-        {
-            return comp switch
-            {
-                CompositionType.Brawl => BrushCache.TealBg,   // Orange bg
-                CompositionType.Dive => BrushCache.PinkBg,    // Sky blue bg
-                CompositionType.Poke => BrushCache.PurpleBg,  // Purple bg
-                _ => BrushCache.WhiteBg
-            };
-        }
-
-        private string FormatHeroName(HeroName heroName)
-        {
-            return heroName.ToString().Replace("_", " ");
         }
     }
 
@@ -550,6 +376,10 @@ namespace Owmeta.Display
         public required List<CompositionInfo> ToIncompatibleCompositions { get; set; }
         public bool ToIsStrongMap { get; set; }
         public bool ToIsWeakMap { get; set; }
+        public Visibility ToMapVisibility => ToIsStrongMap || ToIsWeakMap ? Visibility.Visible : Visibility.Collapsed;
+        public SolidColorBrush ToMapBrush => ToIsStrongMap ? HudPalette.Good : HudPalette.Bad;
+        public SolidColorBrush ToMapBackground => ToIsStrongMap ? HudPalette.GoodSoft : HudPalette.BadSoft;
+        public string ToMapText => ToIsStrongMap ? "Strong map" : "Weak map";
 
         // Score difference
         public int ScoreDiff { get; set; }

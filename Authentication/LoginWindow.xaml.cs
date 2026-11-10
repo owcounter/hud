@@ -28,7 +28,8 @@ namespace Owmeta
             try
             {
                 var tokenResponse = await keycloakAuth.Authenticate(username, password);
-                File.WriteAllText("owmeta_oauth_token.json", JsonConvert.SerializeObject(tokenResponse));
+                var tokenPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "owmeta_oauth_token.json");
+                File.WriteAllText(tokenPath, JsonConvert.SerializeObject(tokenResponse));
 
                 DialogResult = true;
                 Close();

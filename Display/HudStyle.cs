@@ -1,0 +1,186 @@
+using Owmeta.Model;
+using System.Text;
+using System.Windows.Media;
+
+namespace Owmeta.Display
+{
+    /// <summary>
+    /// Single source of truth for HUD colors. XAML references these through x:Static,
+    /// so every panel uses the same frozen brushes.
+    /// </summary>
+    public static class HudPalette
+    {
+        // Surfaces
+        public static readonly SolidColorBrush Panel = Create(0xF0, 0x0B, 0x10, 0x18);
+        public static readonly SolidColorBrush PanelBorder = Create(0x24, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush Card = Create(0x0F, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush CardBorder = Create(0x14, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush Divider = Create(0x1A, 0xFF, 0xFF, 0xFF);
+        public static readonly SolidColorBrush AvatarBackground = Create(0xFF, 0x1C, 0x24, 0x31);
+        public static readonly SolidColorBrush Track = Create(0x26, 0xFF, 0xFF, 0xFF);
+
+        // Text
+        public static readonly SolidColorBrush TextPrimary = Create(0xFF, 0xF4, 0xF6, 0xFA);
+        public static readonly SolidColorBrush TextSecondary = Create(0xFF, 0xA7, 0xB1, 0xC2);
+        public static readonly SolidColorBrush TextMuted = Create(0xFF, 0x6B, 0x77, 0x8C);
+        public static readonly SolidColorBrush TextLabel = Create(0xFF, 0x86, 0x92, 0xA6);
+
+        // Semantics
+        public static readonly SolidColorBrush Good = Create(0xFF, 0x3D, 0xDC, 0x97);
+        public static readonly SolidColorBrush GoodSoft = Create(0x29, 0x3D, 0xDC, 0x97);
+        public static readonly SolidColorBrush Bad = Create(0xFF, 0xFF, 0x5C, 0x6C);
+        public static readonly SolidColorBrush BadSoft = Create(0x29, 0xFF, 0x5C, 0x6C);
+        public static readonly SolidColorBrush Warn = Create(0xFF, 0xFF, 0xB8, 0x3D);
+        public static readonly SolidColorBrush WarnSoft = Create(0x29, 0xFF, 0xB8, 0x3D);
+        public static readonly SolidColorBrush Info = Create(0xFF, 0x6C, 0xA8, 0xFF);
+        public static readonly SolidColorBrush InfoSoft = Create(0x29, 0x6C, 0xA8, 0xFF);
+        public static readonly SolidColorBrush Neutral = Create(0xFF, 0x8A, 0x94, 0xA6);
+        public static readonly SolidColorBrush NeutralSoft = Create(0x1F, 0xFF, 0xFF, 0xFF);
+
+        // Teams
+        public static readonly SolidColorBrush Ally = Create(0xFF, 0x4C, 0xC3, 0xFF);
+        public static readonly SolidColorBrush Enemy = Create(0xFF, 0xFF, 0x4F, 0x64);
+
+        // Accent used for the "best pick" highlight
+        public static readonly SolidColorBrush Accent = Create(0xFF, 0xFF, 0xB8, 0x3D);
+        public static readonly SolidColorBrush AccentSoft = Create(0x1A, 0xFF, 0xB8, 0x3D);
+
+        // Compositions (match the owmeta.io colors)
+        public static readonly SolidColorBrush Dive = Create(0xFF, 0x38, 0xBD, 0xF8);
+        public static readonly SolidColorBrush DiveSoft = Create(0x26, 0x38, 0xBD, 0xF8);
+        public static readonly SolidColorBrush Brawl = Create(0xFF, 0xFB, 0x92, 0x3C);
+        public static readonly SolidColorBrush BrawlSoft = Create(0x26, 0xFB, 0x92, 0x3C);
+        public static readonly SolidColorBrush Poke = Create(0xFF, 0xC0, 0x84, 0xFC);
+        public static readonly SolidColorBrush PokeSoft = Create(0x26, 0xC0, 0x84, 0xFC);
+
+        public static SolidColorBrush ScoreBrush(int score) =>
+            score > 0 ? Good : score < 0 ? Bad : Neutral;
+
+        public static SolidColorBrush ScoreSoftBrush(int score) =>
+            score > 0 ? GoodSoft : score < 0 ? BadSoft : NeutralSoft;
+
+        private static SolidColorBrush Create(byte a, byte r, byte g, byte b)
+        {
+            var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+            brush.Freeze();
+            return brush;
+        }
+    }
+
+    public static class HudIcons
+    {
+        public const string Map = "M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z";
+        public const string Brawl = "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z";
+        public const string Dive = "M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z";
+        public const string Poke = "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4z";
+    }
+
+    public readonly record struct CompositionStyle(SolidColorBrush Foreground, SolidColorBrush Background, string PathData);
+
+    public static class HudFormat
+    {
+        private static readonly string[] MapPrefixes =
+        {
+            "Antarctic Peninsula", "Busan", "Ilios", "Lijiang Tower", "Nepal", "Oasis", "Samoa"
+        };
+
+        public static CompositionStyle GetCompositionStyle(CompositionType comp) => comp switch
+        {
+            CompositionType.Dive => new(HudPalette.Dive, HudPalette.DiveSoft, HudIcons.Dive),
+            CompositionType.Brawl => new(HudPalette.Brawl, HudPalette.BrawlSoft, HudIcons.Brawl),
+            CompositionType.Poke => new(HudPalette.Poke, HudPalette.PokeSoft, HudIcons.Poke),
+            _ => new(HudPalette.TextSecondary, HudPalette.NeutralSoft, HudIcons.Poke)
+        };
+
+        public static CompositionInfo CreateCompositionInfo(CompositionType comp)
+        {
+            var style = GetCompositionStyle(comp);
+            return new CompositionInfo
+            {
+                Name = comp.ToString(),
+                Foreground = style.Foreground,
+                Background = style.Background
+            };
+        }
+
+        public static List<CompositionInfo> CreateCompositionInfos(IEnumerable<CompositionType>? comps) =>
+            comps?.Select(CreateCompositionInfo).ToList() ?? new List<CompositionInfo>();
+
+        public static string Score(int score) => score > 0 ? $"+{score}" : score < 0 ? $"−{-score}" : "0";
+
+        public static string HeroName(HeroName hero) => hero switch
+        {
+            Model.HeroName.Dva => "D.Va",
+            Model.HeroName.Soldier76 => "Soldier: 76",
+            Model.HeroName.Lucio => "Lúcio",
+            Model.HeroName.Torbjorn => "Torbjörn",
+            _ => SplitWords(hero.ToString())
+        };
+
+        public static string MapName(MapName map)
+        {
+            var name = map switch
+            {
+                Model.MapName.KingsRow => "King's Row",
+                Model.MapName.Route66 => "Route 66",
+                Model.MapName.Esperanca => "Esperança",
+                Model.MapName.Paraiso => "Paraíso",
+                Model.MapName.WatchpointGibraltar => "Watchpoint: Gibraltar",
+                Model.MapName.ThroneOfAnubis => "Throne of Anubis",
+                _ => SplitWords(map.ToString())
+            };
+
+            foreach (var prefix in MapPrefixes)
+            {
+                if (name.StartsWith(prefix + " ", StringComparison.Ordinal))
+                    return $"{prefix}: {name[(prefix.Length + 1)..]}";
+            }
+
+            return name;
+        }
+
+        private static string SplitWords(string value)
+        {
+            var sb = new StringBuilder(value.Length + 4);
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c == '_')
+                {
+                    sb.Append(' ');
+                    continue;
+                }
+
+                if (i > 0 && char.IsUpper(c) && value[i - 1] != '_' && !char.IsUpper(value[i - 1]))
+                    sb.Append(' ');
+                else if (i > 0 && char.IsDigit(c) && !char.IsDigit(value[i - 1]))
+                    sb.Append(' ');
+
+                sb.Append(c);
+            }
+            return sb.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Legacy brush names kept for older panels; values come from <see cref="HudPalette"/>.
+    /// </summary>
+    internal static class BrushCache
+    {
+        public static readonly SolidColorBrush Green = HudPalette.Good;
+        public static readonly SolidColorBrush Red = HudPalette.Bad;
+        public static readonly SolidColorBrush White = HudPalette.TextPrimary;
+        public static readonly SolidColorBrush Blue = HudPalette.Info;
+        public static readonly SolidColorBrush Teal = HudPalette.Brawl;
+        public static readonly SolidColorBrush Pink = HudPalette.Dive;
+        public static readonly SolidColorBrush Purple = HudPalette.Poke;
+
+        public static readonly SolidColorBrush GreenBg = HudPalette.GoodSoft;
+        public static readonly SolidColorBrush RedBg = HudPalette.BadSoft;
+        public static readonly SolidColorBrush TealBg = HudPalette.BrawlSoft;
+        public static readonly SolidColorBrush PinkBg = HudPalette.DiveSoft;
+        public static readonly SolidColorBrush BlueBg = HudPalette.InfoSoft;
+        public static readonly SolidColorBrush PurpleBg = HudPalette.PokeSoft;
+        public static readonly SolidColorBrush WhiteBg = HudPalette.NeutralSoft;
+    }
+}

@@ -8,30 +8,22 @@ namespace Owmeta.Display
     public partial class DataFreshnessIndicator : UserControl
     {
         private DateTime _lastUpdateTime;
+        private string? _note;
         private readonly DispatcherTimer _updateTimer;
 
         // Colors for different freshness levels
-        private static readonly SolidColorBrush FreshBrush = new(Color.FromRgb(0x10, 0xB9, 0x81));    // Green - < 1 min
-        private static readonly SolidColorBrush StaleBrush = new(Color.FromRgb(0xF5, 0x9E, 0x0B));    // Yellow/Amber - 1-3 min
-        private static readonly SolidColorBrush OldBrush = new(Color.FromRgb(0xEF, 0x44, 0x44));      // Red - > 3 min
-        private static readonly SolidColorBrush AnalyzingBrush = new(Color.FromRgb(0x3B, 0x82, 0xF6)); // Blue
-        private static readonly SolidColorBrush PartialBrush = new(Color.FromRgb(0x38, 0xBD, 0xF8));  // Light blue
-
-        static DataFreshnessIndicator()
-        {
-            // Freeze brushes for performance
-            FreshBrush.Freeze();
-            StaleBrush.Freeze();
-            OldBrush.Freeze();
-            AnalyzingBrush.Freeze();
-            PartialBrush.Freeze();
-        }
+        private static readonly SolidColorBrush FreshBrush = HudPalette.Good;      // < 1 min
+        private static readonly SolidColorBrush StaleBrush = HudPalette.Warn;      // 1-3 min
+        private static readonly SolidColorBrush OldBrush = HudPalette.Bad;         // > 3 min
+        private static readonly SolidColorBrush AnalyzingBrush = HudPalette.Info;
+        private static readonly SolidColorBrush PartialBrush = HudPalette.Dive;
 
         public DataFreshnessIndicator()
         {
             InitializeComponent();
 
             _lastUpdateTime = DateTime.MinValue;
+            UpdateDisplay();
 
             // Timer to update the display every 10 seconds
             _updateTimer = new DispatcherTimer
@@ -60,15 +52,18 @@ namespace Owmeta.Display
             _updateTimer.Stop();
         }
 
-        public void MarkUpdated()
+        /// <summary>Fresh data; <paramref name="note"/> qualifies it (e.g. a partially read frame) until the next update.</summary>
+        public void MarkUpdated(string? note = null)
         {
             _lastUpdateTime = DateTime.Now;
+            _note = note;
             UpdateDisplay();
         }
 
         public void Reset()
         {
             _lastUpdateTime = DateTime.MinValue;
+            _note = null;
             UpdateDisplay();
         }
 
@@ -77,7 +72,7 @@ namespace Owmeta.Display
             if (_lastUpdateTime == DateTime.MinValue)
             {
                 StatusText.Text = "No data yet";
-                StatusDot.Fill = OldBrush;
+                StatusDot.Fill = HudPalette.TextMuted;
                 return;
             }
 
@@ -85,24 +80,25 @@ namespace Owmeta.Display
 
             if (elapsed.TotalSeconds < 10)
             {
-                StatusText.Text = "Updated: Just now";
+                StatusText.Text = "Updated just now";
                 StatusDot.Fill = FreshBrush;
             }
             else if (elapsed.TotalSeconds < 60)
             {
-                StatusText.Text = $"Updated: {(int)elapsed.TotalSeconds}s ago";
+                StatusText.Text = $"Updated {(int)elapsed.TotalSeconds}s ago";
                 StatusDot.Fill = FreshBrush;
             }
             else if (elapsed.TotalMinutes < 3)
             {
-                StatusText.Text = $"Updated: {(int)elapsed.TotalMinutes}m ago";
+                StatusText.Text = $"Updated {(int)elapsed.TotalMinutes}m ago";
                 StatusDot.Fill = StaleBrush;
             }
             else
             {
-                StatusText.Text = $"Updated: {(int)elapsed.TotalMinutes}m ago";
+                StatusText.Text = $"Updated {(int)elapsed.TotalMinutes}m ago";
                 StatusDot.Fill = OldBrush;
             }
+            if (_note != null) StatusText.Text += $" · {_note}";
         }
 
         public void SetStatus(string status)
@@ -112,7 +108,7 @@ namespace Owmeta.Display
 
         public void SetAnalyzing()
         {
-            StatusText.Text = "Analyzing...";
+            StatusText.Text = "Analyzing scoreboard…";
             StatusDot.Fill = AnalyzingBrush;
         }
 
@@ -131,7 +127,8 @@ namespace Owmeta.Display
         public void SetPartialUpdate(int persistedCount)
         {
             _lastUpdateTime = DateTime.Now;
-            StatusText.Text = $"Updated ({persistedCount} heroes from memory)";
+            _note = $"{persistedCount} from memory";
+            StatusText.Text = $"Updated · {_note}";
             StatusDot.Fill = PartialBrush;
         }
     }

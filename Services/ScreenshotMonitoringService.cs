@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace Owmeta.Services
 {
@@ -12,6 +13,7 @@ namespace Owmeta.Services
         private readonly Dictionary<string, FileSystemWatcher> watchers = new Dictionary<string, FileSystemWatcher>();
         private readonly ApiService apiService;
         private readonly SynchronizationContext synchronizationContext;
+        private readonly ScreenshotCaptureThrottle captureThrottle = new(TimeSpan.FromSeconds(2));
         public event EventHandler<Model.ScreenshotProcessingResponse>? ScreenshotProcessed;
         public event EventHandler? AnalysisStarted;
         public event EventHandler<string>? AnalysisError;
@@ -156,12 +158,9 @@ namespace Owmeta.Services
 
                     try
                     {
-                        using var image = Image.FromFile(file);
-                        using var ms = new MemoryStream();
-                        Logger.Log($"[AUTO-TEST] Image: {image.Width}x{image.Height}");
-                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                        var base64String = Convert.ToBase64String(ms.ToArray());
-                        Logger.Log($"[AUTO-TEST] Sending {ms.Length} bytes...");
+                        var originalBytes = await ReadOriginalScreenshot(file);
+                        var base64String = Convert.ToBase64String(originalBytes);
+                        Logger.Log($"[AUTO-TEST] Sending {originalBytes.Length} original bytes...");
 
                         stopwatch.Restart();
 
@@ -259,10 +258,15 @@ namespace Owmeta.Services
             ProcessScreenshotAtIndex(_currentScreenshotIndex);
         }
 
-        public void CaptureAndProcessScreenshot()
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int key);
+
+        public void CaptureAndProcessScreenshot(CancellationToken cancellation = default, int heldKey = 0)
         {
+            var captureQueuedAt = Stopwatch.GetTimestamp();
             synchronizationContext.Post(async _ =>
             {
+                HudDiagnostics.Write($"capture-dispatched queueMs={Stopwatch.GetElapsedTime(captureQueuedAt).TotalMilliseconds:F2}");
                 // Check if Overwatch is running (unless in dev mode)
                 var overwatchProcess = Process.GetProcessesByName("Overwatch").FirstOrDefault();
                 if (!App.DEV_MODE && overwatchProcess == null)
@@ -271,11 +275,19 @@ namespace Owmeta.Services
                     return;
                 }
 
-                // Wait for the scoreboard to appear after TAB is pressed
-                await Task.Delay(AppSettings.Instance.ScreenshotDelayMs);
+                if (!captureThrottle.TryBeginCapture(DateTimeOffset.UtcNow, out var throttleReason))
+                {
+                    Logger.Log($"Screenshot capture skipped: {throttleReason}");
+                    return;
+                }
 
+                bool analyzing = false;
                 try
                 {
+                    HudDiagnostics.Write($"capture-start delayMs={AppSettings.Instance.ScreenshotDelayMs}");
+                    // Wait for the scoreboard to appear after TAB is pressed
+                    await Task.Delay(Math.Max(50, AppSettings.Instance.ScreenshotDelayMs), cancellation);
+
                     // Capture the screen where Overwatch is running
                     Screen? screen = null;
                     if (overwatchProcess != null && overwatchProcess.MainWindowHandle != IntPtr.Zero)
@@ -293,24 +305,31 @@ namespace Owmeta.Services
                     Logger.Log($"Capturing screen: {screen.DeviceName} ({screen.Bounds.Width}x{screen.Bounds.Height})");
 
                     var bounds = screen.Bounds;
-                    using var bitmap = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
-                    using (var graphics = Graphics.FromImage(bitmap))
+                    var base64String = await Task.Run(() =>
                     {
-                        graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
-                    }
-
-                    // Notify that analysis is starting
+                        void CheckHeld() {
+                            ScreenshotCaptureGuard.Check(cancellation,
+                                () => heldKey == 0 || (GetAsyncKeyState(heldKey) & 0x8000) != 0);
+                        }
+                        CheckHeld();
+                        var copyStarted = Stopwatch.GetTimestamp();
+                        using var bitmap = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
+                        using (var graphics = Graphics.FromImage(bitmap))
+                            graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+                        // Reject a release during the copy, but do not cancel an already
+                        // captured scoreboard while encoding or awaiting the worker.
+                        CheckHeld();
+                        HudDiagnostics.Write($"capture-copy elapsedMs={Stopwatch.GetElapsedTime(copyStarted).TotalMilliseconds:F2} size={bounds.Width}x{bounds.Height}");
+                        using var ms = new MemoryStream();
+                        var encodeStarted = Stopwatch.GetTimestamp();
+                        bitmap.Save(ms, ImageFormat.Png);
+                        HudDiagnostics.Write($"capture-encode elapsedMs={Stopwatch.GetElapsedTime(encodeStarted).TotalMilliseconds:F2} bytes={ms.Length}");
+                        return Convert.ToBase64String(ms.ToArray());
+                    });
+                    analyzing = true;
                     AnalysisStarted?.Invoke(this, EventArgs.Empty);
-
-                    // Convert to base64 directly in memory (no temp file needed)
-                    using var ms = new MemoryStream();
-                    bitmap.Save(ms, ImageFormat.Jpeg);
-                    var imageBytes = ms.ToArray();
-                    var base64String = Convert.ToBase64String(imageBytes);
-
-                    Logger.Log($"Screenshot captured ({imageBytes.Length} bytes)");
-
-                    var response = await apiService.SendScreenshotToServer(base64String);
+                    // Preparation, JSON/base64 and evidence writes also stay off the UI dispatcher.
+                    var response = await Task.Run(() => apiService.SendScreenshotToServer(base64String));
                     if (response != null)
                     {
                         ScreenshotProcessed?.Invoke(this, response);
@@ -321,10 +340,21 @@ namespace Owmeta.Services
                         AnalysisError?.Invoke(this, "No response from server");
                     }
                 }
+                // Only the delay/copy phase is cancelled by a key release; HttpClient timeouts
+                // during analysis also throw OperationCanceledException and must surface as errors.
+                catch (OperationCanceledException) when (!analyzing)
+                {
+                    HudDiagnostics.Write("capture-canceled key released before pixels were captured");
+                }
                 catch (Exception ex)
                 {
                     Logger.Log($"Error capturing/processing screenshot: {ex.Message}");
                     AnalysisError?.Invoke(this, "Error capturing screenshot");
+                }
+                finally
+                {
+                    captureThrottle.CompleteCapture();
+                    HudDiagnostics.Write($"capture-complete elapsedMs={Stopwatch.GetElapsedTime(captureQueuedAt).TotalMilliseconds:F2}");
                 }
             }, null);
         }
@@ -479,22 +509,22 @@ namespace Owmeta.Services
                     return;
                 }
 
+                if (!captureThrottle.TryBeginCapture(DateTimeOffset.UtcNow, out var throttleReason))
+                {
+                    Logger.Log($"Screenshot file skipped: {throttleReason}");
+                    return;
+                }
+
                 try
                 {
                     Logger.Log($"[DEV] Processing file: {e.FullPath}");
                     // Notify that analysis is starting
                     AnalysisStarted?.Invoke(sender ?? this, EventArgs.Empty);
 
-                    using (var image = Image.FromFile(e.FullPath))
-                    using (var ms = new MemoryStream())
                     {
-                        Logger.Log($"[DEV] Image size: {image.Width}x{image.Height}");
-                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                        var imageBytes = ms.ToArray();
+                        var imageBytes = await ReadOriginalScreenshot(e.FullPath);
                         Logger.Log($"[DEV] Base64 length: {imageBytes.Length} bytes");
-                        var base64String = Convert.ToBase64String(imageBytes);
-
-                        var response = await apiService.SendScreenshotToServer(base64String);
+                        var response = await Task.Run(() => apiService.SendScreenshotToServer(Convert.ToBase64String(imageBytes)));
                         if (response != null)
                         {
                             ScreenshotProcessed?.Invoke(sender ?? this, response);
@@ -511,7 +541,21 @@ namespace Owmeta.Services
                     Logger.Log($"Error processing screenshot: {ex.Message}");
                     AnalysisError?.Invoke(sender ?? this, "Error processing screenshot");
                 }
+                finally
+                {
+                    captureThrottle.CompleteCapture();
+                }
             }, null);
+        }
+
+        public static async Task<byte[]> ReadOriginalScreenshot(string path)
+        {
+            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (file.Length is <= 0 or > Owmeta.Vision.Preparation.FramePreparer.MaximumImageBytes)
+                throw new InvalidDataException("Screenshot file size is unsupported");
+            var bytes = new byte[(int)file.Length];
+            await file.ReadExactlyAsync(bytes);
+            return bytes;
         }
 
         public void Dispose()
