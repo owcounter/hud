@@ -78,8 +78,8 @@ jobs:
 
           | Variant | Description |
           |---------|-------------|
-          | **[Self-contained](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-self-contained.zip)** | Includes .NET runtime. Works out-of-the-box. |
-          | **[Framework-dependent](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-framework-dependent.zip)** | Smaller file. Requires [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) installed. |
+          | **[Self-contained](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-self-contained.zip)** | Includes .NET runtime. Needs the [Visual C++ x64 runtime](https://aka.ms/vs/17/release/vc_redist.x64.exe) (usually already installed). |
+          | **[Framework-dependent](https://github.com/$repo/releases/download/$version/OWMetaHUD-$version-framework-dependent.zip)** | Smaller file. Requires the [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and the [Visual C++ x64 runtime](https://aka.ms/vs/17/release/vc_redist.x64.exe). |
 
           ---
 

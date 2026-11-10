@@ -1,7 +1,7 @@
 // Synced from owmeta:csharp/Owmeta.Vision.Preparation/FramePreparer.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 using System.Buffers.Binary;
 using System.Diagnostics;
-using System.IO; // Explicit: the HUD's WPF implicit usings omit System.IO.
+using System.IO; // Explicit: WPF implicit usings omit System.IO.
 using Owmeta.Vision.Protocol;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Owmeta.Vision.Preparation;
 
-/// <summary>Geometry and pixels only: no hero, role, map or player recognition in the HUD.</summary>
+/// <summary>Geometry and pixels only: crops the scoreboard for <c>VisionEngine</c>, which does all recognition.</summary>
 public static class FramePreparer
 {
     public const int MaximumImageBytes = 24 * 1024 * 1024;
@@ -96,8 +96,8 @@ public static class FramePreparer
             using var crop = source.Clone(c => c.Crop(new Rectangle(b.X,b.Y,b.Width,b.Height)));
             using var stream = new MemoryStream(); crop.SaveAsPng(stream); return stream.ToArray();
         }
-        // Thin strips around friendly row boundaries. The worker decides whether an
-        // explicit selection outline is present; HUD merely samples the pixels.
+        // Thin strips around friendly row boundaries. The engine decides whether an
+        // explicit selection outline is present; preparation merely samples the pixels.
         var selectionEdges = new byte[5*2*7*160*3];
         for(int row=0;row<5;row++) for(int edge=0;edge<2;edge++) for(int dy=0;dy<7;dy++) for(int dx=0;dx<160;dx++) {
             int x=(int)Math.Round((faceX+best.Spacing*(1.2+dx/159.0*10))*scale);
@@ -121,7 +121,7 @@ public static class FramePreparer
             SelectionEdges = selectionEdges,
             PlayerPortrait=panelPacket, PlayerPortraitBox=panelPacket.Length>0 ? panelBox : null,
             MapPng = Png(ConvertBox(w*.55, 12, w*.43, 32)),
-            // Relative to the fitted scoreboard; absence or a changed panel produces UNKNOWN in the worker.
+            // Relative to the fitted scoreboard; absence or a changed panel produces UNKNOWN in the engine.
             PlayerNamePng = Png(ConvertBox(w-faceX-best.Spacing*5.85, best.Centers[0]+best.Spacing*2.1, best.Spacing*6.4, best.Spacing*.8)),
             PreparationMs = timer.Elapsed.TotalMilliseconds
         };

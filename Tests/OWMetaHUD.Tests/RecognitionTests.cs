@@ -51,7 +51,8 @@ internal static class RecognitionTests
         slots[0]=slots[0] with {Similarity=float.NaN};
         try {LocalRecognizer.ToMatchState(raw);throw new Exception("NaN accepted");}catch(ApiException){}
         if(ScreenshotMonitoringService.DescribeError(new RecognitionRejectedException("x",raw))!="Scoreboard not found · open it and try again"
-            || ScreenshotMonitoringService.DescribeError(new RecognitionUnavailableException("x",new IOException()))!="Recognition unavailable · reinstall the HUD"
+            || ScreenshotMonitoringService.DescribeError(new RecognitionUnavailableException("x",new IOException()))!="Recognition unavailable · restart or reinstall the HUD"
+            || ScreenshotMonitoringService.DescribeError(new RecognitionUnavailableException("x",new TypeInitializationException("Tesseract",new DllNotFoundException("onnxruntime"))))!="Recognition unavailable · install the Visual C++ x64 runtime"
             || ScreenshotMonitoringService.DescribeError(new UnauthorizedException("x"))!="Session expired · log in again"
             || ScreenshotMonitoringService.DescribeError(new System.Net.Http.HttpRequestException("x"))!="Server unreachable · try again")
             throw new Exception("Analysis error shown with the wrong message");

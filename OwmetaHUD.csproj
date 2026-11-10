@@ -48,5 +48,6 @@
   <ItemGroup>
     <!-- The recognition model pack ships next to the executable; its checksums are verified at load. -->
     <None Include="model-pack\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 // Synced from owmeta:csharp/Owmeta.Vision.Protocol/Protocol.cs by tools/portrait-prototype/sync-hud-vision.ps1. Edit the owmeta source, not this copy.
 namespace Owmeta.Vision.Protocol;
 
-// Versioned local playtest transport. Scores are similarities, never probabilities.
+// Versioned prepared-frame and recognition-result types. Scores are similarities, never probabilities.
 public sealed record Box(int X, int Y, int Width, int Height);
 public sealed record PreparedFrame
 {

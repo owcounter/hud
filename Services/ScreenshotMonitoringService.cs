@@ -557,7 +557,8 @@ namespace Owmeta.Services
         public static string DescribeError(Exception ex) => ex switch
         {
             RecognitionRejectedException => "Scoreboard not found · open it and try again",
-            RecognitionUnavailableException => "Recognition unavailable · reinstall the HUD",
+            RecognitionUnavailableException { NativeRuntimeMissing: true } => "Recognition unavailable · install the Visual C++ x64 runtime",
+            RecognitionUnavailableException => "Recognition unavailable · restart or reinstall the HUD",
             UnauthorizedException => "Session expired · log in again",
             HttpRequestException or TaskCanceledException => "Server unreachable · try again",
             ApiException => "Analysis failed · try again",

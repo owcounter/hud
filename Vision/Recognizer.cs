@@ -10,7 +10,7 @@ namespace PortraitPrototype;
 
 public sealed record Observation(int Hero, float Similarity, float Margin, int BestCandidate = 1, int RunnerUp = 1, string Reason = "accepted");
 
-/// <summary>Standalone prepared-crop worker. No network, history, app contracts, or legacy fallback.</summary>
+/// <summary>Portrait encoder and gallery matching on prepared crops. No network, history, app contracts, or legacy fallback.</summary>
 public sealed class Recognizer : IDisposable
 {
     const int Size = 48, CropBytes = Size * Size * 3;

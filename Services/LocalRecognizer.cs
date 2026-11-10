@@ -44,6 +44,7 @@ public sealed class LocalRecognizer : IDisposable
         }
         catch (Exception e) when (e is not OutOfMemoryException)
         {
+            Logger.Log($"Recognition engine failed to load: {e}");
             throw new RecognitionUnavailableException($"Recognition engine unavailable: {e.Message}", e);
         }
     }
@@ -64,7 +65,16 @@ public sealed class LocalRecognizer : IDisposable
         journal.WriteBytes("player-portrait.owp", frame.PlayerPortrait);
 
         var vision = await engine.Value;
-        var result = await Task.Run(() => vision.Process(frame));
+        RecognitionResult result;
+        // The engine validates the frame again (geometry, crop sizes): a frame it refuses is an
+        // unreadable scoreboard too, so the API keeps the previous heroes.
+        try { result = await Task.Run(() => vision.Process(frame)); }
+        catch (InvalidDataException e)
+        {
+            var rejected = new RecognitionResult { CaptureId = journal.Id, Valid = false, Reason = "engine-rejected: " + e.Message };
+            journal.Write("recognition.json", rejected);
+            throw new RecognitionRejectedException("Screenshot rejected: " + e.Message, rejected);
+        }
         journal.Write("recognition.json", result);
         journal.Write("timing.json", new { frame.PreparationMs, result.IdentityMs, result.WorkerMs });
         if (!result.Valid) throw new RecognitionRejectedException("Screenshot rejected: " + result.Reason, result);
@@ -126,4 +136,20 @@ public sealed class RecognitionRejectedException(string message, RecognitionResu
 }
 
 /// <summary>The bundled model pack or the recognition runtime could not be loaded.</summary>
-public sealed class RecognitionUnavailableException(string message, Exception inner) : Exception(message, inner);
+public sealed class RecognitionUnavailableException(string message, Exception inner) : Exception(message, inner)
+{
+    /// <summary>
+    /// A native library (ONNX Runtime, Tesseract, Leptonica) did not load, most often because the
+    /// Microsoft Visual C++ x64 runtime is not installed.
+    /// </summary>
+    public bool NativeRuntimeMissing
+    {
+        get
+        {
+            for (Exception? e = InnerException; e != null; e = e.InnerException)
+                if (e is DllNotFoundException or BadImageFormatException || e.Message.Contains("Failed to find library", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+    }
+}
