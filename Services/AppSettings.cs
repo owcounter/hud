@@ -9,6 +9,9 @@ namespace Owmeta.Services
         public int MinScoreF3 { get; set; } = 2;
         public bool TabScreenshotEnabled { get; set; } = true;
 
+        // F2: group swaps by the composition each hero is strong in
+        public bool GroupSwapsByComposition { get; set; } = false;
+
         // Keybindings - stored as virtual key codes (0 = disabled, negative = mouse button)
         // Mouse buttons: -1 = XButton1 (Mouse4), -2 = XButton2 (Mouse5)
         public int SwapSuggestionsKey { get; set; } = 0x71;  // F2

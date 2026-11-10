@@ -2,25 +2,25 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Owmeta.Display">
+    <UserControl.Resources>
+        <ResourceDictionary Source="/OWMetaHUD;component/Display/Theme.xaml"/>
+    </UserControl.Resources>
 
-    <Border Background="#BF111827"
-            CornerRadius="8"
-            Padding="10,6">
-
+    <Border x:Name="StatusPill" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal">
             <!-- Status dot -->
             <Ellipse x:Name="StatusDot"
-                    Width="8" Height="8"
-                    Fill="#10B981"
-                    Margin="0,0,8,0"
-                    VerticalAlignment="Center"/>
+                     Width="12" Height="12"
+                     Fill="{x:Static local:HudPalette.Good}"
+                     Margin="0,2,12,0"
+                     VerticalAlignment="Center"/>
 
             <!-- Status text -->
             <TextBlock x:Name="StatusText"
-                      Text="Updated: Just now"
-                      FontSize="12"
-                      Foreground="#9CA3AF"
-                      VerticalAlignment="Center"/>
+                       Text="Updated just now"
+                       Style="{StaticResource Hud.Board}"
+                       FontSize="26"
+                       Foreground="{x:Static local:HudPalette.TextSecondary}"/>
         </StackPanel>
     </Border>
 </UserControl>

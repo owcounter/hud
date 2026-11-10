@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using Owmeta.Model;
 using Owmeta.Services;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -27,6 +28,7 @@ namespace Owmeta.Display
         private const int WM_INPUT = 0x00FF;
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
+        private const int WM_SHOWWINDOW = 0x0018;
 
         // Hotkey IDs
         private const int SWAP_HOTKEY_ID = 9000;
@@ -48,9 +50,25 @@ namespace Owmeta.Display
         private MatchState? _matchState;
         private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
         private Dictionary<HeroName, HeroAnalysis>? _redTeamAnalysis;
+        private HeroName? _displayedPlayerHero;
+        private readonly MatchBoundaryTracker _matchBoundaryTracker = new();
 
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        private static extern int GetMessageTime();
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private const int SW_HIDE = 0;
+        private const int SW_SHOWNOACTIVATE = 4;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string? className, string? windowTitle);
@@ -60,12 +78,6 @@ namespace Owmeta.Display
 
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-        [DllImport("user32.dll")]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-        [DllImport("user32.dll")]
-        private static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 
         [DllImport("user32.dll")]
         private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
@@ -144,15 +156,6 @@ namespace Owmeta.Display
             public RAWKEYBOARD keyboard;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
-        }
-
         private const string OVERWATCH_WINDOW_TITLE = "Overwatch";
         private const string OVERWATCH_CLASS_NAME = "TankWindowClass";
         private readonly DispatcherTimer _positionTimer;
@@ -160,6 +163,14 @@ namespace Owmeta.Display
         private IntPtr _windowHandle;
         private readonly bool _devMode;
         private ScreenshotMonitoringService? _screenshotService;
+        private bool _boundsRefreshPending;
+        private bool _closed;
+        private bool _surfaceVisible;
+        private bool _dashboardUpdatePending;
+        private DispatcherTimer? _parkTimer;
+        private bool _parked;
+        private DispatcherTimer? _diagnosticTimer;
+        private long _diagnosticInputSequence;
 
         // Keybinding state
         private int _currentSwapKey;
@@ -176,10 +187,9 @@ namespace Owmeta.Display
         private bool _rawInputRegistered;
         private IntPtr _rawInputBuffer = IntPtr.Zero;  // Pre-allocated buffer to avoid per-keystroke allocation
         private uint _rawInputBufferSize;
-        private bool _hudWasVisibleBeforeScreenshot;
+        private readonly OverlayContentState _contentState = new();
+        private CancellationTokenSource? _captureCancellation;
         private bool _screenshotKeyPressed;
-        private Visibility _swapVisibilityBeforeScreenshot;
-        private Visibility _compVisibilityBeforeScreenshot;
 
         // Track hotkey pressed state to prevent flickering from key repeat
         private bool _swapKeyHeld;
@@ -189,9 +199,14 @@ namespace Owmeta.Display
         {
             _devMode = devMode;
 
-            Resources.Add("ScaleConverter", new ScaleConverter());
             InitializeComponent();
+            SwapContent.SizeChanged += (_, _) => SyncContentHeight();
+            CompositionDashboard.SizeChanged += (_, _) => SyncContentHeight();
+            NoDataPanel.SizeChanged += (_, _) => SyncContentHeight();
             InitializeWindow();
+            UpdateHotkeyLabels();
+            UpdateDataState();
+            UpdateHeaderTabs();
 
             // Register for display settings changed event
             SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
@@ -215,35 +230,32 @@ namespace Owmeta.Display
 
         private void OnDisplaySettingsChanged(object? sender, EventArgs e)
         {
-            Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+            QueueBoundsRefresh();
+        }
+
+        protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+        {
+            base.OnDpiChanged(oldDpi, newDpi);
+            // Let WPF process the DPI change before restoring the game's pixel bounds.
+            QueueBoundsRefresh();
+        }
+
+        private void QueueBoundsRefresh()
+        {
+            if (_closed || Dispatcher.HasShutdownStarted) return;
+            if (!Dispatcher.CheckAccess())
             {
-                try
-                {
-                    // Wait a moment for the display change to complete
-                    Thread.Sleep(1000);
-
-                    // Update window bounds to match primary screen
-                    SetToScreenResolution();
-
-                    // If window is visible, reposition it
-                    if (IsVisible)
-                    {
-                        var overwatchHandle = FindOverwatchWindow();
-                        if (overwatchHandle != IntPtr.Zero)
-                        {
-                            PositionOverOverwatch(overwatchHandle);
-                        }
-                        else if (!_devMode)
-                        {
-                            // Hide the window if Overwatch isn't found and we're not in dev mode
-                            Visibility = Visibility.Hidden;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log($"Error handling display settings change: {ex.Message}");
-                }
+                Dispatcher.BeginInvoke(new Action(QueueBoundsRefresh));
+                return;
+            }
+            if (_boundsRefreshPending) return;
+            _boundsRefreshPending = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+            {
+                _boundsRefreshPending = false;
+                if (_closed || _windowHandle == IntPtr.Zero) return;
+                SetToScreenResolution();
+                OnPositionCheck(this, EventArgs.Empty);
             }));
         }
 
@@ -265,6 +277,7 @@ namespace Owmeta.Display
 
             _source = HwndSource.FromHwnd(_windowHandle);
             _source.AddHook(HandleMessages);
+            ApplyRenderMode();
 
             // Register custom keybindings
             UpdateHotkeyRegistrations();
@@ -283,14 +296,31 @@ namespace Owmeta.Display
             // Set up mouse hook if needed
             SetupMouseHookIfNeeded();
 
-            // In dev mode, set resolution immediately since Overwatch isn't running
-            if (_devMode)
-            {
-                SetToScreenResolution();
-            }
+            // Also align the initially hidden overlay before its first hotkey toggle.
+            SetToScreenResolution();
 
-            Visibility = _devMode ? Visibility.Visible : Visibility.Hidden;
+            // Content toggles drive visibility; the HWND itself is parked (natively hidden)
+            // only after an empty frame was presented. See UnparkWindow/SchedulePark.
+            _contentState.GameAvailable = _devMode;
+            UpdateWindowVisibility();
             _positionTimer.Start();
+            _diagnosticTimer = HudDiagnostics.StartHeartbeat(Dispatcher);
+            TraceHudState("loaded");
+        }
+
+        // A hardware-rendered per-pixel-alpha window is read back from the GPU on every
+        // frame before DWM sees it; that readback queues behind a GPU-bound game (measured
+        // 0.25-2.2 s, frames dropped). Software rendering keeps the overlay off the game's
+        // GPU queue. OWMETA_HUD_RENDER_MODE=hardware remains for A/B diagnostics only.
+        private void ApplyRenderMode()
+        {
+            bool software = Environment.GetEnvironmentVariable("OWMETA_HUD_RENDER_MODE") != "hardware";
+            if (software && _source?.CompositionTarget != null)
+            {
+                _source.CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
+            }
+            Logger.Log($"Overlay render mode: {(software ? "software" : "hardware")}, tier={System.Windows.Media.RenderCapability.Tier >> 16}");
+            HudDiagnostics.Write($"render-mode software={software} tier={System.Windows.Media.RenderCapability.Tier >> 16}");
         }
 
         private void SetupMouseHookIfNeeded()
@@ -356,6 +386,7 @@ namespace Owmeta.Display
             // Track current keys for keyboard hook
             _currentSwapKey = settings.SwapSuggestionsKey;
             _currentTeamKey = settings.TeamCompositionKey;
+            UpdateHotkeyLabels();
             Logger.Log($"Hotkeys updated: Swap={KeyHelper.GetKeyName(settings.SwapSuggestionsKey)}, Team={KeyHelper.GetKeyName(settings.TeamCompositionKey)}");
 
             // Update mouse hook for mouse button bindings
@@ -381,19 +412,23 @@ namespace Owmeta.Display
             return IntPtr.Zero;
         }
 
+        // Enumerates every process (10-20 ms on the UI thread): callers only use it when
+        // the cheap window lookup fails.
+        private static bool IsOverwatchProcessRunning()
+        {
+            return Process.GetProcessesByName("Overwatch").Any();
+        }
+
         private void OnPositionCheck(object? sender, EventArgs e)
         {
+            using var diagnostic = HudDiagnostics.Measure("position-check", 30);
             var overwatchHandle = FindOverwatchWindow();
-            bool overwatchRunning = overwatchHandle != IntPtr.Zero;
+            bool overwatchRunning = overwatchHandle != IntPtr.Zero || IsOverwatchProcessRunning();
+            bool overwatchWindowFound = overwatchHandle != IntPtr.Zero;
 
-            if (!overwatchRunning && !_devMode)
-            {
-                if (IsVisible)
-                {
-                    Visibility = Visibility.Hidden;
-                }
-            }
-            else if (overwatchRunning && IsVisible)
+            _contentState.GameAvailable = OverwatchPresencePolicy.CanShowOverlay(_devMode, overwatchRunning, overwatchWindowFound);
+            UpdateWindowVisibility();
+            if (overwatchWindowFound && (_contentState.ShowSwap || _contentState.ShowComposition))
             {
                 PositionOverOverwatch(overwatchHandle);
             }
@@ -401,37 +436,17 @@ namespace Owmeta.Display
 
         private void PositionOverOverwatch(IntPtr overwatchHandle)
         {
-            if (GetWindowRect(overwatchHandle, out RECT overwatchRect))
-            {
-                // Get the screen where Overwatch is running
-                var screen = Screen.FromHandle(overwatchHandle);
-
-                int width = overwatchRect.Right - overwatchRect.Left;
-                int height = overwatchRect.Bottom - overwatchRect.Top;
-
-                if (Left != overwatchRect.Left || Top != overwatchRect.Top ||
-                    Width != width || Height != height)
-                {
-                    // Ensure the window is on the correct screen and has the right size
-                    MoveWindow(_windowHandle, overwatchRect.Left, overwatchRect.Top, width, height, true);
-                    SetWindowPos(_windowHandle, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0,
-                        SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-
-                    // Update window position properties
-                    Left = overwatchRect.Left;
-                    Top = overwatchRect.Top;
-                    Width = width;
-                    Height = height;
-                }
-            }
-            else
-            {
-                Logger.Log("Failed to get Overwatch window rectangle");
-            }
+            using var diagnostic = HudDiagnostics.Measure("position-apply", 5);
+            // A minimized/invalid target has no usable client rectangle; keep the last
+            // bounds until it returns instead of moving to Windows' minimized coordinates.
+            OverlayPlacement.TryFollowWindow(_windowHandle, overwatchHandle);
         }
 
         private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            _captureCancellation?.Cancel();
+            _captureCancellation?.Dispose();
+            _diagnosticTimer?.Stop();
             _positionTimer.Stop();
 
             // Remove mouse hook
@@ -534,43 +549,24 @@ namespace Owmeta.Display
         {
             try
             {
-                // Get the screen where Overwatch is running
+                if (_windowHandle == IntPtr.Zero) return;
                 var overwatchHandle = FindOverwatchWindow();
                 if (overwatchHandle != IntPtr.Zero)
                 {
-                    var screen = Screen.FromHandle(overwatchHandle);
-                    Width = screen.Bounds.Width;
-                    Height = screen.Bounds.Height;
+                    PositionOverOverwatch(overwatchHandle);
                 }
                 else
                 {
-                    // Fallback to primary screen actual pixels (not WPF logical units)
                     var primaryScreen = Screen.PrimaryScreen;
                     if (primaryScreen != null)
                     {
-                        Left = primaryScreen.Bounds.Left;
-                        Top = primaryScreen.Bounds.Top;
-                        Width = primaryScreen.Bounds.Width;
-                        Height = primaryScreen.Bounds.Height;
-                        Logger.Log($"Using primary screen: pos=({Left},{Top}) size={Width}x{Height}");
-                    }
-                    else
-                    {
-                        Left = 0;
-                        Top = 0;
-                        Width = SystemParameters.PrimaryScreenWidth;
-                        Height = SystemParameters.PrimaryScreenHeight;
+                        OverlayPlacement.TrySetBounds(_windowHandle, primaryScreen.Bounds);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error setting screen resolution: {ex.Message}");
-                // Fallback to primary screen
-                Left = 0;
-                Top = 0;
-                Width = SystemParameters.PrimaryScreenWidth;
-                Height = SystemParameters.PrimaryScreenHeight;
             }
         }
 
@@ -578,55 +574,88 @@ namespace Owmeta.Display
         {
             Dispatcher.Invoke(() =>
             {
-                bool knownMapChanged = MatchBoundaryPolicy.IsKnownMapChange(_matchState?.Map, response.MatchState.Map);
+                using var diagnostic = HudDiagnostics.Measure("apply-analysis-ui");
+                // Filter out Unknown/Hidden heroes, keeping only recognized ones
+                // F2 and F3 read the same team: the blue team with the player's own analysis.
+                var filteredBlue = FilterUnknownHeroes(ServerRecognitionContract.PlayerAnalyses(response));
+                var filteredRed = FilterUnknownHeroes(response.RedTeamAnalysis);
+
+                bool knownMapChanged = _matchBoundaryTracker.Observe(response.MatchState.Map);
                 if (knownMapChanged)
                 {
-                    ResetAnalysisState($"map changed from {_matchState?.Map} to {response.MatchState.Map}");
+                    ResetAnalysisState($"map changed to {response.MatchState.Map}");
                 }
 
                 _matchState = response.MatchState;
 
-                // Filter out Unknown/Hidden heroes, keeping only recognized ones
-                var filteredBlue = FilterUnknownHeroes(response.BlueTeamAnalysis);
-                var filteredRed = FilterUnknownHeroes(response.RedTeamAnalysis);
+                // The backend marks historical values explicitly; raw worker evidence
+                // stays separate and is never overwritten by this display state.
+                _blueTeamAnalysis = filteredBlue;
+                _redTeamAnalysis = filteredRed;
 
-                // Only update if we have valid data (at least some recognized heroes)
-                // This preserves previous known data when detection fails
-                if (filteredBlue.Count > 0)
-                    _blueTeamAnalysis = filteredBlue;
-
-                if (filteredRed.Count > 0)
-                    _redTeamAnalysis = filteredRed;
+                Logger.Log(
+                    $"HUD response: map={response.MatchState.Map}, player={response.MatchState.PlayerHero}, blueRecognized={filteredBlue.Count}, redRecognized={filteredRed.Count}, persistedRed={response.PersistedRedTeamSlots.Count}, knownMapChanged={knownMapChanged}");
 
                 if (_blueTeamAnalysis != null)
-                    BlueTeamPanel.UpdateCompositions(_blueTeamAnalysis);
-
-                if (_redTeamAnalysis != null)
-                    RedTeamPanel.UpdateCompositions(_redTeamAnalysis);
-
-                if (_matchState?.PlayerHero != null && _blueTeamAnalysis != null)
                 {
-                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
+                    var selectedHero = SelectedHeroPolicy.ResolveForSwapPanel(response.MatchState.PlayerHero, null, _blueTeamAnalysis);
+
+                    response.Capture?.Write("displayed.json", new {
+                        map = (int)response.MatchState.Map,
+                        observedPlayer = response.RecognizedMatchState == null ? (int?)null : (int)response.RecognizedMatchState.PlayerHero,
+                        displayedPlayer = selectedHero.Hero.HasValue ? (int?)selectedHero.Hero.Value : null,
+                        UsedPreviousHero = response.PersistedPlayerHero, selectedHero.Reason,
+                        blueHeroes = _blueTeamAnalysis.Keys.Select(h => (int)h).ToArray(),
+                        redHeroes = _redTeamAnalysis?.Keys.Select(h => (int)h).ToArray(),
+                        response.PersistedBlueTeamSlots, response.PersistedRedTeamSlots, response.PersistedPlayerHero, response.RecognitionFailed,
+                        captureWarning = response.Capture.Warning
+                    });
+
+                    if (selectedHero.Hero.HasValue)
+                    {
+                        if (response.PersistedPlayerHero)
+                        {
+                            Logger.Log($"F2 using previous selected hero {selectedHero.Hero.Value}: {selectedHero.Reason}");
+                        }
+
+                        _displayedPlayerHero = selectedHero.Hero.Value;
+                        SwapSuggestionsPanel.UpdateSuggestions(selectedHero.Hero.Value, _blueTeamAnalysis, _redTeamAnalysis);
+                    }
+                    else
+                    {
+                        _displayedPlayerHero = null;
+                        SwapSuggestionsPanel.UpdateSuggestions(HeroName.Unknown, _blueTeamAnalysis, _redTeamAnalysis,
+                            "HERO NOT IDENTIFIED · OPEN THE SCOREBOARD AGAIN");
+                        Logger.Log($"F2 cleared: {selectedHero.Reason}");
+                    }
 
                     // Show appropriate status indicator
                     // Always mark as updated on successful API response — even if some heroes are Unknown.
                     // The hero panels still fall back to cached data internally, but the indicator
                     // reflects that the server responded successfully.
-                    bool hasPersistedSlots = response.PersistedBlueTeamSlots.Count > 0 ||
-                                             response.PersistedRedTeamSlots.Count > 0;
+                    int persistedSlotCount = response.PersistedBlueTeamSlots.Count +
+                                             response.PersistedRedTeamSlots.Count;
+                    bool hasPersistedSlots = persistedSlotCount > 0;
 
-                    if (hasPersistedSlots)
-                        DataFreshnessIndicator.SetPartialUpdate(
-                            response.PersistedBlueTeamSlots.Count + response.PersistedRedTeamSlots.Count);
+                    // A wholly rejected frame keeps the previous data age; partial successes are fresh data.
+                    if (response.RecognitionFailed)
+                        DataFreshnessIndicator.SetStatus("Screenshot unreadable; using previous results");
+                    else if (response.Capture?.Warning != null)
+                        DataFreshnessIndicator.MarkUpdated("capture recording failed - check log");
+                    else if (response.PersistedPlayerHero)
+                        DataFreshnessIndicator.MarkUpdated("previous player hero");
+                    else if (HasUnreadablePortrait(response.RecognizedMatchState))
+                        DataFreshnessIndicator.MarkUpdated("some portraits unreadable");
+                    else if (hasPersistedSlots)
+                        DataFreshnessIndicator.SetPartialUpdate(persistedSlotCount);
                     else
                         DataFreshnessIndicator.MarkUpdated();
                 }
 
                 // Update composition dashboard (F3 layout)
-                if (_blueTeamAnalysis != null && _redTeamAnalysis != null)
-                {
-                    CompositionDashboard.Update(_blueTeamAnalysis, _redTeamAnalysis);
-                }
+                ScheduleCompositionDashboardUpdate();
+                UpdateMapInfo();
+                UpdateDataState();
 
                 if (knownMapChanged && filteredBlue.Count == 0 && filteredRed.Count == 0)
                 {
@@ -635,6 +664,11 @@ namespace Owmeta.Display
             });
         }
 
+        // The worker reports a portrait it could not identify as UNKNOWN in the raw observation.
+        private static bool HasUnreadablePortrait(MatchState? recognized) =>
+            recognized != null && new[] { recognized.BlueTeam, recognized.RedTeam }.Any(team => team != null &&
+                new[] { team.Tank, team.Damage1, team.Damage2, team.Support1, team.Support2 }.Contains(HeroName.Unknown));
+
         private static Dictionary<HeroName, HeroAnalysis> FilterUnknownHeroes(
             Dictionary<HeroName, HeroAnalysis>? data)
         {
@@ -642,6 +676,7 @@ namespace Owmeta.Display
 
             return data
                 .Where(kvp => kvp.Key != HeroName.Unknown &&
+                              kvp.Key != HeroName.Hidden &&
                               kvp.Key != HeroName.NameUnspecified)
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
@@ -666,15 +701,13 @@ namespace Owmeta.Display
         {
             Dispatcher.Invoke(() =>
             {
-                if (_matchState?.PlayerHero != null && _blueTeamAnalysis != null)
+                // Settings changes (grouping, min score) rebuild the view for the hero already shown.
+                if (_displayedPlayerHero.HasValue && _blueTeamAnalysis != null)
                 {
-                    SwapSuggestionsPanel.UpdateSuggestions(_matchState.PlayerHero, _blueTeamAnalysis, _matchState.Map);
+                    SwapSuggestionsPanel.UpdateSuggestions(_displayedPlayerHero.Value, _blueTeamAnalysis, _redTeamAnalysis);
                 }
 
-                if (_blueTeamAnalysis != null && _redTeamAnalysis != null)
-                {
-                    CompositionDashboard.Update(_blueTeamAnalysis, _redTeamAnalysis);
-                }
+                UpdateCompositionDashboard();
 
                 // Update hotkey registrations based on current settings
                 UpdateHotkeyRegistrations();
@@ -682,109 +715,289 @@ namespace Owmeta.Display
             });
         }
 
+        // Rebuilding the hidden F3 dashboard costs ~80 ms of layout; run it below input
+        // priority so an F2 pressed right after an analysis is not queued behind it.
+        private void ScheduleCompositionDashboardUpdate()
+        {
+            if (CompositionLayout.Visibility == Visibility.Visible)
+            {
+                UpdateCompositionDashboard();
+                return;
+            }
+            if (_dashboardUpdatePending) return;
+            _dashboardUpdatePending = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(FlushCompositionDashboardUpdate));
+        }
+
+        private void FlushCompositionDashboardUpdate()
+        {
+            if (!_dashboardUpdatePending) return;
+            _dashboardUpdatePending = false;
+            UpdateCompositionDashboard();
+        }
+
+        private void UpdateCompositionDashboard()
+        {
+            if (_blueTeamAnalysis == null)
+            {
+                return;
+            }
+
+            CompositionDashboard.Update(
+                _blueTeamAnalysis,
+                _redTeamAnalysis ?? new Dictionary<HeroName, HeroAnalysis>(),
+                _matchState?.Map);
+        }
+
         private void ResetAnalysisState(string reason)
         {
             _matchState = null;
             _blueTeamAnalysis = null;
             _redTeamAnalysis = null;
+            _displayedPlayerHero = null;
 
-            BlueTeamPanel.Clear();
-            RedTeamPanel.Clear();
             SwapSuggestionsPanel.Clear();
             CompositionDashboard.Clear();
             DataFreshnessIndicator.Reset();
+            UpdateMapInfo();
+            UpdateDataState();
 
             Logger.Log($"HUD analysis cache reset: {reason}");
         }
 
-        public void ToggleVisibility()
+        private void UpdateMapInfo()
         {
-            var overwatchHandle = FindOverwatchWindow();
-            bool overwatchRunning = overwatchHandle != IntPtr.Zero;
+            var map = _matchState?.Map;
+            bool known = map.HasValue && map.Value != MapName.MapUnspecified && map.Value != MapName.AllMaps;
+            MapNameText.Text = known ? HudFormat.MapName(map!.Value) : string.Empty;
+            MapInfo.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
+        }
 
-            if (!_devMode && !overwatchRunning)
-            {
-                return;
-            }
+        // Until the first analysis with heroes arrives, both layouts show the same "how to get data" panel.
+        private void UpdateDataState()
+        {
+            bool hasData = _blueTeamAnalysis is { Count: > 0 } || _redTeamAnalysis is { Count: > 0 };
+            SwapContent.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
+            CompositionDashboard.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
+            NoDataPanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
+            SyncContentHeight();
+        }
 
-            // If F3 layout is visible, switch to F2
-            if (CompositionLayout.Visibility == Visibility.Visible)
+        private void SyncContentHeight()
+        {
+            FrameworkElement? active =
+                NoDataPanel.Visibility == Visibility.Visible ? NoDataPanel
+                : SwapLayout.Visibility == Visibility.Visible ? SwapContent
+                : CompositionLayout.Visibility == Visibility.Visible ? CompositionDashboard
+                : null;
+            if (active == null) return;
+            double height = active.ActualHeight > 0 ? active.ActualHeight : active.DesiredSize.Height;
+            if (height > 0) ContentHost.Height = height;
+        }
+
+        private void UpdateHotkeyLabels()
+        {
+            var settings = AppSettings.Instance;
+            var swapKey = KeyHelper.GetKeyName(settings.SwapSuggestionsKey);
+            var teamKey = KeyHelper.GetKeyName(settings.TeamCompositionKey);
+
+            SwapKeyText.Text = swapKey;
+            TeamKeyText.Text = teamKey;
+            HintSwapKeyText.Text = swapKey;
+            HintTeamKeyText.Text = teamKey;
+
+            if (settings.TabScreenshotEnabled)
             {
-                CompositionLayout.Visibility = Visibility.Hidden;
-                SwapLayout.Visibility = Visibility.Visible;
+                CaptureKeyText.Text = KeyHelper.GetKeyName(settings.ScreenshotKey);
+                CaptureHint.Visibility = Visibility.Visible;
+                NoDataTitle.Text = "Open the scoreboard to analyze this match";
             }
             else
             {
-                // Toggle SwapLayout (F2)
-                SwapLayout.Visibility = SwapLayout.Visibility == Visibility.Visible
-                    ? Visibility.Hidden
-                    : Visibility.Visible;
+                CaptureHint.Visibility = Visibility.Collapsed;
+                NoDataTitle.Text = "Take a scoreboard screenshot to analyze this match";
             }
+        }
+
+        // The header and "no data" panel sit outside the F2/F3 layouts, so the whole HUD
+        // surface is shown only while one of the layouts is active (and never during capture).
+        private void UpdateHeaderTabs()
+        {
+            bool swapActive = SwapLayout.Visibility == Visibility.Visible;
+            bool teamActive = CompositionLayout.Visibility == Visibility.Visible;
+            bool surfaceVisible = swapActive || teamActive;
+            MainGrid.Visibility = surfaceVisible ? Visibility.Visible : Visibility.Hidden;
+            SetTabState(SwapTab, SwapTabText, swapActive);
+            SetTabState(TeamTab, TeamTabText, teamActive);
+            SyncContentHeight();
+            if (surfaceVisible != _surfaceVisible)
+            {
+                _surfaceVisible = surfaceVisible;
+                TraceSurfaceChange(surfaceVisible);
+            }
+        }
+
+        // Pairs with the external probe, which timestamps when the marker actually reaches the screen.
+        private void TraceSurfaceChange(bool visible)
+        {
+            if (!HudDiagnostics.Enabled) return;
+            PresentProbeMarker.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            HudDiagnostics.Write($"hud-surface visible={visible} inputSeq={_diagnosticInputSequence}");
+            EventHandler? onFrame = null;
+            onFrame = (_, _) =>
+            {
+                System.Windows.Media.CompositionTarget.Rendering -= onFrame;
+                HudDiagnostics.Write($"wpf-frame visible={visible} inputSeq={_diagnosticInputSequence}");
+            };
+            System.Windows.Media.CompositionTarget.Rendering += onFrame;
+        }
+
+        private static void SetTabState(System.Windows.Controls.Border tab, System.Windows.Controls.TextBlock label, bool active)
+        {
+            tab.Background = active ? HudPalette.TabActive : HudPalette.TabIdle;
+            label.Foreground = active ? HudPalette.TabActiveText : HudPalette.TabIdleText;
+        }
+
+        public void ToggleVisibility()
+        {
+            using var diagnostic = HudDiagnostics.Measure("toggle-f2-total");
+            TraceHudState("f2-begin");
+            var presenceStart = Stopwatch.GetTimestamp();
+            var overwatchHandle = FindOverwatchWindow();
+            bool overwatchRunning = overwatchHandle != IntPtr.Zero || IsOverwatchProcessRunning();
+            bool overwatchWindowFound = overwatchHandle != IntPtr.Zero;
+            HudDiagnostics.Write($"f2-presence elapsedMs={Stopwatch.GetElapsedTime(presenceStart).TotalMilliseconds:F2} running={overwatchRunning} found={overwatchWindowFound}");
+
+            if (!OverwatchPresencePolicy.CanShowOverlay(_devMode, overwatchRunning, overwatchWindowFound))
+            {
+                Logger.Log("F2 ignored: Overwatch is not running");
+                return;
+            }
+
+            _contentState.GameAvailable = true;
+            _contentState.Toggle(1);
 
             UpdateWindowVisibility();
 
-            if (IsVisible && overwatchRunning)
+            Logger.Log($"F2 toggled: swap={SwapLayout.Visibility}, composition={CompositionLayout.Visibility}, processRunning={overwatchRunning}, windowFound={overwatchWindowFound}");
+
+            if (IsVisible && overwatchWindowFound)
             {
                 PositionOverOverwatch(overwatchHandle);
             }
+            else if (IsVisible)
+            {
+                SetToScreenResolution();
+            }
+            TraceHudState("f2-end");
         }
 
         public void ToggleCompositionDashboard()
         {
+            using var diagnostic = HudDiagnostics.Measure("toggle-f3-total");
+            TraceHudState("f3-begin");
             var overwatchHandle = FindOverwatchWindow();
-            bool overwatchRunning = overwatchHandle != IntPtr.Zero;
+            bool overwatchRunning = overwatchHandle != IntPtr.Zero || IsOverwatchProcessRunning();
+            bool overwatchWindowFound = overwatchHandle != IntPtr.Zero;
 
-            if (!_devMode && !overwatchRunning)
+            if (!OverwatchPresencePolicy.CanShowOverlay(_devMode, overwatchRunning, overwatchWindowFound))
             {
+                Logger.Log("F3 ignored: Overwatch is not running");
                 return;
             }
 
-            // If F2 layout is visible, switch to F3
-            if (SwapLayout.Visibility == Visibility.Visible)
-            {
-                SwapLayout.Visibility = Visibility.Hidden;
-                CompositionLayout.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                // Toggle CompositionLayout (F3)
-                CompositionLayout.Visibility = CompositionLayout.Visibility == Visibility.Visible
-                    ? Visibility.Hidden
-                    : Visibility.Visible;
-            }
+            _contentState.GameAvailable = true;
+            _contentState.Toggle(2);
 
             UpdateWindowVisibility();
 
-            if (IsVisible && overwatchRunning)
+            Logger.Log($"F3 toggled: swap={SwapLayout.Visibility}, composition={CompositionLayout.Visibility}, processRunning={overwatchRunning}, windowFound={overwatchWindowFound}");
+
+            if (IsVisible && overwatchWindowFound)
             {
                 PositionOverOverwatch(overwatchHandle);
             }
+            else if (IsVisible)
+            {
+                SetToScreenResolution();
+            }
+            TraceHudState("f3-end");
+        }
+
+        private void TraceHudState(string reason)
+        {
+            if (!HudDiagnostics.Enabled) return;
+            HudDiagnostics.Write($"hud-state reason={reason} inputSeq={_diagnosticInputSequence} window={Visibility} isVisible={IsVisible} nativeVisible={IsWindowVisible(_windowHandle)} swap={SwapLayout.Visibility} composition={CompositionLayout.Visibility} tabHeld={_screenshotKeyPressed} f2Held={_swapKeyHeld} f3Held={_teamKeyHeld} foreground=0x{GetForegroundWindow().ToInt64():X}");
         }
 
         private void UpdateWindowVisibility()
         {
-            // Show window if any layout is visible
-            bool anyVisible = SwapLayout.Visibility == Visibility.Visible ||
-                              CompositionLayout.Visibility == Visibility.Visible;
-            Visibility = anyVisible ? Visibility.Visible : Visibility.Hidden;
+            using var diagnostic = HudDiagnostics.Measure("set-window-visibility");
+            TraceHudState("visibility-before");
+            bool surfaceVisible = _contentState.ShowSwap || _contentState.ShowComposition;
+            if (surfaceVisible) UnparkWindow();
+            // A capture finished while F3 was hidden (Tab held) leaves its rebuild pending at
+            // background priority: apply it before the layout shows, never the old rows.
+            if (_contentState.ShowComposition) FlushCompositionDashboardUpdate();
+            SwapLayout.Visibility = _contentState.ShowSwap ? Visibility.Visible : Visibility.Hidden;
+            CompositionLayout.Visibility = _contentState.ShowComposition ? Visibility.Visible : Visibility.Hidden;
+            UpdateHeaderTabs();
+            if (!surfaceVisible) SchedulePark();
+            TraceHudState("visibility-after");
+            if (HudDiagnostics.Enabled)
+            {
+                var sequence = _diagnosticInputSequence;
+                var queuedAt = Stopwatch.GetTimestamp();
+                Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+                {
+                    if (_closed) return;
+                    HudDiagnostics.Write($"visibility-dispatcher-idle originInputSeq={sequence} elapsedMs={Stopwatch.GetElapsedTime(queuedAt).TotalMilliseconds:F2}");
+                    TraceHudState("visibility-idle");
+                }));
+            }
         }
 
-        private async void CaptureScreenshotWithHiddenHud()
+        // A shown full-screen layered window, even fully transparent, forces DWM to compose
+        // every game frame. Hide the HWND once its transparent frame has been presented, and
+        // reshow it (still transparent) before content becomes visible, so no stale frame flashes.
+        private void UnparkWindow()
         {
-            // Visibility state was already captured in KeyboardHookCallback before dispatch
-            // Hide the HUD so it doesn't appear in the screenshot
-            if (_hudWasVisibleBeforeScreenshot)
+            _parkTimer?.Stop();
+            if (!_parked || _windowHandle == IntPtr.Zero) return;
+            _parked = false;
+            ShowWindow(_windowHandle, SW_SHOWNOACTIVATE);
+            SetWindowPos(_windowHandle, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0,
+                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+            HudDiagnostics.Write($"native-unpark inputSeq={_diagnosticInputSequence}");
+        }
+
+        private void SchedulePark()
+        {
+            if (_parked || _windowHandle == IntPtr.Zero) return;
+            if (_parkTimer == null)
             {
-                SwapLayout.Visibility = Visibility.Hidden;
-                CompositionLayout.Visibility = Visibility.Hidden;
-                UpdateWindowVisibility();
-
-                // Wait for the UI to update before capturing
-                await Task.Delay(50);
+                _parkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+                _parkTimer.Tick += (_, _) =>
+                {
+                    _parkTimer.Stop();
+                    if (_closed || _parked || _contentState.ShowSwap || _contentState.ShowComposition) return;
+                    _parked = true;
+                    ShowWindow(_windowHandle, SW_HIDE);
+                    HudDiagnostics.Write($"native-park inputSeq={_diagnosticInputSequence}");
+                };
             }
+            // Not restarted by the periodic position check, only started once per hide.
+            if (!_parkTimer.IsEnabled) _parkTimer.Start();
+        }
 
-            // Capture the screenshot
-            _screenshotService?.CaptureAndProcessScreenshot();
+        private void CaptureScreenshotWithHiddenHud()
+        {
+            TraceHudState("tab-capture-begin");
+            _contentState.Capturing = true;
+            UpdateWindowVisibility();
+            _captureCancellation?.Dispose();
+            _captureCancellation = new CancellationTokenSource();
+            _screenshotService?.CaptureAndProcessScreenshot(_captureCancellation.Token, _currentScreenshotKey);
         }
 
         private void HandleRawInput(IntPtr lParam)
@@ -807,6 +1020,12 @@ namespace Owmeta.Display
             bool isKeyDown = raw.keyboard.Message == WM_KEYDOWN;
             bool isKeyUp = raw.keyboard.Message == WM_KEYUP;
             if (!isKeyDown && !isKeyUp) return;
+            if (HudDiagnostics.Enabled)
+            {
+                _diagnosticInputSequence++;
+                var queueAge = unchecked((uint)Environment.TickCount - (uint)GetMessageTime());
+                HudDiagnostics.Write($"hotkey seq={_diagnosticInputSequence} vk={vkCode} down={isKeyDown} queueAgeMs={queueAge} device=0x{raw.header.hDevice.ToInt64():X} flags={raw.keyboard.Flags} tabHeld={_screenshotKeyPressed} f2Held={_swapKeyHeld} f3Held={_teamKeyHeld}");
+            }
 
                 // Handle screenshot key
                 if (vkCode == _currentScreenshotKey)
@@ -814,11 +1033,6 @@ namespace Owmeta.Display
                     if (isKeyDown && !_screenshotKeyPressed)
                     {
                         _screenshotKeyPressed = true;
-                        _swapVisibilityBeforeScreenshot = SwapLayout.Visibility;
-                        _compVisibilityBeforeScreenshot = CompositionLayout.Visibility;
-                        _hudWasVisibleBeforeScreenshot =
-                            _swapVisibilityBeforeScreenshot == Visibility.Visible ||
-                            _compVisibilityBeforeScreenshot == Visibility.Visible;
 
                         Logger.Log($"Screenshot key pressed (vkCode={vkCode})");
                         CaptureScreenshotWithHiddenHud();
@@ -827,12 +1041,9 @@ namespace Owmeta.Display
                     {
                         _screenshotKeyPressed = false;
                         Logger.Log("Screenshot key released - restoring HUD");
-                        if (_hudWasVisibleBeforeScreenshot)
-                        {
-                            SwapLayout.Visibility = _swapVisibilityBeforeScreenshot;
-                            CompositionLayout.Visibility = _compVisibilityBeforeScreenshot;
-                            UpdateWindowVisibility();
-                        }
+                        _captureCancellation?.Cancel();
+                        _contentState.Capturing = false;
+                        UpdateWindowVisibility();
                     }
                 }
 
@@ -872,6 +1083,10 @@ namespace Owmeta.Display
                 case WM_INPUT:
                     HandleRawInput(lParam);
                     break;
+                case WM_SHOWWINDOW:
+                    if (HudDiagnostics.Enabled)
+                        HudDiagnostics.Write($"native-showwindow show={wParam != IntPtr.Zero} reason={lParam.ToInt64()} inputSeq={_diagnosticInputSequence}");
+                    break;
                 case WM_HOTKEY when wParam.ToInt32() == F5_HOTKEY_ID:
                     Logger.Log("[DEV] F5 pressed - previous screenshot");
                     _screenshotService?.PreviousScreenshot();
@@ -884,7 +1099,6 @@ namespace Owmeta.Display
                     break;
                 case WM_DISPLAYCHANGE:
                     OnDisplaySettingsChanged(this, EventArgs.Empty);
-                    handled = true;
                     break;
             }
             return IntPtr.Zero;
@@ -892,6 +1106,7 @@ namespace Owmeta.Display
 
         protected override void OnClosed(EventArgs e)
         {
+            _closed = true;
             SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
             base.OnClosed(e);
         }

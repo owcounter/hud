@@ -33,3 +33,8 @@ msbuild.wrn
 
 # direnv
 .envrc
+
+# Local authentication and diagnostic captures are never source artifacts.
+owmeta_oauth_token.json
+recognition-captures/
+local-bundles/

@@ -11,6 +11,7 @@
     <NoWarn>CS8981</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>OWMetaHUD.ico</ApplicationIcon>
     <Version>1.1.2</Version>
   </PropertyGroup>
@@ -21,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Tests\**\*.cs" />
+    <Compile Remove="tools\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Model\"/>

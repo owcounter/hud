@@ -8,59 +8,118 @@ using System.Windows.Media.Imaging;
 
 namespace Owmeta.Display
 {
+    /// <summary>
+    /// F2: the composition table, then your hero as the first row of a table (who he counters, who
+    /// counters him, his compositions), then the swap suggestions in the same columns, ranked by score.
+    /// No suggestion is singled out. The composition to fit is computed without your own hero
+    /// (<see cref="CompositionPolicy.FitTarget"/>). With <see cref="AppSettings.GroupSwapsByComposition"/>
+    /// the suggestions are grouped by the composition each hero is strong in, the composition to fit first.
+    /// </summary>
     public partial class SwapSuggestionsPanel : UserControl
     {
-        public ObservableCollection<HeroSuggestionViewModel> SwapSuggestions { get; } = new();
-        private HeroSuggestionViewModel? _currentHero;
-        private MapName? _currentMap;
-        private Dictionary<HeroName, HeroAnalysis>? _blueTeamAnalysis;
+        /// <summary>Suggestion rows that fit on screen under your hero.</summary>
+        public const int MaxOptions = 9;
+
+        public ObservableCollection<object> Rows { get; } = new();
+
+        /// <summary>The player's hero and score.</summary>
+        public (HeroName Hero, int Score)? CurrentHero { get; private set; }
 
         public SwapSuggestionsPanel()
         {
             InitializeComponent();
-            SuggestionsControl.ItemsSource = SwapSuggestions;
+            SuggestionsControl.ItemsSource = Rows;
         }
 
-        public void Clear()
+        public void Clear() => Clear(null);
+
+        /// <summary>
+        /// Clears the panel. When <paramref name="notice"/> is set it is shown in place of the table.
+        /// </summary>
+        public void Clear(string? notice)
         {
-            _currentHero = null;
-            _currentMap = null;
-            _blueTeamAnalysis = null;
-            CurrentHeroCard.DataContext = null;
-            CurrentHeroCard.Visibility = Visibility.Collapsed;
-            SwapSuggestions.Clear();
+            CurrentHero = null;
+            CurrentRow.Content = null;
+            Rows.Clear();
+            Header.Update(null, null, null);
+            SwapSection.Visibility = Visibility.Collapsed;
+            NoticeText.Text = notice ?? string.Empty;
+            NoticeCard.Visibility = string.IsNullOrEmpty(notice) ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        public void UpdateSuggestions(HeroName playerHero, Dictionary<HeroName, HeroAnalysis> blueTeamAnalysis, MapName? currentMap = null)
+        /// <summary>
+        /// Shows both teams and the swaps for <paramref name="playerHero"/>. When that hero is not on the team,
+        /// the composition table stays and <paramref name="missingHeroNotice"/> replaces the swaps.
+        /// </summary>
+        public void UpdateSuggestions(
+            HeroName playerHero,
+            IReadOnlyDictionary<HeroName, HeroAnalysis> ourTeam,
+            IReadOnlyDictionary<HeroName, HeroAnalysis>? enemyTeam,
+            string? missingHeroNotice = null)
         {
             try
             {
-                _currentMap = currentMap;
-                _blueTeamAnalysis = blueTeamAnalysis;
+                Rows.Clear();
+                CurrentRow.Content = null;
 
-                if (!blueTeamAnalysis.TryGetValue(playerHero, out var currentHeroAnalysis))
-                    return;
-
-                // Update current hero
-                _currentHero = CreateHeroViewModel(playerHero, currentHeroAnalysis, true);
-                CurrentHeroCard.DataContext = _currentHero;
-                CurrentHeroCard.Visibility = Visibility.Visible;
-
-                // Update swap suggestions - sorted by score (highest first), filtered by min score, limited to 21
-                SwapSuggestions.Clear();
-                if (currentHeroAnalysis.SwapSuggestions != null)
+                if (!CompositionPolicy.IsKnownHero(playerHero) || !ourTeam.TryGetValue(playerHero, out var current))
                 {
-                    var minScore = AppSettings.Instance.MinScoreF2;
-                    var sortedSuggestions = currentHeroAnalysis.SwapSuggestions
-                        .Where(s => s.HeroScore >= minScore)
-                        .OrderByDescending(s => s.HeroScore)
-                        .Take(21);
+                    Header.Update(ourTeam, enemyTeam, CompositionPolicy.FitTarget(ourTeam, enemyTeam, null));
+                    CurrentHero = null;
+                    SwapSection.Visibility = Visibility.Collapsed;
+                    NoticeText.Text = missingHeroNotice ?? string.Empty;
+                    NoticeCard.Visibility = missingHeroNotice == null ? Visibility.Collapsed : Visibility.Visible;
+                    return;
+                }
 
-                    foreach (var suggestion in sortedSuggestions)
+                var target = CompositionPolicy.FitTarget(ourTeam, enemyTeam, playerHero);
+                Header.Update(ourTeam, enemyTeam, target);
+                CurrentHero = (playerHero, current.HeroScore);
+                NoticeCard.Visibility = Visibility.Collapsed;
+                SwapSection.Visibility = Visibility.Visible;
+
+                bool IsEnemy(HeroName hero) => enemyTeam == null || enemyTeam.Count == 0 || enemyTeam.ContainsKey(hero);
+                // Synergies count towards the score only with the teammates you keep.
+                bool IsTeammate(HeroName hero) => hero != playerHero && ourTeam.ContainsKey(hero);
+
+                var minScore = AppSettings.Instance.MinScoreF2;
+                // Only heroes the team can pick: known, and not already played by a teammate.
+                var suggestions = (current.SwapSuggestions ?? Enumerable.Empty<HeroAnalysis>())
+                    .Where(s => CompositionPolicy.IsCandidate(ourTeam, s))
+                    .OrderByDescending(s => s.HeroScore)
+                    .ToList();
+                bool grouped = AppSettings.Instance.GroupSwapsByComposition;
+
+                var selection = SwapSuggestionPolicy.SelectSuggestions(suggestions, minScore, MaxOptions);
+                int eligible = suggestions.Count(s => s.HeroScore >= minScore);
+
+                Logger.Log(
+                    $"F2 swap suggestions for {playerHero}: total={selection.TotalCount}, eligible={eligible}, shown={selection.ShownCount}, minScore={minScore}, grouped={grouped}, target={target}");
+
+                CurrentRow.Content = CreateRow(current, target, 0, IsEnemy, IsTeammate, isYou: true);
+                var options = selection.Suggestions;
+
+                int index = 0;
+                void AddRow(HeroAnalysis swap) => Rows.Add(CreateRow(swap, target, index++, IsEnemy, IsTeammate));
+                if (grouped)
+                {
+                    foreach (var group in CompositionPolicy.Group(options, target))
                     {
-                        SwapSuggestions.Add(CreateHeroViewModel(suggestion.Hero.Name, suggestion, false));
+                        Rows.Add(new SwapGroupViewModel(group.Composition, group.IsRecommended));
+                        foreach (var swap in group.Heroes) AddRow(swap);
                     }
                 }
+                else
+                {
+                    foreach (var swap in options) AddRow(swap);
+                }
+
+                NoSwapsCard.Visibility = selection.ShownCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+                NoSwapsText.Text = $"NO SWAP SCORES {HudFormat.Score(minScore)} OR MORE";
+
+                int hidden = eligible - selection.ShownCount;
+                MoreCard.Visibility = hidden > 0 ? Visibility.Visible : Visibility.Collapsed;
+                MoreText.Text = $"+{hidden} MORE";
             }
             catch (Exception ex)
             {
@@ -68,224 +127,64 @@ namespace Owmeta.Display
             }
         }
 
-        private HeroSuggestionViewModel CreateHeroViewModel(HeroName heroName, HeroAnalysis analysis, bool isCurrent)
+        private static SwapRowViewModel CreateRow(
+            HeroAnalysis analysis,
+            CompositionType? target,
+            int index,
+            Func<HeroName, bool> isEnemy,
+            Func<HeroName, bool> isTeammate,
+            bool isYou = false)
         {
-            var compositions = new List<CompositionInfo>();
-
-            if (analysis.Hero?.BestCompositions != null)
+            var hero = analysis.Hero?.Name ?? HeroName.Unknown;
+            var background = isYou ? HudPalette.RowYou : index % 2 == 0 ? HudPalette.RowA : HudPalette.RowB;
+            return new SwapRowViewModel
             {
-                foreach (var comp in analysis.Hero.BestCompositions)
-                {
-                    compositions.Add(new CompositionInfo
-                    {
-                        Name = comp.ToString(),
-                        Foreground = GetCompositionBrush(comp),
-                        Background = GetCompositionBackgroundBrush(comp)
-                    });
-                }
-            }
-
-            var incompatibleCompositions = new List<CompositionInfo>();
-            if (analysis.Hero?.IncompatibleCompositions != null)
-            {
-                foreach (var comp in analysis.Hero.IncompatibleCompositions)
-                {
-                    incompatibleCompositions.Add(new CompositionInfo
-                    {
-                        Name = comp.ToString(),
-                        Foreground = GetCompositionBrush(comp),
-                        Background = GetCompositionBackgroundBrush(comp)
-                    });
-                }
-            }
-
-            var mapStrengthInfo = GetMapStrengthInfo(analysis.Hero, _currentMap);
-            var synergies = ConvertToSynergyInfoList(analysis.Synergies);
-            var counters = ConvertToCounterInfoList(analysis.HardCounters, analysis.SoftCounters, true);
-            var counteredBy = ConvertToCounterInfoList(analysis.HardCounteredBy, analysis.SoftCounteredBy, false);
-
-            return new HeroSuggestionViewModel
-            {
-                HeroName = FormatHeroName(heroName),
-                HeroIcon = IconUtils.GetHeroIconAsBitmapSource(heroName),
-                IsCurrent = isCurrent,
-                ScoreValue = analysis.HeroScore,
-                ScoreBrush = analysis.HeroScore >= 0 ? BrushCache.Green : BrushCache.Red,
-                ScoreBackgroundBrush = analysis.HeroScore >= 0 ? BrushCache.GreenBg : BrushCache.RedBg,
-                Compositions = compositions,
-                IncompatibleCompositions = incompatibleCompositions,
-                Counters = counters,
-                CounteredBy = counteredBy,
-                Synergies = synergies,
-                HasCounters = counters.Count > 0,
-                HasCounteredBy = counteredBy.Count > 0,
-                HasSynergies = synergies.Count > 0,
-                MapStrengthVisibility = mapStrengthInfo.HasValue ? Visibility.Visible : Visibility.Collapsed,
-                MapStrengthBrush = mapStrengthInfo.HasValue ?
-                    (mapStrengthInfo.Value.IsStrong ? BrushCache.Green : BrushCache.Red) : BrushCache.White,
-                MapStrengthText = mapStrengthInfo.HasValue ?
-                    (mapStrengthInfo.Value.IsStrong ? "Strong Map" : "Weak Map") : string.Empty
+                Icon = Board.Portrait(hero),
+                Name = HudFormat.HeroName(hero).ToUpperInvariant(),
+                ScoreText = HudFormat.Score(analysis.HeroScore),
+                ScoreBrush = HudPalette.ScoreBrush(analysis.HeroScore),
+                Background = background,
+                EdgeBrush = isYou ? HudPalette.Ally : background,
+                EdgeAccent = isYou ? HudPalette.Ally : null,
+                YouVisibility = isYou ? Visibility.Visible : Visibility.Collapsed,
+                Counters = Board.Relations(analysis.HardCounters, analysis.SoftCounters, isEnemy, HudPalette.Good),
+                CounteredBy = Board.Relations(analysis.HardCounteredBy, analysis.SoftCounteredBy, isEnemy, HudPalette.Bad),
+                Synergies = Board.Synergies(analysis.Synergies, isTeammate),
+                Fits = Board.Fits(analysis.Hero, target)
             };
-        }
-
-        private List<SynergyInfo> ConvertToSynergyInfoList(IEnumerable<HeroSynergy>? synergies)
-        {
-            var result = new List<SynergyInfo>();
-            if (synergies == null) return result;
-
-            foreach (var synergy in synergies.Take(3))
-            {
-                if (_blueTeamAnalysis != null && _blueTeamAnalysis.ContainsKey(synergy.HeroName))
-                {
-                    result.Add(new SynergyInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(synergy.HeroName),
-                        Name = FormatHeroName(synergy.HeroName),
-                        Comment = string.IsNullOrEmpty(synergy.Comment) ? "Good synergy" : synergy.Comment
-                    });
-                }
-            }
-
-            return result;
-        }
-
-        private List<CounterInfo> ConvertToCounterInfoList(
-            IEnumerable<HeroCounter>? hardCounters,
-            IEnumerable<HeroCounter>? softCounters,
-            bool isCountering)
-        {
-            var result = new List<CounterInfo>();
-
-            if (hardCounters != null)
-            {
-                foreach (var counter in hardCounters.Take(3))
-                {
-                    result.Add(new CounterInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(counter.HeroName),
-                        Name = FormatHeroName(counter.HeroName),
-                        IsHard = true,
-                        Comment = string.IsNullOrEmpty(counter.Comment)
-                            ? (isCountering ? "Hard counter" : "Hard countered by")
-                            : counter.Comment
-                    });
-                }
-            }
-
-            if (softCounters != null && result.Count < 4)
-            {
-                foreach (var counter in softCounters.Take(4 - result.Count))
-                {
-                    result.Add(new CounterInfo
-                    {
-                        Icon = IconUtils.GetHeroIconAsBitmapSource(counter.HeroName),
-                        Name = FormatHeroName(counter.HeroName),
-                        IsHard = false,
-                        Comment = string.IsNullOrEmpty(counter.Comment)
-                            ? (isCountering ? "Soft counter" : "Soft countered by")
-                            : counter.Comment
-                    });
-                }
-            }
-
-            return result;
-        }
-
-        private (bool IsStrong, bool IsWeak)? GetMapStrengthInfo(Hero? hero, MapName? currentMap)
-        {
-            if (hero == null || currentMap == null)
-                return null;
-
-            bool isStrong = hero.StrongMaps?.Contains(currentMap.Value) ?? false;
-            bool isWeak = hero.WeakMaps?.Contains(currentMap.Value) ?? false;
-
-            if (!isStrong && !isWeak)
-                return null;
-
-            return (isStrong, isWeak);
-        }
-
-        private SolidColorBrush GetCompositionBrush(CompositionType comp)
-        {
-            return comp switch
-            {
-                CompositionType.Brawl => BrushCache.Teal,   // Orange
-                CompositionType.Dive => BrushCache.Pink,    // Sky blue
-                CompositionType.Poke => BrushCache.Purple,  // Purple
-                _ => BrushCache.White
-            };
-        }
-
-        private SolidColorBrush GetCompositionBackgroundBrush(CompositionType comp)
-        {
-            return comp switch
-            {
-                CompositionType.Brawl => BrushCache.TealBg,   // Orange bg
-                CompositionType.Dive => BrushCache.PinkBg,    // Sky blue bg
-                CompositionType.Poke => BrushCache.PurpleBg,  // Purple bg
-                _ => BrushCache.WhiteBg
-            };
-        }
-
-        private string FormatHeroName(HeroName heroName)
-        {
-            return heroName.ToString().Replace("_", " ");
         }
     }
 
-    internal static class BrushCache
+    public sealed class SwapGroupViewModel
     {
-        public static readonly SolidColorBrush Green = CreateFrozen(0x10, 0xB9, 0x81);
-        public static readonly SolidColorBrush Red = CreateFrozen(0xEF, 0x44, 0x44);
-        public static readonly SolidColorBrush White = CreateFrozen(0xFF, 0xFF, 0xFF);
-        public static readonly SolidColorBrush Blue = CreateFrozen(0x3B, 0x82, 0xF6);
-        public static readonly SolidColorBrush Teal = CreateFrozen(0xfb, 0x92, 0x3c);  // Orange for Brawl
-        public static readonly SolidColorBrush Pink = CreateFrozen(0x38, 0xbd, 0xf8);  // Sky blue for Dive
-        public static readonly SolidColorBrush Purple = CreateFrozen(0xc0, 0x84, 0xfc); // Purple for Poke
-
-        public static readonly SolidColorBrush GreenBg = CreateFrozen(0x1A, 0x10, 0xB9, 0x81);
-        public static readonly SolidColorBrush RedBg = CreateFrozen(0x1A, 0xEF, 0x44, 0x44);
-        public static readonly SolidColorBrush TealBg = CreateFrozen(0x1A, 0xfb, 0x92, 0x3c);  // Orange bg for Brawl
-        public static readonly SolidColorBrush PinkBg = CreateFrozen(0x1A, 0x38, 0xbd, 0xf8);  // Sky blue bg for Dive
-        public static readonly SolidColorBrush BlueBg = CreateFrozen(0x1A, 0x3B, 0x82, 0xF6);
-        public static readonly SolidColorBrush PurpleBg = CreateFrozen(0x1A, 0xc0, 0x84, 0xfc); // Purple bg for Poke
-        public static readonly SolidColorBrush WhiteBg = CreateFrozen(0x1A, 0xFF, 0xFF, 0xFF);
-
-        private static SolidColorBrush CreateFrozen(byte r, byte g, byte b)
+        public SwapGroupViewModel(CompositionType composition, bool isRecommended)
         {
-            var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
-            brush.Freeze();
-            return brush;
+            Name = Board.CompositionName(composition);
+            Color = HudPalette.CompositionBrush(composition);
+            Background = isRecommended ? HudPalette.CompositionBandBrush(composition) : HudPalette.GroupBand;
+            MarkerVisibility = isRecommended ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private static SolidColorBrush CreateFrozen(byte a, byte r, byte g, byte b)
-        {
-            var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
-            brush.Freeze();
-            return brush;
-        }
+        public string Name { get; }
+        public Brush Color { get; }
+        public Brush Background { get; }
+        public Visibility MarkerVisibility { get; }
     }
 
-    public class HeroSuggestionViewModel
+    public sealed class SwapRowViewModel
     {
-        public required string HeroName { get; set; }
-        public required BitmapSource HeroIcon { get; set; }
-        public bool IsCurrent { get; set; }
-        public int ScoreValue { get; set; }
-        public required SolidColorBrush ScoreBrush { get; set; }
-        public required SolidColorBrush ScoreBackgroundBrush { get; set; }
-        public required List<CompositionInfo> Compositions { get; set; }
-        public required List<CompositionInfo> IncompatibleCompositions { get; set; }
-        public required List<CounterInfo> Counters { get; set; }
-        public required List<CounterInfo> CounteredBy { get; set; }
-        public required List<SynergyInfo> Synergies { get; set; }
-        public bool HasCounters { get; set; }
-        public bool HasCounteredBy { get; set; }
-        public bool HasSynergies { get; set; }
-        public bool HasIncompatibleCompositions => IncompatibleCompositions?.Count > 0;
-        public required Visibility MapStrengthVisibility { get; set; }
-        public required SolidColorBrush MapStrengthBrush { get; set; }
-        public required string MapStrengthText { get; set; }
+        public required ImageSource Icon { get; init; }
+        public required string Name { get; init; }
+        public required string ScoreText { get; init; }
+        public required Brush ScoreBrush { get; init; }
+        public required Brush Background { get; init; }
+        public required Brush EdgeBrush { get; init; }
+        public Brush? EdgeAccent { get; init; }
+        public Visibility YouVisibility { get; init; } = Visibility.Collapsed;
+        public required List<BoardIcon> Counters { get; init; }
+        public required List<BoardIcon> CounteredBy { get; init; }
+        public required List<BoardIcon> Synergies { get; init; }
+        public required List<CompositionWord> Fits { get; init; }
     }
 
     public class CompositionInfo
@@ -307,6 +206,7 @@ namespace Owmeta.Display
     {
         public required BitmapSource Icon { get; set; }
         public required string Name { get; set; }
+        public bool IsHard => false;
         public required string Comment { get; set; }
     }
 }

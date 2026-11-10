@@ -23,6 +23,7 @@ namespace Owmeta.Display
             MinScoreF2Box.Text = AppSettings.Instance.MinScoreF2.ToString();
             MinScoreF3Box.Text = AppSettings.Instance.MinScoreF3.ToString();
             TabScreenshotCheckBox.IsChecked = AppSettings.Instance.TabScreenshotEnabled;
+            GroupByCompositionCheckBox.IsChecked = AppSettings.Instance.GroupSwapsByComposition;
 
             _swapKey = AppSettings.Instance.SwapSuggestionsKey;
             _teamKey = AppSettings.Instance.TeamCompositionKey;
@@ -161,6 +162,7 @@ namespace Owmeta.Display
             }
 
             AppSettings.Instance.TabScreenshotEnabled = TabScreenshotCheckBox.IsChecked ?? false;
+            AppSettings.Instance.GroupSwapsByComposition = GroupByCompositionCheckBox.IsChecked ?? false;
             AppSettings.Instance.SwapSuggestionsKey = _swapKey;
             AppSettings.Instance.TeamCompositionKey = _teamKey;
             AppSettings.Instance.ScreenshotKey = _screenshotKey;

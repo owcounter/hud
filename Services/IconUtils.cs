@@ -20,6 +20,7 @@ namespace Owmeta.Services
     public static class IconUtils
     {
         private static readonly Dictionary<HeroName, Image> Icons = new();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<(HeroName Hero, int Size), BitmapSource> BitmapCache = new();
         private static readonly HttpClient httpClient = new();
 
         private static string ConvertEnumToApiKey(HeroName heroName)
@@ -87,8 +88,12 @@ namespace Owmeta.Services
 
         public static BitmapSource GetHeroIconAsBitmapSource(HeroName heroName, int size = 64)
         {
-            using var image = GetHeroIconSync(heroName, size);
-            return CreateBitmapSourceFromImage(image);
+            // Frozen bitmaps are immutable and thread-safe, so they can be shared across updates.
+            return BitmapCache.GetOrAdd((heroName, size), key =>
+            {
+                using var image = GetHeroIconSync(key.Hero, key.Size);
+                return CreateBitmapSourceFromImage(image);
+            });
         }
 
         private static Image ResizeImage(Image image, int width, int height)
