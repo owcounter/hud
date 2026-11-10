@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Scoreboard recognition engine. The .cs files are synced copies of the owmeta sources
+       (tools/portrait-prototype/sync-hud-vision.ps1); edit them there, not here. This project
+       is HUD-owned: a plain library so the engine compiles with the same usings as in owmeta. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Owmeta.Vision</AssemblyName>
+    <RootNamespace>Owmeta.Vision</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+  </ItemGroup>
+</Project>

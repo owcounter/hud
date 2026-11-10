@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "kind": "local-playtest",
+  "encoder_retrained": false,
+  "correction": {
+    "source": "train:1ae34af0019186306074be5cc8e16782e158591f4221514d042438bedd158206:9",
+    "old": 17,
+    "new": 43,
+    "variants": 7
+  },
+  "source_manifest_sha256": "e4e3b794abccdd669adfe252b7c1a2283d0d61d7678958c4f0d2918f56ea8185",
+  "role_reference_sha256": "195ce26a32a1b05dbdfa505d9a6f08d067550c4054218160ac1b9e115dad1833",
+  "limits": "Experimental geometry and OCR. No accuracy guarantee. Dead portraits commonly UNKNOWN. September data is diagnostic, not untouched acceptance.",
+  "dependencies": {
+    "onnxruntime": "1.24.4 MIT",
+    "Tesseract": "5.2.0 Apache-2.0",
+    "ImageSharp": "3.1.11 Six Labors Split License; commercial eligibility must be reviewed before distribution",
+    "artwork": "Blizzard game assets, existing project references; redistribution rights unverified",
+    "encoder": "Custom small CNN trained on existing assets and older screenshots"
+  },
+  "checksums": {
+    "catalog.json": "f3f4a658054773f284638a4fcd208ed65a05e6ab1ce7bb73c37a943fe847d5b6",
+    "encoder.onnx": "60760b219f8632b1a37f7d86126580965e8ca6f804f3f94d232c6c0cc09be63b",
+    "gallery.bin": "950b92f4ef515b3f39879753b936b9f0bb1b1e73cb05b779ee2c19af6c6657d0",
+    "manifest.json": "3fa7b07bec938c182721f7d5d2a8dfe6c5c0dc7f82e4d03e04092092a06f6faf",
+    "roles.bin": "6e627266c827b634bd1a271ea8e147b4c68b556d5672a9f1e171b9914fb23b44",
+    "tessdata/eng.traineddata": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+  },
+  "rosterUpdate": {
+    "date": "2026-10-07",
+    "source": "https://overwatch.blizzard.com/en-us/heroes/",
+    "license": "Blizzard artwork; local evaluation only, redistribution rights unverified",
+    "roleChanges": [
+      {
+        "heroId": 33,
+        "hero": "Sombra",
+        "from": "damage",
+        "to": "support",
+        "effectiveDate": "2026-10-06"
+      }
+    ],
+    "references": [
+      {
+        "heroId": 56,
+        "hero": "Doctrine",
+        "role": "support",
+        "file": "../../prototype-artifacts/roster-20261007/assets/doctrine.png",
+        "url": "https://d15f34w2p8l1cc.cloudfront.net/overwatch/2492a15c575c12314907d0d77501ec337b4d56796bc7f03e5dfb50d415612bae.png",
+        "sha256": "2492a15c575c12314907d0d77501ec337b4d56796bc7f03e5dfb50d415612bae"
+      }
+    ],
+    "validation": "Official-artwork references only; live screenshot accuracy for added heroes remains unverified. Thresholds and encoder unchanged."
+  },
+  "captureReferences": [
+    {
+      "date": "2026-10-09",
+      "note": "Doctrine (56) official artwork does not match its in-game scoreboard icon (live crops scored 0.47-0.49, UNKNOWN). Labeled in-game crops, one per team; leave-one-out across teams accepted at 0.967 similarity. Originals and prepared requests stay outside Git.",
+      "references": [
+        {
+          "heroId": 56,
+          "hero": "Doctrine",
+          "team": "blue",
+          "slot": 3,
+          "request": "../../prototype-artifacts/roster-20261009/prepared/a7021be9edd842cd8bb601499d2852a8.request.json",
+          "requestSha256": "2dd66b2ee08aea1d46dfe99cf12d0463a5be69729bb1196109f010914d64c42c",
+          "source": "ScreenShot_26-10-09_19-06-12-000.jpg",
+          "sourceSha256": "825121af214aee31a0db8dfad15d9ee102f2c291c3b10c0612663abdfac61b14"
+        },
+        {
+          "heroId": 56,
+          "hero": "Doctrine",
+          "team": "red",
+          "slot": 9,
+          "request": "../../prototype-artifacts/roster-20261009/prepared/6031c788abe44322871b2a5390b5d1e2.request.json",
+          "requestSha256": "f6fa986ae595a52804b8a78d676167b2e80a643768a011caa5bbdc9a829b2540",
+          "source": "ScreenShot_26-10-09_19-18-53-000.jpg",
+          "sourceSha256": "f2952d62f0074ae2390027a00a902668687f9a711f96565d37c0efefa274b408"
+        }
+      ],
+      "variants": 7,
+      "validation": "Labeled in-game crops; self-checks on these crops are not independent accuracy tests. Thresholds and encoder unchanged."
+    }
+  ]
+}

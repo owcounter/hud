@@ -31,6 +31,12 @@ if (args.Length == 1 && args[0] == "--diagnostics")
     return 0;
 }
 
+if (args.Length == 2 && args[0] == "--live")
+{
+    await RecognitionTests.RunLive(args[1]);
+    return 0;
+}
+
 if (args.Length == 1 && args[0] == "--placement")
 {
     OverlayPlacementTests.Run();
