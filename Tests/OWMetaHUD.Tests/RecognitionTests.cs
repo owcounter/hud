@@ -25,6 +25,10 @@ internal static class RecognitionTests
 
     public static void Run()
     {
+        // Selection edge scores measured on real captures: own row tank / damage 1, and no outline.
+        foreach(var (scores,row) in new (float[],int)[] {([70,0,0,0,0],0),([67,0,0,1,2],0),([81,57,0,0,0],1),([82,65,0,0,0],1),
+            ([0,0,66,0,0],2),([0,0,0,0,70],4),([20,10,0,0,0],-1),([70,60,55,0,0],-1)})
+            if(Owmeta.Vision.VisionEngine.SelectRow(scores)!=row) throw new Exception($"Selected row for [{string.Join(",",scores)}] was not {row}");
         var deadSlots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,1,2,"unreadable-artwork")).ToArray();
         var panel=new SlotObservation(9,.95f,.5f,9,28,"accepted");
         var dead=new RecognitionResult {Valid=true,Slots=deadSlots,PlayerHero=9,SelectedRow=0,
