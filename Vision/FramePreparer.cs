@@ -36,11 +36,12 @@ public static class FramePreparer
         using var small = source.Clone(c => c.Resize((int)Math.Round(source.Width * 720.0 / source.Height), 720, KnownResamplers.Box));
         int w = small.Width, h = small.Height;
         var mask = new byte[w * h]; int peak = 0;
+        int searchLeft = (int)Math.Round(w * .06), searchRight = (int)Math.Round(w * .47);
         small.ProcessPixelRows(rows => {
             for (int y = 0; y < h; y++) foreach (var p in rows.GetRowSpan(y)) peak = Math.Max(peak, Math.Max(p.R, Math.Max(p.G, p.B)));
             for (int y = 86; y < 655; y++) {
                 var row = rows.GetRowSpan(y);
-                for (int x = (int)Math.Round(w * .06); x < (int)Math.Round(w * .47); x++) {
+                for (int x = searchLeft; x < searchRight; x++) {
                     var p = row[x]; int max = Math.Max(p.R, Math.Max(p.G, p.B)), min = Math.Min(p.R, Math.Min(p.G, p.B));
                     if (min > Math.Max(30, peak * .8) && max - min < Math.Max(5, peak * .14)) mask[y * w + x] = 1;
                 }
@@ -54,7 +55,10 @@ public static class FramePreparer
         for (int y = 0; y < h; y++) for (int x = 1; x < w - 1; x++) {
             int i = y * w + x; closed[i] = (byte)(dilated[i-1] & dilated[i] & dilated[i+1]);
         }
-        var glyphs = Components(closed, w, h);
+        // A shape cut by the search window is not a role icon. Once every player has a major
+        // perk, the window's right edge cuts the second perk icon of all 10 rows, and those
+        // slivers would otherwise form a second, equally regular column ("Ambiguous scoreboard grid").
+        var glyphs = Components(closed, w, h).Where(g => g.Left > searchLeft && g.Left + g.Width < searchRight).ToList();
         var candidates = new List<Candidate>();
         foreach (var glyph in glyphs) {
             var column = glyphs.Where(g => Math.Abs(g.X - glyph.X) < 3).OrderBy(g => g.Y).DistinctBy(g => g.Y).ToArray();
