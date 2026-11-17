@@ -71,8 +71,7 @@ public sealed class VisionEngine : IDisposable
             string mapText="", playerText="", ocrStatus="ok"; int map=0, player=1;
             TextWord[] mapWords=[], playerWords=[];
             var selectionScores=ReadSelectionEdges(frame.SelectionEdges);
-            var selectionOrder=Enumerable.Range(0,5).OrderByDescending(i=>selectionScores[i]).ToArray();
-            int selectedRow=selectionScores[selectionOrder[0]]>=35 && selectionScores[selectionOrder[0]]-selectionScores[selectionOrder[1]]>=20 ? selectionOrder[0] : -1;
+            int selectedRow=SelectRow(selectionScores);
             if(selectedRow>=0 && slots[selectedRow].Hero>2) player=slots[selectedRow].Hero;
             PlayerObservation? playerEvidence = player>2 ? new(player,selectedRow,"selected-row-portrait",0) : null;
             SlotObservation? panelPortrait=null;
@@ -173,6 +172,21 @@ public sealed class VisionEngine : IDisposable
         float score=scores[order[0]], margin=score-scores[order[1]];
         return new(score>=.80f && margin>=.08f ? order[0]+1 : 0,score,margin);
     }
+    /// <summary>The outlined friendly row, or -1. A row scores high when both its edges are lit.</summary>
+    public static int SelectRow(float[] scores)
+    {
+        if(scores is not {Length:5}) throw new InvalidDataException("Invalid selection scores");
+        var order=Enumerable.Range(0,5).OrderByDescending(i=>scores[i]).ToArray();
+        // Row 0's top edge borders the white header and is always lit, so an outline around
+        // row 1 (whose top edge is row 0's bottom edge) also lights both edges of row 0.
+        // Row 0 and row 1 both lit (in either order), clear of the other rows, means row 1 is outlined.
+        if(order[0]+order[1]==1 && scores[1]>=35 && scores[1]-scores[order[2]]>=20) return 1;
+        // A real tank outline leaves row 1 dark (measured 0-2). Row 1 partly lit while row 0 wins
+        // is too close to the case above to trust row 0, so report no selected row instead.
+        if(order[0]==0 && scores[1]>=20) return -1;
+        return scores[order[0]]>=35 && scores[order[0]]-scores[order[1]]>=20 ? order[0] : -1;
+    }
+
     public static float[] ReadSelectionEdges(byte[] pixels)
     {
         if(pixels.Length!=33600) throw new InvalidDataException("Invalid selection strips");
