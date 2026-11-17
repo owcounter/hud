@@ -82,7 +82,7 @@
     },
     {
       "date": "2026-11-17",
-      "note": "Shion (54) and D.Mon (55) official artwork does not match their scoreboard icons (live crops 0.43-0.59, UNKNOWN). Labeled live in-game crops from HUD capture journals (exact engine crops), visually verified against the official artwork: Shion blue team (normal and bright card), D.Mon red team (dark card and burning effect); one red Sierra crop below threshold (0.615). Dead portraits are not added: the engine reports them as unreadable artwork by design. Originals stay outside Git.",
+      "note": "Shion (54) and D.Mon (55) official artwork does not match their scoreboard icons (live crops 0.43-0.59, UNKNOWN). Labeled live in-game crops from HUD capture journals (exact engine crops), visually verified against the official artwork: Shion blue team (normal and bright card), D.Mon red team (dark card and burning effect); one red Sierra crop below threshold (0.615). Dead portraits are not added: the engine reports them as unreadable artwork by design. Limits: three matches on one evening; Shion blue team only, D.Mon red team only (one held-out blue D.Mon accepted at 0.943); held-out frames share matches with the references. Replay of 274 scoreboards: only UNKNOWN to Shion/D.Mon/Sierra changes; Reaper margin against D.Mon drops to 0.39-0.45 (threshold 0.3). Originals and prepared requests stay outside Git.",
       "references": [
         {
           "heroId": 54,
