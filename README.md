@@ -25,7 +25,7 @@ OWMETA HUD is a lightweight, non-intrusive heads-up display application that pro
 
 ## Installation
 
-1. Download the latest release from [GitHub Releases](https://github.com/owcounter/hud/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/owmeta/hud/releases)
 2. Extract the ZIP file to your preferred location
 3. Run `OwmetaHUD.exe`
 4. Log in with your OWMETA account
@@ -133,7 +133,7 @@ OWMETA HUD is a lightweight, non-intrusive heads-up display application that pro
 
 - Join our [Discord server](https://discord.gg/nDA9CAkwbQ) for community support
 - Visit [OWMETA](https://owmeta.io) for more information
-- Report bugs through [GitHub Issues](https://github.com/owcounter/hud/issues)
+- Report bugs through [GitHub Issues](https://github.com/owmeta/hud/issues)
 
 ## Contributing
 
