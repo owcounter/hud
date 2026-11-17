@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/owmeta/hud/compare/v1.2.0...v1.3.0) (2026-11-17)
+
+
+### Features
+
+* recognize Shion and D.Mon on the scoreboard ([#20](https://github.com/owmeta/hud/issues/20)) ([38a7e25](https://github.com/owmeta/hud/commit/38a7e25ba35b7e666f0c96730687d4f23a3ca503))
+
+
+### Bug Fixes
+
+* recognize perk-heavy scoreboards and the first damage row ([#18](https://github.com/owmeta/hud/issues/18)) ([1ce349f](https://github.com/owmeta/hud/commit/1ce349f568e06c93cfda8446e064d16efeb3ac61))
+
 ## [1.2.0](https://github.com/owcounter/hud/compare/v1.1.2...v1.2.0) (2026-11-10)
 
 
