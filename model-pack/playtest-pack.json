@@ -21,8 +21,8 @@
   "checksums": {
     "catalog.json": "f3f4a658054773f284638a4fcd208ed65a05e6ab1ce7bb73c37a943fe847d5b6",
     "encoder.onnx": "60760b219f8632b1a37f7d86126580965e8ca6f804f3f94d232c6c0cc09be63b",
-    "gallery.bin": "950b92f4ef515b3f39879753b936b9f0bb1b1e73cb05b779ee2c19af6c6657d0",
-    "manifest.json": "3fa7b07bec938c182721f7d5d2a8dfe6c5c0dc7f82e4d03e04092092a06f6faf",
+    "gallery.bin": "2a92c839f9e0950ff0981970672827c9e12ed4b703f7f22f5affe29bed6d3a1e",
+    "manifest.json": "27d8e1e496b5f705f4ca88c3547b0e9ff1c8f56a7f0a2ae1aa1b697364a3f778",
     "roles.bin": "6e627266c827b634bd1a271ea8e147b4c68b556d5672a9f1e171b9914fb23b44",
     "tessdata/eng.traineddata": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
   },
@@ -75,6 +75,69 @@
           "requestSha256": "f6fa986ae595a52804b8a78d676167b2e80a643768a011caa5bbdc9a829b2540",
           "source": "ScreenShot_26-10-09_19-18-53-000.jpg",
           "sourceSha256": "f2952d62f0074ae2390027a00a902668687f9a711f96565d37c0efefa274b408"
+        }
+      ],
+      "variants": 7,
+      "validation": "Labeled in-game crops; self-checks on these crops are not independent accuracy tests. Thresholds and encoder unchanged."
+    },
+    {
+      "date": "2026-11-17",
+      "note": "Shion (54) and D.Mon (55) official artwork does not match their scoreboard icons (live crops 0.43-0.59, UNKNOWN). Labeled live in-game crops from HUD capture journals (exact engine crops), visually verified against the official artwork: Shion blue team (normal and bright card), D.Mon red team (dark card and burning effect); one red Sierra crop below threshold (0.615). Dead portraits are not added: the engine reports them as unreadable artwork by design. Limits: three matches on one evening; Shion blue team only, D.Mon red team only (one held-out blue D.Mon accepted at 0.943); held-out frames share matches with the references. Replay of 274 scoreboards: only UNKNOWN to Shion/D.Mon/Sierra changes; Reaper margin against D.Mon drops to 0.39-0.45 (threshold 0.3). Originals and prepared requests stay outside Git.",
+      "references": [
+        {
+          "heroId": 54,
+          "hero": "Shion",
+          "team": "blue",
+          "slot": 2,
+          "look": "alive",
+          "request": "prepared/20261115-213114-348-fdcf2dc466c9412c9be476c7fc34e6d3.request.json",
+          "requestSha256": "71efe063d22463052f5b6ce6b8aaebf2b37ac490d779d4f4c0b288526e92211c",
+          "source": "owmeta-captures/2026-11-15/20261115-213114-348-fdcf2dc466c9412c9be476c7fc34e6d3/portraits.owp",
+          "sourceSha256": "3f387ded6cea4a9fb2f9a323a5e250ea17450730e16d67c4ee066c8004870b2a"
+        },
+        {
+          "heroId": 54,
+          "hero": "Shion",
+          "team": "blue",
+          "slot": 2,
+          "look": "alive, bright card",
+          "request": "prepared/20261115-214241-449-cb696a6888a848e896505e0ac00e71b9.request.json",
+          "requestSha256": "836db51fa960ab8feac3214d24bbbe1bc5896b1975772810f898b6aaf0e5d9cb",
+          "source": "owmeta-captures/2026-11-15/20261115-214241-449-cb696a6888a848e896505e0ac00e71b9/portraits.owp",
+          "sourceSha256": "00ca2b2ff6c5dfa11560fc95bb0567e06e66032bc38a42c8b68f99af1ba06c3e"
+        },
+        {
+          "heroId": 55,
+          "hero": "D.Mon",
+          "team": "red",
+          "slot": 5,
+          "look": "alive, dark card",
+          "request": "prepared/20261115-220008-238-89375558438244c7b5507c0cac2e23ac.request.json",
+          "requestSha256": "ef002c99d3f695c7193c3d1a7a79525ed308b9f6b5c71fac471e020c49fef27e",
+          "source": "owmeta-captures/2026-11-15/20261115-220008-238-89375558438244c7b5507c0cac2e23ac/portraits.owp",
+          "sourceSha256": "b973c5e800a0081b599b0bc23b4d8b241d4d2c3e95d597a4a238e0c3e9a674f4"
+        },
+        {
+          "heroId": 55,
+          "hero": "D.Mon",
+          "team": "red",
+          "slot": 5,
+          "look": "alive, burning effect",
+          "request": "prepared/20261115-220831-531-83c51852e0ec4d0e8e03127c79a629b8.request.json",
+          "requestSha256": "5b85d6473b1690d7654c67c07aae4bed9442ad24f7bfd9c90c2453f2e932cb1e",
+          "source": "owmeta-captures/2026-11-15/20261115-220831-531-83c51852e0ec4d0e8e03127c79a629b8/portraits.owp",
+          "sourceSha256": "c4a7d90a6abf99e3cf59541f54c351a7b58b3a409c36a0cb9749241034213298"
+        },
+        {
+          "heroId": 53,
+          "hero": "Sierra",
+          "team": "red",
+          "slot": 6,
+          "look": "alive",
+          "request": "prepared/20261115-215247-263-73cb929d25814b229becbaedb20bacaa.request.json",
+          "requestSha256": "74a459e69fe18886b4631f87669d4c2808a63e9d6c9a5f82169d79d20c322ee3",
+          "source": "owmeta-captures/2026-11-15/20261115-215247-263-73cb929d25814b229becbaedb20bacaa/portraits.owp",
+          "sourceSha256": "25a79836cd2a813fd8fb024afb529dcca61e9512541794e1a1b7d70d1c42594d"
         }
       ],
       "variants": 7,
