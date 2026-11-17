@@ -25,9 +25,11 @@ internal static class RecognitionTests
 
     public static void Run()
     {
-        // Selection edge scores measured on real captures: own row tank / damage 1, and no outline.
+        // Selection edge scores: the first four were measured on real captures (own row tank, then
+        // damage 1); the others are synthetic edge cases (other rows, ties, row 1 partly lit, no outline).
         foreach(var (scores,row) in new (float[],int)[] {([70,0,0,0,0],0),([67,0,0,1,2],0),([81,57,0,0,0],1),([82,65,0,0,0],1),
-            ([0,0,66,0,0],2),([0,0,0,0,70],4),([20,10,0,0,0],-1),([70,60,55,0,0],-1)})
+            ([0,0,66,0,0],2),([0,0,0,0,70],4),([60,70,0,0,0],1),([50,50,0,0,0],1),([70,15,0,0,0],0),
+            ([81,30,0,0,0],-1),([81,57,45,0,0],-1),([20,10,0,0,0],-1),([70,60,55,0,0],-1)})
             if(Owmeta.Vision.VisionEngine.SelectRow(scores)!=row) throw new Exception($"Selected row for [{string.Join(",",scores)}] was not {row}");
         var deadSlots=Enumerable.Range(0,10).Select(_=>new SlotObservation(1,.4f,.01f,1,2,"unreadable-artwork")).ToArray();
         var panel=new SlotObservation(9,.95f,.5f,9,28,"accepted");

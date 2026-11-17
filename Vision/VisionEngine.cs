@@ -179,8 +179,11 @@ public sealed class VisionEngine : IDisposable
         var order=Enumerable.Range(0,5).OrderByDescending(i=>scores[i]).ToArray();
         // Row 0's top edge borders the white header and is always lit, so an outline around
         // row 1 (whose top edge is row 0's bottom edge) also lights both edges of row 0.
-        // Row 0 and row 1 both lit, clear of the other rows, means row 1 is outlined.
-        if(order[0]==0 && order[1]==1 && scores[1]>=35 && scores[1]-scores[order[2]]>=20) return 1;
+        // Row 0 and row 1 both lit (in either order), clear of the other rows, means row 1 is outlined.
+        if(order[0]+order[1]==1 && scores[1]>=35 && scores[1]-scores[order[2]]>=20) return 1;
+        // A real tank outline leaves row 1 dark (measured 0-2). Row 1 partly lit while row 0 wins
+        // is too close to the case above to trust row 0, so report no selected row instead.
+        if(order[0]==0 && scores[1]>=20) return -1;
         return scores[order[0]]>=35 && scores[order[0]]-scores[order[1]]>=20 ? order[0] : -1;
     }
 
